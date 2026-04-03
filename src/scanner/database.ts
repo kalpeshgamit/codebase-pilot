@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import type { DatabaseInfo } from '../types.js';
+import { toPosix } from '../utils.js';
 import { getOrmDetectors } from '../registry/index.js';
 
 export function detectDatabase(root: string): DatabaseInfo | null {
@@ -29,7 +30,7 @@ export function detectDatabase(root: string): DatabaseInfo | null {
           const result = detector.detect(pkgPath);
           if (result) {
             const schemaPath = findSchemaPath(pkgPath, detector.schemaPaths);
-            const relativePath = schemaPath ? `${dir}/${child}/${schemaPath}` : null;
+            const relativePath = schemaPath ? toPosix(`${dir}/${child}/${schemaPath}`) : null;
             return { orm: detector.name, type: result === 'auto' ? 'auto' : result, schemaPath: relativePath };
           }
         }

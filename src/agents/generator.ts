@@ -1,4 +1,5 @@
 import type { ProjectScan, AgentDefinition, AgentsConfig } from '../types.js';
+import { toPosix } from '../utils.js';
 
 export function generateAgents(scan: ProjectScan): AgentsConfig {
   const agents: Record<string, AgentDefinition> = {};
@@ -97,7 +98,7 @@ function mapPackageToAgent(
   type: string,
   fileCount: number,
 ): AgentDefinition | null {
-  const srcPath = `${path}/src/`;
+  const srcPath = toPosix(`${path}/src/`);
 
   switch (type) {
     case 'api':
@@ -140,7 +141,7 @@ function mapPackageToAgent(
       return {
         name: `${name}-plugin-agent`,
         model: 'sonnet',
-        context: [path + '/'],
+        context: [toPosix(path + '/')],
         task: `Plugin scaffold and tools in ${path}`,
         layer: 2,
         dependsOn: [],
@@ -149,7 +150,7 @@ function mapPackageToAgent(
       return {
         name: `${name}-db-agent`,
         model: 'haiku',
-        context: [path + '/'],
+        context: [toPosix(path + '/')],
         task: `Database schema and migrations in ${path}`,
         layer: 1,
         dependsOn: [],

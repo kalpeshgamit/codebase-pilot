@@ -1,6 +1,7 @@
 import { resolve, join, dirname, basename, extname, relative } from 'node:path';
 import { existsSync, readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
 import type { AgentsConfig } from '../types.js';
+import { toPosix } from '../utils.js';
 import { getAllLanguages } from '../registry/index.js';
 
 interface FixOptions {
@@ -72,7 +73,7 @@ export function resolveMovedPath(root: string, stalePath: string, languages: str
   // Strategy 2: File → directory (src/types.ts → src/types/)
   if (!stalePath.endsWith('/') && extname(stalePath)) {
     const withoutExt = stalePath.replace(/\.[^.]+$/, '');
-    const dirCandidate = withoutExt + '/';
+    const dirCandidate = toPosix(withoutExt + '/');
     if (existsSync(join(root, dirCandidate)) && statSync(join(root, dirCandidate)).isDirectory()) {
       return dirCandidate;
     }
@@ -91,10 +92,10 @@ export function resolveMovedPath(root: string, stalePath: string, languages: str
         return eName.toLowerCase() === name.toLowerCase();
       });
       if (match) {
-        const matchPath = dir === '.' ? match : `${dir}/${match}`;
+        const matchPath = dir === '.' ? match : toPosix(`${dir}/${match}`);
         const matchFull = join(root, matchPath);
         try {
-          if (statSync(matchFull).isDirectory()) return matchPath + '/';
+          if (statSync(matchFull).isDirectory()) return toPosix(matchPath + '/');
         } catch {}
         return matchPath;
       }
@@ -143,11 +144,11 @@ function findByName(dir: string, name: string, depth: number): string | null {
       } catch { continue; }
 
       if (entry === name) {
-        return relative(dir, full) + '/';
+        return toPosix(relative(dir, full) + '/');
       }
 
       const found = findByName(full, name, depth + 1);
-      if (found) return entry + '/' + found;
+      if (found) return toPosix(entry + '/' + found);
     }
   } catch {}
   return null;

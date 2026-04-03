@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import type { PackageInfo, LanguageInfo } from '../types.js';
+import { toPosix } from '../utils.js';
 import { getSkipDirs } from '../registry/index.js';
 
 const SKIP_DIRS = getSkipDirs();
@@ -81,7 +82,7 @@ function discoverPackages(root: string, languages: LanguageInfo[]): PackageInfo[
 
     for (const child of children) {
       const pkgPath = join(dirPath, child);
-      const relativePath = `${dir}/${child}`;
+      const relativePath = toPosix(`${dir}/${child}`);
 
       packages.push({
         name: child,
