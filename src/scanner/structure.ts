@@ -1,12 +1,9 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import type { PackageInfo, LanguageInfo } from '../types.js';
+import { getSkipDirs } from '../registry/index.js';
 
-const SKIP_DIRS = new Set([
-  'node_modules', 'dist', 'build', 'out', '.git', '.next',
-  '__pycache__', '.venv', 'venv', 'target', 'vendor', 'coverage',
-  '.turbo', '.cache', '.codebase-pilot',
-]);
+const SKIP_DIRS = getSkipDirs();
 
 export function detectStructure(
   root: string,
