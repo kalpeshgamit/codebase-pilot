@@ -61,7 +61,11 @@
     "tree-sitter"
   ],
   "license": "MIT",
-  "author": "Kalpesh Gamit <kalpesh.gamit@indianic.com>",
+  "author": {
+    "name": "Kalpesh Gamit (KG)",
+    "email": "kalpa.hacker@gmail.com",
+    "url": "https://github.com/nicgamit"
+  },
   "homepage": "https://github.com/nicgamit/codebase-pilot#readme",
   "repository": {
     "type": "git",
