@@ -28,10 +28,14 @@ export function generateAgents(scan: ProjectScan): AgentsConfig {
 
   // Add types-agent if TypeScript project
   if (scan.languages.some((l) => l.name === 'TypeScript')) {
+    const typesContext = scan.database?.schemaPath
+      ? [scan.database.schemaPath]
+      : ['src/'];
+
     agents['types-agent'] = {
       name: 'types-agent',
       model: 'haiku',
-      context: scan.database?.schemaPath ? [scan.database.schemaPath] : ['src/types/'],
+      context: typesContext,
       task: 'Extract TypeScript interfaces — pure type extraction, no logic',
       layer: 1,
       dependsOn: scan.database?.schemaPath ? ['schema-agent'] : [],
