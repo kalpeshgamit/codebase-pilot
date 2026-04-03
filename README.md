@@ -321,6 +321,13 @@ const claudeMd = generateClaudeMd(scan);
 
 See [CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
+## Author
+
+**Kalpesh Gamit (KG)**
+- Website: [kalpeshgamit.github.io](https://kalpeshgamit.github.io)
+- LinkedIn: [linkedin.com/in/kalpeshgamit](https://www.linkedin.com/in/kalpeshgamit)
+- Email: kalpa.hacker@gmail.com
+
 ## License
 
 [MIT](LICENSE)
