@@ -5,3 +5,8 @@ dist/
 *.log
 coverage/
 .codebase-pilot/
+package-lock.json
+
+# Claude Code config (local only)
+.claudeignore
+CLAUDE.md
