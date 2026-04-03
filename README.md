@@ -69,6 +69,43 @@ npm install -g codebase-pilot
 | **Tier 2** -- Package manager + tests (21) | Entry points, package files, skip dirs, test runner detection | Haskell, Clojure, F#, OCaml, Nim, Crystal, Julia, Perl, Lua, R, Erlang, Groovy, V, Objective-C, D, Ada, Fortran, COBOL, Hack, Gleam, Assembly |
 | **Tier 3** -- Extension only (18) | File counting and language percentage reporting | Lisp, Scheme, Racket, Prolog, Forth, APL, VHDL, Verilog, Tcl, Shell, PowerShell, Terraform, Solidity, Move, Cairo, GraphQL, Protobuf, SQL |
 
+## Packing & token counting
+
+- **Security scanning** -- 152 patterns across 15 categories filter secrets and credentials before packing
+- **Code compression** -- Regex-based Tier A (8 languages) strips comments, whitespace, and formatting noise; tree-sitter Tier B stub ready for AST-level compression
+- **Token counting** -- Per-file breakdown with visual bars and project total
+- **Output formats** -- XML (default) and Markdown
+- **Agent-scoped packing** -- `--agent api-agent` packs only that agent's context files
+
+```bash
+# Pack entire project as XML
+codebase-pilot pack
+
+# Pack as Markdown with compression
+codebase-pilot pack --format md --compress
+
+# Pack only one agent's context
+codebase-pilot pack --agent api-agent
+
+# Show token breakdown
+codebase-pilot tokens
+```
+
+## Security scanning
+
+152 patterns across 15 categories detect secrets and sensitive tokens before they reach an LLM context window:
+
+| Category | Patterns | Category | Patterns |
+|----------|----------|----------|----------|
+| Cloud | 14 | VCS/CI | 8 |
+| Payment | 20 | Messaging | 9 |
+| AI LLMs | 14 | AI Infra | 8 |
+| AI DevTools | 8 | Database | 15 |
+| Dev Infra | 15 | Auth | 5 |
+| Monitoring | 12 | Social | 8 |
+| Crypto | 4 | Crypto Keys | 7 |
+| Generic | 4 | | |
+
 ## Commands
 
 | Command | Description |
@@ -77,6 +114,8 @@ npm install -g codebase-pilot
 | `codebase-pilot scan` | Re-detect project structure and update configs |
 | `codebase-pilot fix` | Auto-repair drift (stale paths, missing files) |
 | `codebase-pilot health` | Run healthcheck on agent setup |
+| `codebase-pilot pack` | Pack codebase into AI-friendly single file (XML or Markdown) |
+| `codebase-pilot tokens` | Show token counts per file and total |
 | `codebase-pilot eject` | Export all generated files and remove the dependency |
 
 ## What gets generated
