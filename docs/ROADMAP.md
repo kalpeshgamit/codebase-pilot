@@ -1,6 +1,6 @@
 # Roadmap
 
-## v0.1.0 (Current) — Foundation
+## v0.1.0 — Foundation (DONE)
 
 - [x] CLI entry point with 5 commands (init, scan, fix, health, eject)
 - [x] Scanner: language detection (20+ languages)
@@ -19,6 +19,18 @@
 - [x] Fix CLI: auto-repair stale context paths
 - [x] Eject CLI: export + remove dependency
 - [x] Tested on real monorepo (MCPHub: Express + Drizzle + 6 packages)
+
+## v0.1.x — Context Engine (DONE)
+
+- [x] `pack` command: collect and format codebase files for LLM context
+- [x] `tokens` command: estimate token count for files or agent scopes
+- [x] Security scanner: 152 regex patterns across 15 categories (API keys, tokens, passwords, etc.)
+- [x] Agent-scoped packing: `--agent` flag filters to agent's context paths
+- [x] Code compression — Tier A: regex-based body folding (8 languages)
+- [x] Code compression — Tier B: tree-sitter compression stub (optional)
+- [x] Output formats: XML and Markdown
+- [x] .claudeignore-aware file collection
+- [x] 7 CLI commands total (init, scan, fix, health, eject, pack, tokens)
 
 ## v0.2.0 — Code Intelligence
 

@@ -41,6 +41,26 @@ npm run build
 - Functions over classes where possible
 - Early returns over nested conditionals
 
+## Project Structure
+
+```
+src/
+  bin/              # CLI entry point
+  cli/              # 7 commands: init, scan, fix, health, eject, pack, tokens
+  scanner/          # Project detection engine
+  agents/           # Agent generator (scan → agents.json)
+  generators/       # File generators (CLAUDE.md, .claudeignore, etc.)
+  packer/           # Codebase packing engine (collector, formatters, token counter)
+  security/         # Secret detection (152 patterns, 15 categories)
+  compress/         # Code compression (Tier A regex, Tier B tree-sitter)
+  types.ts          # All interfaces
+  index.ts          # Public API
+tests/
+  security/         # Secret detection tests
+  packer/           # Pack engine tests
+  compress/         # Compression tests
+```
+
 ## Adding a New Framework Detector
 
 Edit `src/scanner/framework.ts`:
@@ -71,6 +91,17 @@ Edit `src/scanner/database.ts`:
   detect: (r) => hasNodeDep(r, 'your-orm-package') ? 'auto' : null,
 },
 ```
+
+## Adding a Security Pattern
+
+Edit `src/security/patterns.ts` and add to the appropriate category:
+
+```typescript
+// In src/security/patterns.ts, add to the appropriate category:
+{ name: 'MyService API Key', category: 'cloud', regex: /myservice_[A-Za-z0-9]{32,}/ },
+```
+
+Then add a test case in `tests/security/` to verify the pattern matches real-world examples and does not produce false positives.
 
 ## Commit Messages
 

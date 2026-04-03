@@ -16,15 +16,21 @@ npm run build
 ```
 src/
   bin/              # CLI entry point
-  cli/              # 5 commands: init, scan, fix, health, eject
+  cli/              # 7 commands: init, scan, fix, health, eject, pack, tokens
   scanner/          # Project detection (delegates to registry)
   registry/         # Data-driven language/framework/ORM/test detection
   agents/           # Agent generator (scan → agents.json)
   generators/       # File generators (CLAUDE.md, .claudeignore, etc.)
+  packer/           # Codebase packing engine (collector, formatters, token counter)
+  security/         # Secret detection (152 patterns, 15 categories)
+  compress/         # Code compression (Tier A regex, Tier B tree-sitter)
   types.ts          # All interfaces
   utils.ts          # Cross-platform utilities
   index.ts          # Public API
-tests/              # Vitest test suite
+tests/
+  security/         # Secret detection tests
+  packer/           # Pack engine tests
+  compress/         # Compression tests
 ```
 
 ## Running Tests
@@ -65,6 +71,17 @@ Add a detector to `src/registry/frameworks.ts`:
 ```
 
 Same pattern for test runners (`src/registry/testing.ts`) and ORMs (`src/registry/databases.ts`).
+
+## Adding a Security Pattern
+
+Edit `src/security/patterns.ts` and add to the appropriate category:
+
+```typescript
+// In src/security/patterns.ts, add to the appropriate category:
+{ name: 'MyService API Key', category: 'cloud', regex: /myservice_[A-Za-z0-9]{32,}/ },
+```
+
+Then add a test case in `tests/security/` to verify the pattern matches real-world examples and does not produce false positives.
 
 ## Code Style
 

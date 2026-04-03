@@ -9,7 +9,7 @@ Every Claude Code user wastes tokens through context bloat, no agent orchestrati
 
 ## Solution
 
-A zero-cloud CLI + optional MCP server that auto-detects any project's structure and generates a complete Claude Code optimization setup.
+A zero-cloud CLI (7 commands) + optional MCP server that auto-detects any project's structure, generates a complete Claude Code optimization setup, and provides a context engine for packing, token estimation, security scanning, and code compression.
 
 ## Core Principles
 
@@ -18,6 +18,15 @@ A zero-cloud CLI + optional MCP server that auto-detects any project's structure
 3. Zero runtime overhead — CLI generates static files, MCP server is optional
 4. Language-agnostic — detects any language via file patterns + tree-sitter
 5. Auto-everything — scans project, generates configs, detects drift, auto-fixes
+
+## Context Engine
+
+The context engine provides codebase packing and token management:
+
+- **`pack` command** — Collect files, apply .claudeignore + agent scoping, detect secrets, optionally compress, output as XML or Markdown
+- **`tokens` command** — Estimate token counts for files or agent-scoped contexts
+- **Security scanning** — 152 regex patterns across 15 categories (API keys, cloud credentials, private keys, database URLs, JWT secrets, OAuth tokens, etc.)
+- **Compression** — Tier A: regex-based function body folding for 8 languages; Tier B: tree-sitter AST compression (optional stub)
 
 ## Token Savings Target
 

@@ -80,6 +80,20 @@ api-agent     →  { routes, controller_file } (5-10 lines)
 - Layer ordering: did L3 wait for L2 to complete?
 - Model appropriateness: was haiku used for complex reasoning?
 
+## Agent-Scoped Packing
+
+Pack only the files relevant to a specific agent's context, or count tokens for an agent's scope:
+
+```bash
+# Pack only files relevant to an agent
+codebase-pilot pack --agent api-agent
+
+# Count tokens for an agent's context
+codebase-pilot tokens --agent api-agent
+```
+
+This filters the file collector to only include paths listed in the agent's `contextPaths` from `agents.json`. Combined with .claudeignore and security scanning, this ensures each agent receives a minimal, safe context window.
+
 ## Healthcheck
 
 Run before any dispatch:

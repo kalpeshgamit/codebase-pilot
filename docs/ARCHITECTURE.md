@@ -29,6 +29,20 @@ codebase-pilot/
 │   │   ├── agents-json.ts        # agents.json writer
 │   │   ├── slash-commands.ts     # /dispatch + /healthcheck commands
 │   │   └── gitignore.ts          # .gitignore updater
+│   ├── packer/                   # Codebase packing engine
+│   │   ├── index.ts              # Pack orchestrator
+│   │   ├── collector.ts          # File collector (.claudeignore + agent scoping)
+│   │   ├── formatter-xml.ts      # XML output format
+│   │   ├── formatter-md.ts       # Markdown output format
+│   │   └── token-counter.ts      # Token estimation
+│   ├── security/                 # Secret detection
+│   │   ├── scanner.ts            # Regex-based scanner
+│   │   └── patterns.ts           # 152 secret patterns (15 categories)
+│   ├── compress/                 # Code compression
+│   │   ├── index.ts              # Compression orchestrator (Tier A + B)
+│   │   ├── regex-compress.ts     # Tier A: regex-based (8 languages)
+│   │   ├── treesitter-compress.ts # Tier B: tree-sitter (optional)
+│   │   └── patterns.ts           # Per-language compression patterns
 │   ├── intelligence/             # Code intelligence (TODO)
 │   │   ├── ast-parser.ts         # tree-sitter AST parsing
 │   │   ├── smart-search.ts       # Semantic symbol search
@@ -52,7 +66,10 @@ codebase-pilot/
 │   ├── monorepo.json
 │   ├── express-api.json
 │   └── claude-md/*.md
-├── tests/                        # Vitest tests (TODO)
+├── tests/                        # Vitest tests
+│   ├── security/                 # Secret detection tests
+│   ├── packer/                   # Pack engine tests
+│   └── compress/                 # Compression tests
 ├── docs/                         # Documentation
 ├── package.json
 └── tsconfig.json
@@ -89,6 +106,16 @@ npx codebase-pilot init
     ├── agents-json.ts    → .codebase-pilot/agents.json
     ├── slash-commands.ts → .claude/commands/*.md
     └── gitignore.ts      → .gitignore (update)
+```
+
+## Pack Command Data Flow
+
+```
+pack command → collector (walk + .claudeignore + agent scoping)
+            → security scanner (skip files with secrets)
+            → compressor (optional, fold function bodies)
+            → formatter (XML or Markdown)
+            → output file or stdout
 ```
 
 ## Agent Layer System
