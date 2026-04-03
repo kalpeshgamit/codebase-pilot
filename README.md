@@ -1,6 +1,6 @@
 # codebase-pilot
 
-**Auto-detect, orchestrate, and optimize any project for Claude Code.**
+**AI context engine for Claude Code. Pack, compress, and optimize any codebase. Save 60–90% tokens.**
 
 Zero cloud. Zero lock-in. Zero runtime overhead.
 
@@ -13,25 +13,204 @@ Zero cloud. Zero lock-in. Zero runtime overhead.
 
 ## What it does
 
-codebase-pilot scans your project and generates a complete Claude Code optimization setup in seconds. It detects your languages, frameworks, databases, and test runners, then produces targeted sub-agent configurations that cut token usage by ~60%.
+codebase-pilot solves the core AI coding problem: getting the right code into Claude efficiently, without leaking secrets or blowing your context window.
 
-- **CLAUDE.md** -- project-specific prompt cache, auto-cached by Anthropic's system
-- **.claudeignore** -- smart noise filter that excludes build artifacts, deps, and junk
-- **agents.json** -- sub-agent orchestration with layered execution and model routing
-- **Slash commands** -- `/dispatch` and `/healthcheck` for Claude Code integration
-- **Monorepo-aware** -- detects workspaces and maps each package to a focused agent
+- **Pack** your codebase into a single XML or Markdown file for Claude
+- **Compress** code by 60–90% — keeps signatures, folds bodies
+- **Scan** for 152 secret patterns before anything reaches an LLM
+- **Count tokens** per file with savings estimates
+- **Scope** packing to a single agent's context paths
+- **Generate** CLAUDE.md, .claudeignore, agents.json, and slash commands
 
-## Quick start
+---
+
+## Installation
+
+### npm (recommended)
+
+```bash
+npm install -g codebase-pilot
+```
+
+### npx (no install)
 
 ```bash
 npx codebase-pilot init
 ```
 
-No install required. One command scans your project and generates everything:
+### Verify
+
+```bash
+codebase-pilot --version
+```
+
+---
+
+## Uninstall
+
+```bash
+npm uninstall -g codebase-pilot
+```
+
+To also remove project config files:
+
+```bash
+codebase-pilot eject   # removes .codebase-pilot/ from project
+```
+
+---
+
+## Quick start
+
+```bash
+# Set up a project
+codebase-pilot init
+
+# See token breakdown + savings estimate
+codebase-pilot tokens
+
+# Pack entire codebase compressed → clipboard
+codebase-pilot pack --compress --copy
+
+# Pack just one agent's context
+codebase-pilot pack --agent api-agent --compress --copy
+```
+
+---
+
+## Token savings
 
 ```
-codebase-pilot v0.1.0
+codebase-pilot tokens
 
+  Token count by file:
+
+    src/registry/frameworks.ts     3,819 tokens  ██████████████░░   6%
+    src/security/patterns.ts       4,376 tokens  ████████████████   7%
+    ...
+
+  Total: 60,458 tokens across 71 files
+
+  Savings estimate (per session):
+    Without codebase-pilot:   ~60,458 tokens  (manual file reads)
+    With pack --compress:      ~24,183 tokens
+    Pilot saves:              ~36,275 tokens per session
+
+  Your savings (from pack runs):
+    Today:      3 sessions  — ~108,825 tokens saved
+    This week:  9 sessions  — ~326,475 tokens saved
+```
+
+| Approach | Tokens | Reduction |
+|----------|--------|-----------|
+| No tool (manual file reads) | ~60K | baseline |
+| `pack` | ~45K | ~25% |
+| `pack --compress` | ~24K | ~60% |
+| `pack --agent <name> --compress` | ~7K | **~90%** |
+
+---
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `codebase-pilot init` | Scan project and generate all config files |
+| `codebase-pilot scan` | Re-detect project structure, update configs |
+| `codebase-pilot fix` | Auto-repair drift (stale paths, missing files) |
+| `codebase-pilot health` | Validate agent setup |
+| `codebase-pilot pack` | Pack codebase into AI-friendly XML or Markdown |
+| `codebase-pilot tokens` | Token counts per file + savings estimate |
+| `codebase-pilot eject` | Export all generated files, remove dependency |
+
+### pack options
+
+```
+--format xml|md     Output format (default: xml)
+--output <path>     Output file (default: codebase-pilot-output.xml)
+--compress          Extract signatures, fold bodies (~60-90% reduction)
+--agent <name>      Pack only files in that agent's context paths
+--no-security       Skip secret detection
+--copy              Write to stdout for piping/clipboard
+```
+
+### tokens options
+
+```
+--sort size|name    Sort order (default: size)
+--limit <n>         Show top N files (default: 20)
+--agent <name>      Count tokens for a specific agent's context
+```
+
+---
+
+## Security scanning
+
+152 patterns across 15 categories. Runs automatically on every `pack`. Files with secrets are skipped from output.
+
+| Category | Examples |
+|----------|---------|
+| Cloud | AWS, GCP, Azure, DigitalOcean, Supabase, Cloudflare |
+| VCS / CI | GitHub tokens, GitLab, Bitbucket, CircleCI, Travis |
+| Payment | Stripe, Razorpay, Square, Braintree, Plaid, PayPal |
+| AI LLMs | OpenAI, Anthropic, Groq, Perplexity, xAI, Cerebras |
+| AI Infra | HuggingFace, Replicate, Together, Fireworks, Cohere |
+| AI DevTools | LangSmith, LangFuse, Pinecone, Weaviate, Qdrant |
+| Messaging | Slack, Twilio, SendGrid, Mailgun, Resend, Postmark |
+| Database | MongoDB, PostgreSQL, Redis, PlanetScale, Neon, Turso |
+| Dev Infra | npm, Docker, Doppler, Vault, Trigger.dev, PostHog |
+| Monitoring | Sentry, Datadog, New Relic, Grafana, Honeycomb |
+| Crypto | Ethereum, Solana, Bitcoin private keys |
+| Crypto Keys | RSA, EC, DSA, OpenSSH, PGP private key blocks |
+| Generic | password=, secret=, api_key=, Bearer tokens |
+
+Disable with `--no-security` if you're packing a test fixtures repo.
+
+---
+
+## Code compression
+
+Two tiers — always works, gets better with tree-sitter:
+
+**Tier A (default, zero deps):** Regex-based signature extraction across 8 languages. Folds function bodies, keeps signatures, imports, type definitions.
+
+```typescript
+// Before (12 lines, ~150 tokens)
+export async function createUser(data: UserInput): Promise<User> {
+  const validated = schema.parse(data);
+  const user = await db.user.create({ data: validated });
+  await sendWelcomeEmail(user.email);
+  return user;
+}
+
+// After --compress (1 line, ~20 tokens)
+export async function createUser(data: UserInput): Promise<User> { /* ... */ }
+```
+
+**Tier B (optional):** tree-sitter AST parsing for accurate statement counting and doc comment preservation. Install `tree-sitter` and language grammars as optional dependencies — Tier B activates automatically.
+
+---
+
+## Agent-scoped packing
+
+Pack only the files relevant to a specific agent. This is the biggest token win.
+
+```bash
+codebase-pilot pack --agent api-agent --compress
+# → packs only packages/api/src/ instead of entire repo
+# → 7K tokens instead of 60K
+```
+
+Agent context paths come from `.codebase-pilot/agents.json` (generated by `init`).
+
+---
+
+## What init generates
+
+```bash
+codebase-pilot init
+```
+
+```
   Scanning project...
 
   Detected:
@@ -40,10 +219,6 @@ codebase-pilot v0.1.0
     Database:   Prisma -> PostgreSQL
     Tests:      Vitest
     Structure:  Monorepo (3 packages)
-    Packages:
-      packages/api              -> api      (45 files)
-      packages/web              -> web      (32 files)
-      packages/shared           -> lib      (12 files)
 
   Generating:
     * CLAUDE.md (express template)
@@ -53,86 +228,29 @@ codebase-pilot v0.1.0
     * .claude/commands/healthcheck.md
 ```
 
-Or install globally:
+Existing `CLAUDE.md` and `.claudeignore` are merged, never overwritten.
 
-```bash
-npm install -g codebase-pilot
-```
+---
 
 ## Language support
 
-56 languages across 3 detection tiers:
+56 languages across 3 tiers:
 
-| Tier | What you get | Languages |
-|------|-------------|-----------|
-| **Tier 1** -- Full ecosystem (17) | Entry points, package files, skip dirs, framework/ORM/test detection | TypeScript, JavaScript, Python, Go, Rust, Java, Kotlin, Ruby, PHP, C#, Swift, Dart, Elixir, Scala, C++, C, Zig |
-| **Tier 2** -- Package manager + tests (21) | Entry points, package files, skip dirs, test runner detection | Haskell, Clojure, F#, OCaml, Nim, Crystal, Julia, Perl, Lua, R, Erlang, Groovy, V, Objective-C, D, Ada, Fortran, COBOL, Hack, Gleam, Assembly |
-| **Tier 3** -- Extension only (18) | File counting and language percentage reporting | Lisp, Scheme, Racket, Prolog, Forth, APL, VHDL, Verilog, Tcl, Shell, PowerShell, Terraform, Solidity, Move, Cairo, GraphQL, Protobuf, SQL |
+| Tier | Count | Languages |
+|------|-------|-----------|
+| **Tier 1** — Full ecosystem | 17 | TypeScript, JavaScript, Python, Go, Rust, Java, Kotlin, Ruby, PHP, C#, Swift, Dart, Elixir, Scala, C++, C, Zig |
+| **Tier 2** — Package + tests | 21 | Haskell, Clojure, F#, OCaml, Nim, Crystal, Julia, Perl, Lua, R, Erlang, Groovy, V, Objective-C, D, Ada, Fortran, COBOL, Hack, Gleam, Assembly |
+| **Tier 3** — Extension only | 18 | Lisp, Scheme, Racket, Prolog, Forth, APL, VHDL, Verilog, Tcl, Shell, PowerShell, Terraform, Solidity, Move, Cairo, GraphQL, Protobuf, SQL |
 
-## Packing & token counting
+**58 framework detectors** — Next.js, Nuxt, SvelteKit, Remix, Astro, Express, Fastify, NestJS, Django, FastAPI, Flask, Gin, Echo, Fiber, Axum, Actix, Spring Boot, Rails, Laravel, and more.
 
-- **Security scanning** -- 152 patterns across 15 categories filter secrets and credentials before packing
-- **Code compression** -- Regex-based Tier A (8 languages) strips comments, whitespace, and formatting noise; tree-sitter Tier B stub ready for AST-level compression
-- **Token counting** -- Per-file breakdown with visual bars and project total
-- **Output formats** -- XML (default) and Markdown
-- **Agent-scoped packing** -- `--agent api-agent` packs only that agent's context files
+**39 test runners** — Vitest, Jest, pytest, Go test, Cargo test, JUnit, RSpec, PHPUnit, ExUnit, and more.
 
-```bash
-# Pack entire project as XML
-codebase-pilot pack
+**32 ORM detectors** — Prisma, Drizzle, SQLAlchemy, GORM, Diesel, Hibernate, ActiveRecord, Eloquent, and more.
 
-# Pack as Markdown with compression
-codebase-pilot pack --format md --compress
+---
 
-# Pack only one agent's context
-codebase-pilot pack --agent api-agent
-
-# Show token breakdown
-codebase-pilot tokens
-```
-
-## Security scanning
-
-152 patterns across 15 categories detect secrets and sensitive tokens before they reach an LLM context window:
-
-| Category | Patterns | Category | Patterns |
-|----------|----------|----------|----------|
-| Cloud | 14 | VCS/CI | 8 |
-| Payment | 20 | Messaging | 9 |
-| AI LLMs | 14 | AI Infra | 8 |
-| AI DevTools | 8 | Database | 15 |
-| Dev Infra | 15 | Auth | 5 |
-| Monitoring | 12 | Social | 8 |
-| Crypto | 4 | Crypto Keys | 7 |
-| Generic | 4 | | |
-
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `codebase-pilot init` | Scan project and generate all configuration files |
-| `codebase-pilot scan` | Re-detect project structure and update configs |
-| `codebase-pilot fix` | Auto-repair drift (stale paths, missing files) |
-| `codebase-pilot health` | Run healthcheck on agent setup |
-| `codebase-pilot pack` | Pack codebase into AI-friendly single file (XML or Markdown) |
-| `codebase-pilot tokens` | Show token counts per file and total |
-| `codebase-pilot eject` | Export all generated files and remove the dependency |
-
-## What gets generated
-
-| File | Purpose |
-|------|---------|
-| `CLAUDE.md` | Framework-specific prompt cache with project rules, patterns, and token directives |
-| `.claudeignore` | Excludes `node_modules`, `dist`, build caches, and language-specific junk directories |
-| `.codebase-pilot/agents.json` | Sub-agent definitions with model routing, context paths, and layer ordering |
-| `.claude/commands/dispatch.md` | Slash command to spawn focused agents by pattern |
-| `.claude/commands/healthcheck.md` | Slash command to validate agent setup before dispatch |
-
-Existing `CLAUDE.md` and `.claudeignore` files are merged, never overwritten.
-
-## How agents work
-
-Agents are organized in layers. Lower layers run first and produce context for higher layers. Each agent reads only 2-4 files and uses the cheapest model that can handle its task.
+## Agent layers
 
 ```
 Layer 0   healthcheck-agent (haiku)    Pre-flight validation
@@ -141,60 +259,24 @@ Layer 1   schema-agent (haiku)         DB schema only
 Layer 2   api-agent (sonnet)           API routes + controllers
           cli-agent (haiku)            CLI commands
 Layer 3   frontend-agent (haiku)       React/Vue/Svelte pages
-Layer 4   standards-agent (opus)       Code quality gate (SOLID review)
+Layer 4   standards-agent (opus)       Code quality gate
 Layer 5   supervisor-agent (opus)      Behavior audit gate
 Layer 6   docs-agent (haiku)           Documentation updates
 ```
 
-**Model routing:** haiku for mechanical extraction, sonnet for implementation, opus for reasoning and review gates. This layered approach yields ~60% token savings compared to a single agent reading everything.
-
-## Framework detection
-
-58 framework detectors across 14 languages:
-
-| Language | Frameworks |
-|----------|-----------|
-| TypeScript/JS | Next.js, Nuxt, SvelteKit, Remix, Astro, Express, Fastify, Hono, NestJS, Koa, React, Vue, Angular, Svelte |
-| Python | Django, FastAPI, Flask, Starlette, Tornado, Sanic |
-| Go | Gin, Echo, Fiber, Chi, Gorilla |
-| Rust | Actix, Axum, Rocket, Warp, Tide |
-| Java | Spring Boot, Quarkus, Micronaut, Vert.x |
-| Kotlin | Ktor |
-| Ruby | Rails, Sinatra, Hanami |
-| PHP | Laravel, Symfony, Slim, Lumen |
-| C# | ASP.NET Core, Blazor, MAUI |
-| Swift | Vapor, Hummingbird |
-| Dart | Flutter, Dart Frog, Serverpod |
-| Elixir | Phoenix, Plug |
-| Scala | Play, Akka HTTP, http4s, ZIO HTTP |
-| C++ | Qt, Drogon |
-
-**39 test runners** -- Vitest, Jest, Mocha, pytest, unittest, Go test, Cargo test, JUnit, TestNG, Kotest, RSpec, Minitest, PHPUnit, Pest, xUnit, NUnit, MSTest, XCTest, Quick, flutter_test, dart test, ExUnit, ScalaTest, MUnit, GoogleTest, Catch2, CTest, zig test, HSpec, clojure.test, OUnit, Gleam test, EUnit, crystal spec, nim test, D unittest, Julia Test, Busted, Perl Test
-
-**32 ORM/database detectors** -- Prisma, Drizzle, TypeORM, Sequelize, Mongoose, SQLAlchemy, Django ORM, Tortoise, Peewee, GORM, sqlx (Go), ent, sqlc, Diesel, SeaORM, sqlx (Rust), Hibernate, jOOQ, MyBatis, ActiveRecord, Sequel, Eloquent, Doctrine, Entity Framework, Dapper, Ecto, Fluent, Drift, Slick, Doobie, Exposed, Ktorm
-
-## Dispatch patterns
-
-After init, use slash commands in Claude Code:
+Use in Claude Code:
 
 ```
 /dispatch new-feature Add payment processing
 /dispatch api-feature Subscription CRUD endpoints
-/dispatch cli-command Export analytics data
 /healthcheck
 ```
 
-Patterns map to agent groups. `new-feature` dispatches schema, types, API, frontend, and review agents in the correct layer order.
+---
 
 ## Configuration
 
-The generated `.codebase-pilot/agents.json` is plain JSON. Edit it directly to:
-
-- Add or remove agents
-- Change model assignments (`haiku`, `sonnet`, `opus`)
-- Adjust context paths for each agent
-- Define custom dispatch patterns
-- Reorder layers
+`.codebase-pilot/agents.json` is plain JSON — edit directly:
 
 ```json
 {
@@ -216,6 +298,8 @@ The generated `.codebase-pilot/agents.json` is plain JSON. Edit it directly to:
 }
 ```
 
+---
+
 ## Programmatic API
 
 ```typescript
@@ -226,24 +310,7 @@ const agents = generateAgents(scan);
 const claudeMd = generateClaudeMd(scan);
 ```
 
-Exported: `detect`, `generateAgents`, `generateClaudeMd`, `generateClaudeignore`, `createMemoryDb`
-
-## Eject anytime
-
-```bash
-codebase-pilot eject
-```
-
-All generated files stay as plain text. Zero lock-in. Everything works with vanilla Claude Code after ejecting.
-
-## Token savings
-
-| Without | With codebase-pilot | Savings |
-|---------|-------------------|---------|
-| Single agent reads everything | Sub-agents read 2-4 files each | ~60% |
-| Full file reads | Targeted line ranges | ~90% per read |
-| 5 MCP servers loaded | Built-in tools only | ~2,000 tokens/session |
-| No prompt cache | CLAUDE.md auto-cached | ~5,000 tokens/session |
+---
 
 ## Requirements
 
@@ -252,7 +319,7 @@ All generated files stay as plain text. Zero lock-in. Everything works with vani
 
 ## Contributing
 
-See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for setup instructions and development workflow.
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 ## License
 

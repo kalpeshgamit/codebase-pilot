@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import { writeFileSync } from 'node:fs';
 import { packProject } from '../packer/index.js';
 import { formatTokenCount } from '../packer/token-counter.js';
+import { logPackRun } from '../packer/usage-logger.js';
 
 interface PackCommandOptions {
   dir: string;
@@ -59,6 +60,16 @@ export async function packCommand(options: PackCommandOptions): Promise<void> {
     }
 
     writeFileSync(outputPath, result.output, 'utf8');
+
+    // Log this run for savings tracking
+    logPackRun(root, {
+      date: new Date().toISOString(),
+      tokensRaw: result.rawTokens,
+      tokensPacked: result.totalTokens,
+      files: result.fileCount,
+      agent: options.agent,
+      compressed: options.compress,
+    });
 
     console.log(`  Files:    ${result.fileCount} packed`);
     if (result.compressionRatio !== undefined) {

@@ -7,6 +7,10 @@ coverage/
 .codebase-pilot/
 package-lock.json
 
+# Pack output
+codebase-pilot-output.xml
+codebase-pilot-output.md
+
 # Claude Code config (local only)
 .claudeignore
 CLAUDE.md

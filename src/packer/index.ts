@@ -22,6 +22,7 @@ export interface PackResult {
   output: string;
   fileCount: number;
   totalTokens: number;
+  rawTokens: number;
   skippedFiles: Array<{ file: string; reason: string }>;
   compressionRatio?: number;
 }
@@ -89,6 +90,7 @@ export function packProject(options: PackOptions): PackResult {
     output,
     fileCount: files.length,
     totalTokens,
+    rawTokens: originalTokens,
     skippedFiles,
     compressionRatio: options.compress
       ? Math.round((1 - totalTokens / originalTokens) * 100)

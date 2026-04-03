@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import { collectFiles } from '../packer/collector.js';
 import { formatTokenCount } from '../packer/token-counter.js';
+import { readPackLogs, getStats } from '../packer/usage-logger.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { AgentsConfig } from '../types.js';
@@ -71,6 +72,27 @@ export async function tokensCommand(options: TokensCommandOptions): Promise<void
 
   console.log('');
   console.log(`  Total: ${formatTokenCount(totalTokens)} tokens across ${files.length} files`);
+
+  // Savings estimate
+  const compressedEstimate = Math.round(totalTokens * 0.4);
+  const savingsEstimate = totalTokens - compressedEstimate;
+  console.log('');
+  console.log('  Savings estimate (per session):');
+  console.log(`    Without codebase-pilot:   ~${formatTokenCount(totalTokens)} tokens  (manual file reads)`);
+  console.log(`    With pack --compress:      ~${formatTokenCount(compressedEstimate)} tokens`);
+  console.log(`    Pilot saves:              ~${formatTokenCount(savingsEstimate)} tokens per session`);
+
+  // Usage stats from pack log
+  const logs = readPackLogs(root);
+  if (logs.length > 0) {
+    const today = getStats(logs, 1);
+    const week = getStats(logs, 7);
+    console.log('');
+    console.log('  Your savings (from pack runs):');
+    console.log(`    Today:      ${today.sessions} session${today.sessions !== 1 ? 's' : ''}  — ~${formatTokenCount(today.tokensSaved)} tokens saved`);
+    console.log(`    This week:  ${week.sessions} session${week.sessions !== 1 ? 's' : ''}  — ~${formatTokenCount(week.tokensSaved)} tokens saved`);
+  }
+
   console.log('');
 }
 

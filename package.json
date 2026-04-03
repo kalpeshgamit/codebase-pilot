@@ -1,7 +1,7 @@
 {
   "name": "codebase-pilot",
   "version": "0.1.0",
-  "description": "Claude Code Optimization Kit — auto-detect, orchestrate, and optimize any project",
+  "description": "Claude Code context engine — pack, compress, and optimize any codebase for AI. Save 60-90% tokens.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {
     "better-sqlite3": "^11.0.0",
@@ -47,23 +47,28 @@
     "claude",
     "claude-code",
     "ai",
-    "optimization",
-    "tokens",
+    "context-engine",
+    "token-optimization",
+    "codebase-packer",
+    "repomix",
     "sub-agents",
+    "agents",
     "orchestration",
+    "security-scanner",
+    "code-compression",
     "mcp",
-    "tree-sitter",
-    "ast"
+    "vibe-coding",
+    "tree-sitter"
   ],
   "license": "MIT",
-  "author": "codebase-pilot contributors",
-  "homepage": "https://github.com/codebase-pilot/codebase-pilot#readme",
+  "author": "Kalpesh Gamit <kalpesh.gamit@indianic.com>",
+  "homepage": "https://github.com/nicgamit/codebase-pilot#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/codebase-pilot/codebase-pilot.git"
+    "url": "git+https://github.com/nicgamit/codebase-pilot.git"
   },
   "bugs": {
-    "url": "https://github.com/codebase-pilot/codebase-pilot/issues"
+    "url": "https://github.com/nicgamit/codebase-pilot/issues"
   },
   "engines": {
     "node": ">=18.0.0"

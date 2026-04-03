@@ -1,0 +1,29 @@
+# Source
+src/
+tests/
+templates/
+
+# Docs
+docs/
+*.md
+!README.md
+
+# Config
+tsconfig.json
+.eslintrc*
+.prettierrc*
+.claudeignore
+CLAUDE.md
+
+# Dev
+.github/
+.claude/
+.codebase-pilot/
+bin/
+
+# Output
+codebase-pilot-output.xml
+codebase-pilot-output.md
+*.tsbuildinfo
+coverage/
+*.log
