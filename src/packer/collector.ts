@@ -57,9 +57,11 @@ export function collectFiles(root: string, options: CollectOptions): CollectedFi
 
         // Skip if agent scoping is active and file is outside context
         if (options.agentContextPaths && options.agentContextPaths.length > 0) {
-          const inScope = options.agentContextPaths.some(
-            ctx => relPath.startsWith(ctx) || relPath === ctx.replace(/\/$/, ''),
-          );
+          const inScope = options.agentContextPaths.some(ctx => {
+            // Normalize: strip leading ./ from context paths
+            const normalized = ctx.replace(/^\.\//, '');
+            return relPath.startsWith(normalized) || relPath === normalized.replace(/\/$/, '');
+          });
           if (!inScope) continue;
         }
 
