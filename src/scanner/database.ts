@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import type { DatabaseInfo } from '../types.js';
 
@@ -108,6 +108,7 @@ const DETECTORS: DbDetector[] = [
 ];
 
 export function detectDatabase(root: string): DatabaseInfo | null {
+  // Check root first
   for (const detector of DETECTORS) {
     const result = detector.detect(root);
     if (result) {
@@ -119,6 +120,33 @@ export function detectDatabase(root: string): DatabaseInfo | null {
       };
     }
   }
+
+  // Check workspace packages (monorepo)
+  for (const dir of ['packages', 'apps', 'services']) {
+    const dirPath = join(root, dir);
+    if (!existsSync(dirPath)) continue;
+    try {
+      const children = readdirSync(dirPath).filter((f) => {
+        try { return statSync(join(dirPath, f)).isDirectory(); } catch { return false; }
+      });
+      for (const child of children) {
+        const pkgPath = join(dirPath, child);
+        for (const detector of DETECTORS) {
+          const result = detector.detect(pkgPath);
+          if (result) {
+            const schemaPath = findSchemaPath(pkgPath, detector.orm);
+            const relativePath = schemaPath ? `${dir}/${child}/${schemaPath}` : null;
+            return {
+              orm: detector.orm,
+              type: result === 'auto' ? detector.type : result,
+              schemaPath: relativePath,
+            };
+          }
+        }
+      }
+    } catch {}
+  }
+
   return null;
 }
 

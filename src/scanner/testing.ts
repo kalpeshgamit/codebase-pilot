@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 interface TestDetector {
@@ -22,6 +22,23 @@ export function detectTestRunner(root: string): string | null {
   for (const detector of DETECTORS) {
     if (detector.detect(root)) return detector.name;
   }
+
+  // Check workspace packages
+  for (const dir of ['packages', 'apps', 'services']) {
+    const dirPath = join(root, dir);
+    if (!existsSync(dirPath)) continue;
+    try {
+      const children = readdirSync(dirPath).filter((f) => {
+        try { return statSync(join(dirPath, f)).isDirectory(); } catch { return false; }
+      });
+      for (const child of children) {
+        for (const detector of DETECTORS) {
+          if (detector.detect(join(dirPath, child))) return detector.name;
+        }
+      }
+    } catch {}
+  }
+
   return null;
 }
 
@@ -29,7 +46,6 @@ function hasNodeDep(root: string, dep: string): boolean {
   const pkgPath = join(root, 'package.json');
   if (!existsSync(pkgPath)) return false;
   try {
-    const { readFileSync } = require('node:fs');
     const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
     const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
     return dep in deps;
@@ -40,7 +56,6 @@ function hasNodeDep(root: string, dep: string): boolean {
 
 function hasPytestConfig(root: string): boolean {
   try {
-    const { readFileSync } = require('node:fs');
     const content = readFileSync(join(root, 'pyproject.toml'), 'utf8');
     return content.includes('[tool.pytest]') || content.includes('pytest');
   } catch {

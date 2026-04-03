@@ -91,7 +91,7 @@ export async function healthCommand(options: HealthOptions): Promise<void> {
     for (const dep of agent.dependsOn) {
       if (dep === 'ALL previous layers' || dep === 'standards-agent') continue;
       const depAgent = config.agents[dep];
-      if (depAgent && depAgent.layer >= agent.layer) {
+      if (depAgent && depAgent.layer > agent.layer) {
         results.push({
           agent: agent.name,
           check: 'layer_ordering',
