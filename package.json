@@ -40,7 +40,8 @@
   },
   "files": [
     "dist",
-    "templates"
+    "LICENSE",
+    "README.md"
   ],
   "keywords": [
     "claude",
@@ -55,9 +56,14 @@
     "ast"
   ],
   "license": "MIT",
+  "author": "codebase-pilot contributors",
+  "homepage": "https://github.com/codebase-pilot/codebase-pilot#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nicgamit/codebase-pilot"
+    "url": "https://github.com/codebase-pilot/codebase-pilot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/codebase-pilot/codebase-pilot/issues"
   },
   "engines": {
     "node": ">=18.0.0"
