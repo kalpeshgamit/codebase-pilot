@@ -1,0 +1,63 @@
+{
+  "name": "codebase-pilot",
+  "version": "0.1.0",
+  "description": "Claude Code Optimization Kit — auto-detect, orchestrate, and optimize any project",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "codebase-pilot": "dist/bin/codebase-pilot.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts src/bin/codebase-pilot.ts --format esm --dts --clean",
+    "dev": "tsx src/bin/codebase-pilot.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "chokidar": "^4.0.0",
+    "commander": "^12.1.0",
+    "tree-sitter": "^0.22.0",
+    "tree-sitter-typescript": "^0.23.0",
+    "tree-sitter-python": "^0.23.0",
+    "tree-sitter-go": "^0.23.0",
+    "tree-sitter-rust": "^0.23.0",
+    "tree-sitter-json": "^0.24.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^20.0.0",
+    "eslint": "^9.0.0",
+    "tsup": "^8.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "keywords": [
+    "claude",
+    "claude-code",
+    "ai",
+    "optimization",
+    "tokens",
+    "sub-agents",
+    "orchestration",
+    "mcp",
+    "tree-sitter",
+    "ast"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nicgamit/codebase-pilot"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
