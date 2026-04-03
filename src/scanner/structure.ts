@@ -102,11 +102,34 @@ function inferPackageType(
   _root: string,
 ): PackageInfo['type'] {
   const name = basename(pkgPath).toLowerCase();
-  const entries = listDirSafe(pkgPath);
 
-  if (name.includes('api') || name.includes('server') || name.includes('backend') || name === 'core') {
-    return 'api';
-  }
+  // 1. Check bin field in package.json → CLI
+  const pkg = readPkgJsonSafe(pkgPath);
+  if (pkg?.bin) return 'cli';
+
+  // 2. Check CLI framework dependencies
+  const cliDeps = ['commander', 'yargs', 'meow', 'clipanion', 'oclif', 'cac', 'citty'];
+  if (pkg && hasAnyDep(pkg, cliDeps)) return 'cli';
+
+  // Go CLI frameworks
+  if (hasGoDep(pkgPath, 'github.com/spf13/cobra') || hasGoDep(pkgPath, 'github.com/urfave/cli')) return 'cli';
+
+  // Rust CLI frameworks
+  if (hasRustDep(pkgPath, 'clap')) return 'cli';
+
+  // Python CLI frameworks
+  if (hasPythonDep(pkgPath, 'click') || hasPythonDep(pkgPath, 'typer')) return 'cli';
+
+  // 3. Check server framework deps → API
+  const serverDeps = ['express', 'fastify', 'hono', 'koa', '@nestjs/core', '@hapi/hapi'];
+  if (pkg && hasAnyDep(pkg, serverDeps)) return 'api';
+
+  // 4. Check frontend framework deps → web
+  const frontendDeps = ['react', 'vue', 'svelte', '@angular/core', 'next', 'nuxt'];
+  if (pkg && hasAnyDep(pkg, frontendDeps)) return 'web';
+
+  // 5. Name-based inference (existing logic)
+  if (name.includes('api') || name.includes('server') || name.includes('backend') || name === 'core') return 'api';
   if (name.includes('web') || name.includes('app') || name.includes('frontend') || name.includes('ui') || name.includes('client')) {
     if (name === 'ui' || name.includes('kit') || name.includes('shared')) return 'lib';
     return 'web';
@@ -116,9 +139,10 @@ function inferPackageType(
   if (name.includes('db') || name.includes('database') || name.includes('migration')) return 'database';
   if (name.includes('lib') || name.includes('util') || name.includes('common') || name.includes('shared')) return 'lib';
 
+  // 6. Directory structure inference
   if (existsSync(join(pkgPath, 'src', 'routes')) || existsSync(join(pkgPath, 'src', 'api'))) return 'api';
   if (existsSync(join(pkgPath, 'src', 'components')) || existsSync(join(pkgPath, 'src', 'pages'))) return 'web';
-  if (existsSync(join(pkgPath, 'src', 'commands'))) return 'cli';
+  if (existsSync(join(pkgPath, 'src', 'commands')) || existsSync(join(pkgPath, 'src', 'cli'))) return 'cli';
 
   return 'unknown';
 }
@@ -160,10 +184,35 @@ function countSourceFiles(dir: string, depth = 0): number {
   return count;
 }
 
-function listDirSafe(dir: string): string[] {
-  try {
-    return readdirSync(dir);
-  } catch {
-    return [];
+function readPkgJsonSafe(root: string): Record<string, unknown> | null {
+  const path = join(root, 'package.json');
+  if (!existsSync(path)) return null;
+  try { return JSON.parse(readFileSync(path, 'utf8')); } catch { return null; }
+}
+
+function hasAnyDep(pkg: Record<string, unknown>, deps: string[]): boolean {
+  const allDeps = { ...(pkg.dependencies as Record<string, string> || {}), ...(pkg.devDependencies as Record<string, string> || {}) };
+  return deps.some(d => d in allDeps);
+}
+
+function hasGoDep(root: string, dep: string): boolean {
+  const goMod = join(root, 'go.mod');
+  if (!existsSync(goMod)) return false;
+  try { return readFileSync(goMod, 'utf8').includes(dep); } catch { return false; }
+}
+
+function hasRustDep(root: string, dep: string): boolean {
+  const cargo = join(root, 'Cargo.toml');
+  if (!existsSync(cargo)) return false;
+  try { return readFileSync(cargo, 'utf8').includes(dep); } catch { return false; }
+}
+
+function hasPythonDep(root: string, dep: string): boolean {
+  for (const f of ['requirements.txt', 'Pipfile', 'pyproject.toml']) {
+    const path = join(root, f);
+    if (existsSync(path)) {
+      try { if (readFileSync(path, 'utf8').includes(dep)) return true; } catch {}
+    }
   }
+  return false;
 }
