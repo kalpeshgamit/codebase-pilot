@@ -3,8 +3,8 @@ import { scanForSecrets, isEnvFile } from '../../src/security/scanner.js';
 import { SECRET_PATTERNS } from '../../src/security/patterns.js';
 
 describe('pattern count', () => {
-  it('has 75+ secret patterns', () => {
-    expect(SECRET_PATTERNS.length).toBeGreaterThanOrEqual(75);
+  it('has 120+ secret patterns', () => {
+    expect(SECRET_PATTERNS.length).toBeGreaterThanOrEqual(120);
   });
 
   it('every pattern has required fields', () => {
@@ -17,7 +17,7 @@ describe('pattern count', () => {
 
   it('covers all major categories', () => {
     const categories = new Set(SECRET_PATTERNS.map(p => p.category));
-    for (const cat of ['cloud', 'vcs', 'payment', 'messaging', 'ai', 'database', 'auth', 'monitoring', 'social', 'crypto', 'crypto-key', 'generic']) {
+    for (const cat of ['cloud', 'vcs', 'payment', 'messaging', 'ai', 'ai-infra', 'ai-devtools', 'database', 'devinfra', 'auth', 'monitoring', 'social', 'crypto', 'crypto-key', 'generic']) {
       expect(categories, `Missing category: ${cat}`).toContain(cat);
     }
   });
@@ -127,6 +127,85 @@ describe('scanForSecrets — AI services', () => {
 
   it('detects Replicate token', () => {
     const results = scanForSecrets('REPLICATE="r8_' + 'a'.repeat(36) + '"', 'rep.ts');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('detects Groq API key', () => {
+    const results = scanForSecrets('GROQ_KEY="gsk_' + 'a'.repeat(48) + '"', 'groq.ts');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('detects Perplexity API key', () => {
+    const results = scanForSecrets('PERPLEXITY="pplx-' + 'a'.repeat(48) + '"', 'pplx.ts');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('detects xAI/Grok API key', () => {
+    const results = scanForSecrets('XAI_KEY="xai-' + 'a'.repeat(40) + '"', 'xai.ts');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('detects Cerebras API key', () => {
+    const results = scanForSecrets('CEREBRAS="csk-' + 'a'.repeat(40) + '"', 'cerebras.ts');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('detects LangSmith key', () => {
+    const results = scanForSecrets('LANGSMITH="lsv2_' + 'a'.repeat(20) + '"', 'lang.ts');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('detects Pinecone key', () => {
+    const results = scanForSecrets('PINECONE_API_KEY="' + 'a'.repeat(36) + '"', 'vec.ts');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('scanForSecrets — payment gateways (expanded)', () => {
+  it('detects Razorpay key', () => {
+    const results = scanForSecrets('RAZORPAY_KEY="rzp_live_' + 'a'.repeat(14) + '"', 'pay.ts');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('detects Plaid access token', () => {
+    const results = scanForSecrets('TOKEN="access-sandbox-' + 'a'.repeat(8) + '-' + 'b'.repeat(4) + '-' + 'c'.repeat(4) + '-' + 'd'.repeat(4) + '-' + 'e'.repeat(12) + '"', 'plaid.ts');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('detects Stripe test key', () => {
+    const results = scanForSecrets('sk_test_' + 'a'.repeat(24), 'stripe.ts');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('scanForSecrets — dev infrastructure', () => {
+  it('detects npm token', () => {
+    const results = scanForSecrets('NPM_TOKEN="npm_' + 'A'.repeat(36) + '"', 'ci.ts');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('detects Docker Hub token', () => {
+    const results = scanForSecrets('DOCKER_TOKEN="dckr_pat_' + 'A'.repeat(27) + '"', 'docker.ts');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('detects Doppler token', () => {
+    const results = scanForSecrets('DOPPLER="dp.st.' + 'A'.repeat(40) + '"', 'env.ts');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('detects Resend API key', () => {
+    const results = scanForSecrets('RESEND_KEY="re_' + 'A'.repeat(24) + '"', 'mail.ts');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('detects Trigger.dev secret', () => {
+    const results = scanForSecrets('TRIGGER="tr_prod_' + 'A'.repeat(24) + '"', 'jobs.ts');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('detects PostHog key', () => {
+    const results = scanForSecrets('POSTHOG="phc_' + 'A'.repeat(32) + '"', 'analytics.ts');
     expect(results.length).toBeGreaterThanOrEqual(1);
   });
 });

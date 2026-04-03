@@ -39,11 +39,25 @@ export const SECRET_PATTERNS: SecretPattern[] = [
   // PAYMENT & BILLING
   // ═══════════════════════════════════════════
   { name: 'Stripe Secret Key', category: 'payment', regex: /sk_live_[A-Za-z0-9]{24,}/ },
+  { name: 'Stripe Test Key', category: 'payment', regex: /sk_test_[A-Za-z0-9]{24,}/ },
   { name: 'Stripe Restricted Key', category: 'payment', regex: /rk_live_[A-Za-z0-9]{24,}/ },
   { name: 'Stripe Webhook Secret', category: 'payment', regex: /whsec_[A-Za-z0-9]{32,}/ },
   { name: 'PayPal Client ID', category: 'payment', regex: /paypal.*client[_-]?id\s*[=:]\s*['"]?A[A-Za-z0-9\-_]{40,}/i },
+  { name: 'PayPal Secret', category: 'payment', regex: /paypal.*secret\s*[=:]\s*['"]?E[A-Za-z0-9\-_]{40,}/i },
   { name: 'Square Access Token', category: 'payment', regex: /sq0atp-[A-Za-z0-9\-_]{22,}/ },
   { name: 'Square OAuth', category: 'payment', regex: /sq0csp-[A-Za-z0-9\-_]{43,}/ },
+  { name: 'Razorpay Key ID', category: 'payment', regex: /rzp_(?:live|test)_[A-Za-z0-9]{14,}/ },
+  { name: 'Razorpay Secret', category: 'payment', regex: /razorpay.*secret\s*[=:]\s*['"]?[A-Za-z0-9]{20,}['"]/i },
+  { name: 'Braintree Token', category: 'payment', regex: /braintree.*[=:]\s*['"]?[A-Za-z0-9]{32,}['"]/i },
+  { name: 'Adyen API Key', category: 'payment', regex: /adyen.*api[_-]?key\s*[=:]\s*['"]?AQE[A-Za-z0-9]+['"]/i },
+  { name: 'Mollie API Key', category: 'payment', regex: /(?:live|test)_[A-Za-z0-9]{30,}/ },
+  { name: 'Paddle API Key', category: 'payment', regex: /paddle.*[=:]\s*['"]?pdl_[A-Za-z0-9\-_]{20,}['"]/i },
+  { name: 'LemonSqueezy API Key', category: 'payment', regex: /lemonsqueezy.*[=:]\s*['"]?[A-Za-z0-9]{40,}['"]/i },
+  { name: 'Coinbase Commerce Key', category: 'payment', regex: /coinbase.*[=:]\s*['"]?[A-Za-z0-9\-]{36,}['"]/i },
+  { name: 'Plaid Client Secret', category: 'payment', regex: /plaid.*secret\s*[=:]\s*['"]?[a-f0-9]{30,}['"]/i },
+  { name: 'Plaid Access Token', category: 'payment', regex: /access-(?:sandbox|development|production)-[a-f0-9\-]{36}/ },
+  { name: 'Wise API Token', category: 'payment', regex: /wise.*api[_-]?(?:key|token)\s*[=:]\s*['"]?[A-Za-z0-9\-]{36,}['"]/i },
+  { name: 'RevenueCat API Key', category: 'payment', regex: /revenuecat.*[=:]\s*['"]?[a-zA-Z0-9]{32,}['"]/i },
 
   // ═══════════════════════════════════════════
   // COMMUNICATION & MESSAGING
@@ -59,14 +73,46 @@ export const SECRET_PATTERNS: SecretPattern[] = [
   { name: 'Postmark Token', category: 'messaging', regex: /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/ }, // combined with postmark context
 
   // ═══════════════════════════════════════════
-  // AI & ML SERVICES
+  // AI & ML SERVICES — LLM Providers
   // ═══════════════════════════════════════════
   { name: 'OpenAI API Key', category: 'ai', regex: /sk-[A-Za-z0-9]{20}T3BlbkFJ[A-Za-z0-9]{20}/ },
   { name: 'OpenAI Project Key', category: 'ai', regex: /sk-proj-[A-Za-z0-9\-_]{40,}/ },
+  { name: 'OpenAI Org Key', category: 'ai', regex: /org-[A-Za-z0-9]{24,}/ },
   { name: 'Anthropic API Key', category: 'ai', regex: /sk-ant-[A-Za-z0-9\-_]{40,}/ },
-  { name: 'HuggingFace Token', category: 'ai', regex: /hf_[A-Za-z0-9]{34,}/ },
-  { name: 'Cohere API Key', category: 'ai', regex: /[A-Za-z0-9]{40}/ }, // context-dependent
-  { name: 'Replicate Token', category: 'ai', regex: /r8_[A-Za-z0-9]{36,}/ },
+  { name: 'Google Gemini Key', category: 'ai', regex: /AIzaSy[A-Za-z0-9\-_]{33}/ },
+  { name: 'Mistral API Key', category: 'ai', regex: /mistral.*[=:]\s*['"]?[A-Za-z0-9]{32,}['"]/i },
+  { name: 'Groq API Key', category: 'ai', regex: /gsk_[A-Za-z0-9]{48,}/ },
+  { name: 'DeepSeek API Key', category: 'ai', regex: /deepseek.*[=:]\s*['"]?sk-[A-Za-z0-9]{32,}['"]/i },
+  { name: 'xAI/Grok API Key', category: 'ai', regex: /xai-[A-Za-z0-9]{40,}/ },
+  { name: 'Perplexity API Key', category: 'ai', regex: /pplx-[A-Za-z0-9]{48,}/ },
+  { name: 'Together AI Key', category: 'ai', regex: /together.*[=:]\s*['"]?[A-Za-z0-9]{40,}['"]/i },
+  { name: 'Fireworks AI Key', category: 'ai', regex: /fireworks.*[=:]\s*['"]?fw_[A-Za-z0-9]{32,}['"]/i },
+  { name: 'Cerebras API Key', category: 'ai', regex: /csk-[A-Za-z0-9]{40,}/ },
+  { name: 'Cohere API Key', category: 'ai', regex: /cohere.*[=:]\s*['"]?[A-Za-z0-9]{40,}['"]/i },
+
+  // ═══════════════════════════════════════════
+  // AI & ML SERVICES — Inference & Hosting
+  // ═══════════════════════════════════════════
+  { name: 'HuggingFace Token', category: 'ai-infra', regex: /hf_[A-Za-z0-9]{34,}/ },
+  { name: 'Replicate Token', category: 'ai-infra', regex: /r8_[A-Za-z0-9]{36,}/ },
+  { name: 'RunPod API Key', category: 'ai-infra', regex: /runpod.*[=:]\s*['"]?[A-Za-z0-9]{32,}['"]/i },
+  { name: 'Modal Token', category: 'ai-infra', regex: /modal.*(?:token|secret)\s*[=:]\s*['"]?[A-Za-z0-9\-_]{32,}['"]/i },
+  { name: 'Stability AI Key', category: 'ai-infra', regex: /sk-[A-Za-z0-9]{48,}/ },
+  { name: 'ElevenLabs Key', category: 'ai-infra', regex: /elevenlabs.*[=:]\s*['"]?[a-f0-9]{32,}['"]/i },
+  { name: 'Deepgram API Key', category: 'ai-infra', regex: /deepgram.*[=:]\s*['"]?[a-f0-9]{40,}['"]/i },
+  { name: 'AssemblyAI Key', category: 'ai-infra', regex: /assemblyai.*[=:]\s*['"]?[a-f0-9]{32,}['"]/i },
+
+  // ═══════════════════════════════════════════
+  // AI & ML SERVICES — Vector DBs & AI DevTools
+  // ═══════════════════════════════════════════
+  { name: 'Pinecone API Key', category: 'ai-devtools', regex: /pinecone.*[=:]\s*['"]?[a-f0-9\-]{36,}['"]/i },
+  { name: 'Weaviate API Key', category: 'ai-devtools', regex: /weaviate.*[=:]\s*['"]?[A-Za-z0-9]{32,}['"]/i },
+  { name: 'Qdrant API Key', category: 'ai-devtools', regex: /qdrant.*[=:]\s*['"]?[A-Za-z0-9\-_]{32,}['"]/i },
+  { name: 'Chroma Token', category: 'ai-devtools', regex: /chroma.*(?:token|key)\s*[=:]\s*['"]?[A-Za-z0-9]{20,}['"]/i },
+  { name: 'LangSmith API Key', category: 'ai-devtools', regex: /lsv2_[A-Za-z0-9]{20,}/ },
+  { name: 'LangSmith Key', category: 'ai-devtools', regex: /langsmith.*[=:]\s*['"]?ls_[A-Za-z0-9\-_]{32,}['"]/i },
+  { name: 'Weights & Biases Key', category: 'ai-devtools', regex: /wandb.*[=:]\s*['"]?[a-f0-9]{40}['"]/i },
+  { name: 'Neptune AI Key', category: 'ai-devtools', regex: /neptune.*[=:]\s*['"]?[A-Za-z0-9\-_]{36,}['"]/i },
 
   // ═══════════════════════════════════════════
   // DATABASE & STORAGE
@@ -77,6 +123,34 @@ export const SECRET_PATTERNS: SecretPattern[] = [
   { name: 'Redis Connection', category: 'database', regex: /redis(?:s)?:\/\/[^\s'"]+/ },
   { name: 'PlanetScale Token', category: 'database', regex: /pscale_tkn_[A-Za-z0-9\-_]{43,}/ },
   { name: 'Neon DB Connection', category: 'database', regex: /postgresql:\/\/[^:]+:[^@]+@[^.]+\.neon\.tech/ },
+  { name: 'Turso DB Token', category: 'database', regex: /turso.*(?:token|auth)\s*[=:]\s*['"]?[A-Za-z0-9\-_.]{40,}['"]/i },
+  { name: 'Turso DB URL', category: 'database', regex: /libsql:\/\/[^\s'"]+\.turso\.io/ },
+  { name: 'Upstash Redis Token', category: 'database', regex: /upstash.*(?:token|password)\s*[=:]\s*['"]?[A-Za-z0-9=]{30,}['"]/i },
+  { name: 'Upstash Redis URL', category: 'database', regex: /https:\/\/[^.]+\.upstash\.io/ },
+  { name: 'Convex Deploy Key', category: 'database', regex: /convex.*(?:deploy|admin)\s*[=:]\s*['"]?prod:[A-Za-z0-9]{32,}['"]/i },
+  { name: 'Fauna Secret', category: 'database', regex: /fnAE[A-Za-z0-9\-_]{36,}/ },
+  { name: 'CockroachDB Connection', category: 'database', regex: /postgresql:\/\/[^:]+:[^@]+@[^.]+\.cockroachlabs\.cloud/ },
+  { name: 'Airtable API Key', category: 'database', regex: /pat[A-Za-z0-9]{14}\.[a-f0-9]{64}/ },
+  { name: 'Hasura Admin Secret', category: 'database', regex: /hasura.*admin[_-]?secret\s*[=:]\s*['"]?[A-Za-z0-9\-_]{20,}['"]/i },
+
+  // ═══════════════════════════════════════════
+  // DEV INFRASTRUCTURE & DEPLOYMENT
+  // ═══════════════════════════════════════════
+  { name: 'Railway Token', category: 'devinfra', regex: /railway.*[=:]\s*['"]?[a-f0-9\-]{36,}['"]/i },
+  { name: 'Fly.io Token', category: 'devinfra', regex: /FlyV1\s+[A-Za-z0-9\-_]{40,}/ },
+  { name: 'Render API Key', category: 'devinfra', regex: /render.*api[_-]?key\s*[=:]\s*['"]?rnd_[A-Za-z0-9]{32,}['"]/i },
+  { name: 'Doppler Token', category: 'devinfra', regex: /dp\.(?:st|ct|sa|scrt)\.[A-Za-z0-9]{40,}/ },
+  { name: 'Terraform Cloud Token', category: 'devinfra', regex: /(?:atlas|tfe)[_-]?token\s*[=:]\s*['"]?[A-Za-z0-9\.]{14,}['"]/i },
+  { name: 'Pulumi Access Token', category: 'devinfra', regex: /pul-[a-f0-9]{40}/ },
+  { name: 'npm Token', category: 'devinfra', regex: /npm_[A-Za-z0-9]{36}/ },
+  { name: 'PyPI Token', category: 'devinfra', regex: /pypi-[A-Za-z0-9\-_]{100,}/ },
+  { name: 'RubyGems API Key', category: 'devinfra', regex: /rubygems_[a-f0-9]{48}/ },
+  { name: 'Docker Hub Token', category: 'devinfra', regex: /dckr_pat_[A-Za-z0-9\-_]{27,}/ },
+  { name: 'Inngest Key', category: 'devinfra', regex: /inngest.*(?:key|signing)\s*[=:]\s*['"]?signkey-[A-Za-z0-9\-]{20,}['"]/i },
+  { name: 'Trigger.dev Secret', category: 'devinfra', regex: /tr_(?:dev|prod)_[A-Za-z0-9]{24,}/ },
+  { name: 'Resend API Key', category: 'devinfra', regex: /re_[A-Za-z0-9]{24,}/ },
+  { name: 'Loops API Key', category: 'devinfra', regex: /loops.*api[_-]?key\s*[=:]\s*['"]?[a-f0-9]{32,}['"]/i },
+  { name: 'Uploadthing Secret', category: 'devinfra', regex: /sk_live_[A-Za-z0-9]{32,}/ },
 
   // ═══════════════════════════════════════════
   // AUTH & IDENTITY
@@ -96,6 +170,12 @@ export const SECRET_PATTERNS: SecretPattern[] = [
   { name: 'Segment Write Key', category: 'monitoring', regex: /segment.*write[_-]?key\s*[=:]\s*['"]?[A-Za-z0-9]{32}/i },
   { name: 'Mixpanel Token', category: 'monitoring', regex: /mixpanel.*token\s*[=:]\s*['"]?[a-f0-9]{32}/i },
   { name: 'Amplitude API Key', category: 'monitoring', regex: /amplitude.*api[_-]?key\s*[=:]\s*['"]?[a-f0-9]{32}/i },
+  { name: 'Grafana Cloud Token', category: 'monitoring', regex: /glc_[A-Za-z0-9+/=]{32,}/ },
+  { name: 'LogRocket Key', category: 'monitoring', regex: /logrocket.*[=:]\s*['"]?[a-z0-9]{6}\/[a-z0-9\-]{36}['"]/i },
+  { name: 'PostHog API Key', category: 'monitoring', regex: /phc_[A-Za-z0-9]{32,}/ },
+  { name: 'LaunchDarkly SDK Key', category: 'monitoring', regex: /sdk-[a-f0-9\-]{36}/ },
+  { name: 'Axiom API Token', category: 'monitoring', regex: /xaat-[A-Za-z0-9\-]{36,}/ },
+  { name: 'BetterStack Token', category: 'monitoring', regex: /betterstack.*[=:]\s*['"]?[A-Za-z0-9]{32,}['"]/i },
 
   // ═══════════════════════════════════════════
   // SOCIAL & THIRD-PARTY APIs
