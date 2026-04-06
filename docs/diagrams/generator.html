@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>codebase-pilot — Diagram Generator</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; color: #e6edf3; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+
+  .diagram {
+    width: 1200px;
+    margin: 40px auto;
+    padding: 48px;
+    background: #0d1117;
+    border-radius: 16px;
+    position: relative;
+  }
+
+  .diagram-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #58a6ff;
+    margin-bottom: 32px;
+  }
+
+  /* ===== DIAGRAM 1: Architecture Pipeline ===== */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    justify-content: center;
+  }
+
+  .pipeline-node {
+    padding: 20px 24px;
+    border-radius: 12px;
+    text-align: center;
+    min-width: 140px;
+    position: relative;
+  }
+
+  .pipeline-node .label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .pipeline-node .sub {
+    font-size: 11px;
+    color: #8b949e;
+    line-height: 1.4;
+  }
+
+  .node-source { background: linear-gradient(135deg, #f85149 0%, #da3633 100%); }
+  .node-scan { background: linear-gradient(135deg, #d29922 0%, #bb8009 100%); }
+  .node-pack { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+  .node-secure { background: linear-gradient(135deg, #58a6ff 0%, #1f6feb 100%); }
+  .node-output { background: linear-gradient(135deg, #3fb950 0%, #238636 100%); }
+  .node-target { background: rgba(88, 166, 255, 0.15); border: 1px solid rgba(88, 166, 255, 0.3); }
+
+  .arrow {
+    width: 40px;
+    height: 2px;
+    background: #30363d;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .arrow::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: -4px;
+    border: 5px solid transparent;
+    border-left: 6px solid #30363d;
+  }
+
+  /* ===== DIAGRAM 2: Token Savings ===== */
+  .savings-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 800px;
+  }
+
+  .savings-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .savings-label {
+    width: 280px;
+    font-size: 13px;
+    color: #8b949e;
+    text-align: right;
+    font-family: ui-monospace, 'SF Mono', monospace;
+  }
+
+  .savings-track {
+    flex: 1;
+    height: 32px;
+    background: #161b22;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .savings-fill {
+    height: 100%;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    transition: width 1s ease;
+  }
+
+  .fill-red { background: linear-gradient(90deg, #f85149, #da3633); }
+  .fill-orange { background: linear-gradient(90deg, #d29922, #bb8009); }
+  .fill-blue { background: linear-gradient(90deg, #58a6ff, #1f6feb); }
+  .fill-green { background: linear-gradient(90deg, #3fb950, #238636); }
+
+  .savings-value {
+    width: 80px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: ui-monospace, 'SF Mono', monospace;
+  }
+
+  .savings-value.green { color: #3fb950; }
+  .savings-value.red { color: #f85149; }
+
+  /* ===== DIAGRAM 3: Blast Radius ===== */
+  .blast {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .blast-center {
+    text-align: center;
+  }
+
+  .blast-file {
+    background: linear-gradient(135deg, #f85149, #da3633);
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: ui-monospace, 'SF Mono', monospace;
+    margin-bottom: 12px;
+  }
+
+  .blast-risk {
+    background: rgba(210, 153, 34, 0.15);
+    border: 1px solid rgba(210, 153, 34, 0.4);
+    color: #d29922;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-block;
+  }
+
+  .blast-column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .blast-column-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #8b949e;
+    margin-bottom: 4px;
+  }
+
+  .blast-item {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: ui-monospace, 'SF Mono', monospace;
+  }
+
+  .blast-direct { background: rgba(88, 166, 255, 0.1); border: 1px solid rgba(88, 166, 255, 0.2); color: #58a6ff; }
+  .blast-transitive { background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); color: #a78bfa; }
+  .blast-test { background: rgba(63, 185, 80, 0.1); border: 1px solid rgba(63, 185, 80, 0.2); color: #3fb950; }
+
+  /* ===== DIAGRAM 4: Platform Support ===== */
+  .platforms {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .platform-card {
+    width: 160px;
+    padding: 24px 20px;
+    border-radius: 12px;
+    text-align: center;
+    background: #161b22;
+    border: 1px solid #30363d;
+  }
+
+  .platform-card:hover {
+    border-color: #58a6ff;
+  }
+
+  .platform-icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+  }
+
+  .platform-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .platform-file {
+    font-size: 11px;
+    color: #8b949e;
+    font-family: ui-monospace, 'SF Mono', monospace;
+  }
+
+  /* ===== DIAGRAM 5: Agent Layers ===== */
+  .layers {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .layer-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .layer-num {
+    width: 24px;
+    font-size: 11px;
+    color: #484f58;
+    font-weight: 700;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .layer-agents {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .layer-agent {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    flex: 1;
+    text-align: center;
+  }
+
+  .model-haiku { background: rgba(48, 54, 61, 0.8); border: 1px solid #30363d; color: #8b949e; }
+  .model-sonnet { background: rgba(31, 111, 235, 0.15); border: 1px solid rgba(31, 111, 235, 0.3); color: #58a6ff; }
+  .model-opus { background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); color: #a78bfa; }
+
+  .layer-desc {
+    font-size: 11px;
+    color: #484f58;
+    width: 120px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ===== DIAGRAM 6: MCP Flow ===== */
+  .mcp-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .mcp-step {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .mcp-actor {
+    width: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .mcp-actor.dev { color: #e6edf3; }
+  .mcp-actor.ai { color: #58a6ff; }
+  .mcp-actor.mcp { color: #3fb950; }
+
+  .mcp-msg {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: ui-monospace, 'SF Mono', monospace;
+  }
+
+  .msg-right { background: rgba(88, 166, 255, 0.1); border: 1px solid rgba(88, 166, 255, 0.2); color: #58a6ff; }
+  .msg-left { background: rgba(63, 185, 80, 0.1); border: 1px solid rgba(63, 185, 80, 0.2); color: #3fb950; }
+  .msg-user { background: rgba(230, 237, 243, 0.05); border: 1px solid rgba(230, 237, 243, 0.1); color: #e6edf3; }
+
+  .mcp-arrow {
+    font-size: 16px;
+    color: #30363d;
+    flex-shrink: 0;
+  }
+
+  /* Watermark */
+  .watermark {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 11px;
+    color: #30363d;
+    letter-spacing: 1px;
+  }
+
+  .sep { height: 1px; background: #21262d; margin: 60px 40px; }
+</style>
+</head>
+<body>
+
+<!-- DIAGRAM 1: Architecture Pipeline -->
+<div class="diagram" id="d1-pipeline">
+  <div class="diagram-title">How codebase-pilot works</div>
+  <div class="pipeline">
+    <div class="pipeline-node node-source">
+      <div class="label">Your Codebase</div>
+      <div class="sub">92 files<br>98K tokens</div>
+    </div>
+    <div class="arrow"></div>
+    <div class="pipeline-node node-scan">
+      <div class="label">Scan</div>
+      <div class="sub">56 languages<br>58 frameworks</div>
+    </div>
+    <div class="arrow"></div>
+    <div class="pipeline-node node-pack">
+      <div class="label">Pack + Compress</div>
+      <div class="sub">Signatures only<br>Agent scoped</div>
+    </div>
+    <div class="arrow"></div>
+    <div class="pipeline-node node-secure">
+      <div class="label">Security Scan</div>
+      <div class="sub">152 patterns<br>15 categories</div>
+    </div>
+    <div class="arrow"></div>
+    <div class="pipeline-node node-output">
+      <div class="label">~7K tokens</div>
+      <div class="sub">93% reduction</div>
+    </div>
+    <div class="arrow"></div>
+    <div class="pipeline-node node-target">
+      <div class="label">AI Tools</div>
+      <div class="sub">Claude · Cursor<br>Windsurf · Codex</div>
+    </div>
+  </div>
+  <div class="watermark">codebase-pilot</div>
+</div>
+
+<div class="sep"></div>
+
+<!-- DIAGRAM 2: Token Savings -->
+<div class="diagram" id="d2-savings">
+  <div class="diagram-title">Token savings comparison</div>
+  <div class="savings-bars">
+    <div class="savings-row">
+      <div class="savings-label">Manual file reads</div>
+      <div class="savings-track"><div class="savings-fill fill-red" style="width:100%">98,798</div></div>
+      <div class="savings-value red">baseline</div>
+    </div>
+    <div class="savings-row">
+      <div class="savings-label">codebase-pilot pack</div>
+      <div class="savings-track"><div class="savings-fill fill-orange" style="width:75%">74,239</div></div>
+      <div class="savings-value green">-25%</div>
+    </div>
+    <div class="savings-row">
+      <div class="savings-label">pack --compress</div>
+      <div class="savings-track"><div class="savings-fill fill-blue" style="width:30%">29,274</div></div>
+      <div class="savings-value green">-70%</div>
+    </div>
+    <div class="savings-row">
+      <div class="savings-label">pack --agent api --compress</div>
+      <div class="savings-track"><div class="savings-fill fill-green" style="width:7%">~7K</div></div>
+      <div class="savings-value green">-93%</div>
+    </div>
+  </div>
+  <div class="watermark">codebase-pilot</div>
+</div>
+
+<div class="sep"></div>
+
+<!-- DIAGRAM 3: Blast Radius -->
+<div class="diagram" id="d3-blast">
+  <div class="diagram-title">Blast radius analysis</div>
+  <div class="blast">
+    <div class="blast-center">
+      <div class="blast-file">src/types.ts</div>
+      <div class="blast-risk">RISK: HIGH (53/100)</div>
+    </div>
+    <div class="blast-column">
+      <div class="blast-column-title">Direct dependents (18)</div>
+      <div class="blast-item blast-direct">src/agents/generator.ts</div>
+      <div class="blast-item blast-direct">src/mcp/server.ts</div>
+      <div class="blast-item blast-direct">src/packer/index.ts</div>
+      <div class="blast-item blast-direct">src/scanner/detector.ts</div>
+      <div class="blast-item blast-direct" style="opacity:0.5">+ 14 more</div>
+    </div>
+    <div class="blast-column">
+      <div class="blast-column-title">Transitive (+10)</div>
+      <div class="blast-item blast-transitive">src/cli/init.ts</div>
+      <div class="blast-item blast-transitive">src/cli/eval.ts</div>
+      <div class="blast-item blast-transitive">src/cli/pack.ts</div>
+    </div>
+    <div class="blast-column">
+      <div class="blast-column-title">Affected tests (5)</div>
+      <div class="blast-item blast-test">tests/agents/generator.test.ts</div>
+      <div class="blast-item blast-test">tests/cli/pack.test.ts</div>
+      <div class="blast-item blast-test" style="opacity:0.5">+ 3 more</div>
+    </div>
+  </div>
+  <div class="watermark">codebase-pilot</div>
+</div>
+
+<div class="sep"></div>
+
+<!-- DIAGRAM 4: Platform Support -->
+<div class="diagram" id="d4-platforms">
+  <div class="diagram-title">Multi-platform support</div>
+  <div class="platforms">
+    <div class="platform-card">
+      <div class="platform-icon">&#9670;</div>
+      <div class="platform-name">Claude Code</div>
+      <div class="platform-file">CLAUDE.md</div>
+    </div>
+    <div class="platform-card">
+      <div class="platform-icon">&#9654;</div>
+      <div class="platform-name">Cursor</div>
+      <div class="platform-file">.cursorrules</div>
+    </div>
+    <div class="platform-card">
+      <div class="platform-icon">&#9733;</div>
+      <div class="platform-name">Windsurf</div>
+      <div class="platform-file">.windsurfrules</div>
+    </div>
+    <div class="platform-card">
+      <div class="platform-icon">&#9679;</div>
+      <div class="platform-name">OpenAI Codex</div>
+      <div class="platform-file">AGENTS.md</div>
+    </div>
+    <div class="platform-card">
+      <div class="platform-icon">&#9881;</div>
+      <div class="platform-name">MCP Server</div>
+      <div class="platform-file">stdio transport</div>
+    </div>
+  </div>
+  <div class="watermark">codebase-pilot</div>
+</div>
+
+<div class="sep"></div>
+
+<!-- DIAGRAM 5: Agent Layers -->
+<div class="diagram" id="d5-agents">
+  <div class="diagram-title">Agent layer architecture</div>
+  <div class="layers">
+    <div class="layer-row">
+      <div class="layer-num">0</div>
+      <div class="layer-agents"><div class="layer-agent model-haiku">healthcheck-agent</div></div>
+      <div class="layer-desc">Pre-flight</div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-num">1</div>
+      <div class="layer-agents">
+        <div class="layer-agent model-haiku">schema-agent</div>
+        <div class="layer-agent model-haiku">types-agent</div>
+      </div>
+      <div class="layer-desc">Extraction</div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-num">2</div>
+      <div class="layer-agents">
+        <div class="layer-agent model-sonnet">api-agent</div>
+        <div class="layer-agent model-haiku">cli-agent</div>
+      </div>
+      <div class="layer-desc">Implementation</div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-num">3</div>
+      <div class="layer-agents"><div class="layer-agent model-haiku">frontend-agent</div></div>
+      <div class="layer-desc">UI</div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-num">4</div>
+      <div class="layer-agents"><div class="layer-agent model-opus">standards-agent</div></div>
+      <div class="layer-desc">Quality gate</div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-num">5</div>
+      <div class="layer-agents"><div class="layer-agent model-opus">supervisor-agent</div></div>
+      <div class="layer-desc">Audit gate</div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-num">6</div>
+      <div class="layer-agents"><div class="layer-agent model-haiku">docs-agent</div></div>
+      <div class="layer-desc">Documentation</div>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:20px;font-size:11px;color:#484f58;">
+    <span style="color:#8b949e;">&#9632; haiku</span> &nbsp;&nbsp;
+    <span style="color:#58a6ff;">&#9632; sonnet</span> &nbsp;&nbsp;
+    <span style="color:#a78bfa;">&#9632; opus</span>
+  </div>
+  <div class="watermark">codebase-pilot</div>
+</div>
+
+<div class="sep"></div>
+
+<!-- DIAGRAM 6: Social Preview Banner -->
+<div class="diagram" id="d6-banner" style="height:320px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(135deg, #0d1117 0%, #161b22 50%, #0d1117 100%);border:1px solid #30363d;">
+  <div style="font-size:48px;font-weight:800;letter-spacing:-0.03em;margin-bottom:8px;">
+    <span style="background:linear-gradient(135deg,#58a6ff,#3fb950);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">codebase-pilot</span>
+  </div>
+  <div style="font-size:18px;color:#8b949e;margin-bottom:24px;">AI context engine for LLMs</div>
+  <div style="display:flex;gap:24px;font-size:13px;">
+    <div style="color:#58a6ff;"><strong>16</strong> <span style="color:#484f58;">commands</span></div>
+    <div style="color:#3fb950;"><strong>93%</strong> <span style="color:#484f58;">token reduction</span></div>
+    <div style="color:#a78bfa;"><strong>56</strong> <span style="color:#484f58;">languages</span></div>
+    <div style="color:#d29922;"><strong>152</strong> <span style="color:#484f58;">security patterns</span></div>
+    <div style="color:#f85149;"><strong>7456</strong> <span style="color:#484f58;">dashboard port</span></div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:40px;color:#484f58;font-size:12px;">
+  Open each diagram in a new tab and screenshot at 2x resolution for best quality.<br>
+  Or use browser DevTools → screenshot node to capture individual diagrams.
+</div>
+
+</body>
+</html>

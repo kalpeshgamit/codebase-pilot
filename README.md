@@ -72,138 +72,34 @@ codebase-pilot ui    # → http://localhost:7456
 
 ### Architecture Pipeline
 
-```mermaid
-flowchart LR
-    A["Your Codebase\n92 files · 98K tokens"] --> B["Scan"]
-    B --> C["Detect\nLanguages · Frameworks\nORMs · Test Runners"]
-    C --> D["Pack + Compress"]
-    D --> E["Security Scan\n152 patterns"]
-    E --> F["Agent Scoping\nRelevant files only"]
-    F --> G["~7K tokens\n93% reduction"]
-    G --> H["Claude Code\nCursor · Windsurf\nCodex"]
-
-    style A fill:#f85149,color:#fff
-    style G fill:#3fb950,color:#fff
-    style H fill:#58a6ff,color:#fff
-```
+<img src="docs/diagrams/pipeline.png" alt="How codebase-pilot works" width="100%" />
 
 **Without codebase-pilot:** Claude reads 98K tokens of your full codebase.
 **With codebase-pilot:** 7K tokens — only the relevant, compressed code. No secrets.
+
+### Token Savings
+
+<img src="docs/diagrams/savings.png" alt="Token savings comparison" width="100%" />
 
 ### Blast Radius Analysis
 
 When you change a file, codebase-pilot traces the full impact across your codebase:
 
-```mermaid
-flowchart TD
-    A["Changed: src/types.ts"] --> B["Direct Dependents (18)"]
-    B --> C["src/agents/generator.ts"]
-    B --> D["src/mcp/server.ts"]
-    B --> E["src/packer/index.ts"]
-    B --> F["src/scanner/detector.ts"]
-    B --> G["... 14 more"]
-    
-    C --> H["Transitive (+10)"]
-    D --> H
-    F --> H
-    H --> I["src/cli/init.ts"]
-    H --> J["src/cli/eval.ts"]
-    
-    B --> K["Affected Tests (5)"]
-    K --> L["tests/agents/generator.test.ts"]
-    K --> M["tests/cli/pack.test.ts"]
-    K --> N["... 3 more"]
-
-    A --> O["Risk: HIGH\n53/100"]
-
-    style A fill:#f85149,color:#fff
-    style O fill:#d29922,color:#fff
-    style K fill:#3fb950,color:#fff
-```
+<img src="docs/diagrams/blast-radius.png" alt="Blast radius analysis" width="100%" />
 
 ### Agent Layer Architecture
 
-Agents run in layers — lower layers produce context for higher layers:
+Agents run in layers — lower layers produce context for higher layers. Each agent reads only 2-4 files with the cheapest model that can handle its task.
 
-```mermaid
-flowchart TD
-    L0["Layer 0: healthcheck-agent\n(haiku) Pre-flight"]
-    L1a["Layer 1: schema-agent\n(haiku) DB schema"]
-    L1b["Layer 1: types-agent\n(haiku) Interfaces"]
-    L2a["Layer 2: api-agent\n(sonnet) Routes"]
-    L2b["Layer 2: cli-agent\n(haiku) Commands"]
-    L3["Layer 3: frontend-agent\n(haiku) UI pages"]
-    L4["Layer 4: standards-agent\n(opus) Quality gate"]
-    L5["Layer 5: supervisor-agent\n(opus) Behavior audit"]
-    L6["Layer 6: docs-agent\n(haiku) Documentation"]
-
-    L0 --> L1a & L1b
-    L1a & L1b --> L2a & L2b
-    L2a & L2b --> L3
-    L3 --> L4
-    L4 --> L5
-    L5 --> L6
-
-    style L0 fill:#30363d,color:#e6edf3
-    style L1a fill:#30363d,color:#e6edf3
-    style L1b fill:#30363d,color:#e6edf3
-    style L2a fill:#1f6feb,color:#fff
-    style L2b fill:#30363d,color:#e6edf3
-    style L3 fill:#30363d,color:#e6edf3
-    style L4 fill:#8b5cf6,color:#fff
-    style L5 fill:#8b5cf6,color:#fff
-    style L6 fill:#30363d,color:#e6edf3
-```
+<img src="docs/diagrams/agent-layers.png" alt="Agent layer architecture" width="100%" />
 
 ### Multi-Platform Support
 
-```mermaid
-flowchart LR
-    A["codebase-pilot init\n--platform cursor,windsurf,codex"] --> B["CLAUDE.md\nClaude Code"]
-    A --> C[".cursorrules\nCursor"]
-    A --> D[".windsurfrules\nWindsurf"]
-    A --> E["AGENTS.md\nOpenAI Codex"]
-    A --> F[".claudeignore\nAll platforms"]
-    A --> G["agents.json\nSub-agents"]
-
-    style A fill:#58a6ff,color:#fff
-    style B fill:#d29922,color:#fff
-    style C fill:#3fb950,color:#fff
-    style D fill:#8b5cf6,color:#fff
-    style E fill:#f85149,color:#fff
-```
-
-### MCP Integration Flow
-
-```mermaid
-sequenceDiagram
-    participant User as Developer
-    participant AI as AI Tool (Claude/Cursor)
-    participant MCP as codebase-pilot MCP
-    participant FS as Codebase
-
-    User->>AI: "Add user auth to the API"
-    AI->>MCP: scan_project()
-    MCP->>FS: Detect languages, frameworks
-    MCP-->>AI: TypeScript, Express, Prisma
-    AI->>MCP: pack_codebase(agent="api-agent", compress=true)
-    MCP->>FS: Collect → Security scan → Compress
-    MCP-->>AI: 7K tokens (API routes only)
-    AI->>MCP: count_tokens()
-    MCP-->>AI: 93% reduction from baseline
-    AI->>User: Implementation with full context
-```
+<img src="docs/diagrams/platforms.png" alt="Multi-platform support" width="100%" />
 
 ---
 
 ## Token Savings
-
-| Approach | Tokens | Reduction |
-|----------|-------:|:---------:|
-| Manual file reads | ~98K | — |
-| `pack` | ~74K | 25% |
-| `pack --compress` | ~29K | **70%** |
-| `pack --agent <name> --compress` | ~7K | **93%** |
 
 The `tokens` command tracks your actual savings over time:
 
