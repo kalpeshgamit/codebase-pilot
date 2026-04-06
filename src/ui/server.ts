@@ -22,11 +22,12 @@ import {
   renderAgents,
   renderFiles,
   renderImpact,
+  renderProjects,
   render404,
 } from './pages.js';
 
 import type { AgentsConfig } from '../types.js';
-import type { DashboardData, GraphPageData, AgentsPageData, FilesPageData, ImpactPageData } from './pages.js';
+import type { DashboardData, GraphPageData, AgentsPageData, FilesPageData, ImpactPageData, ProjectsPageData } from './pages.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -245,6 +246,24 @@ export function startUiServer(root: string, port: number): void {
         return;
       }
 
+      if (pathname === '/projects') {
+        const globalLogs = readGlobalLogs();
+        const today = getStats(globalLogs, 1);
+        const week = getStats(globalLogs, 7);
+        const month = getStats(globalLogs, 30);
+        const allTime = getStats(globalLogs, 99999);
+        const projects = getProjectSummaries(globalLogs);
+        const recentRuns = getRecentRuns(globalLogs, 15);
+        const data: ProjectsPageData = {
+          today, week, month, allTime,
+          projects,
+          recentRuns: recentRuns as ProjectsPageData['recentRuns'],
+          currentProject: root,
+        };
+        htmlResponse(res, renderProjects(data, port));
+        return;
+      }
+
       if (pathname === '/graph') {
         const graphData = buildGraphData(root);
         const pageData: GraphPageData = {
@@ -292,6 +311,14 @@ export function startUiServer(root: string, port: number): void {
       }
 
       // ---- JSON APIs ----
+
+      if (pathname === '/api/projects') {
+        const globalLogs = readGlobalLogs();
+        const allTime = getStats(globalLogs, 99999);
+        const projects = getProjectSummaries(globalLogs);
+        jsonResponse(res, { allTime, projects });
+        return;
+      }
 
       if (pathname === '/api/search') {
         const q = url.searchParams.get('q') || '';

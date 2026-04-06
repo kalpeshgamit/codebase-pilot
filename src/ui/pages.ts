@@ -31,6 +31,7 @@ const T = {
 function layout(title: string, activePage: string, body: string, port: number, headExtra = ''): string {
   const nav = [
     { href: '/', label: 'Dashboard', icon: '&#9632;' },
+    { href: '/projects', label: 'Projects', icon: '&#9670;' },
     { href: '/graph', label: 'Graph', icon: '&#9679;' },
     { href: '/search', label: 'Search', icon: '&#8981;' },
     { href: '/agents', label: 'Agents', icon: '&#9881;' },
@@ -1317,6 +1318,157 @@ export function renderImpact(data: ImpactPageData, port: number): string {
     ${depList(data.affectedTests, 'Affected Tests')}`;
 
   return layout('Impact', '', body, port);
+}
+
+// ---------------------------------------------------------------------------
+// Projects (system-wide consolidated view)
+// ---------------------------------------------------------------------------
+
+export interface ProjectsPageData {
+  today: { sessions: number; tokensSaved: number; tokensUsed: number };
+  week: { sessions: number; tokensSaved: number; tokensUsed: number };
+  month: { sessions: number; tokensSaved: number; tokensUsed: number };
+  allTime: { sessions: number; tokensSaved: number; tokensUsed: number };
+  projects: Array<{
+    project: string;
+    projectPath: string;
+    sessions: number;
+    tokensSaved: number;
+    tokensUsed: number;
+    lastUsed: string;
+  }>;
+  recentRuns: Array<{
+    date: string;
+    project: string;
+    tokensRaw: number;
+    tokensPacked: number;
+    files: number;
+    compressed: boolean;
+    agent?: string;
+    command: string;
+  }>;
+  currentProject: string;
+}
+
+export function renderProjects(data: ProjectsPageData, port: number): string {
+  // System-wide stat cards
+  const cards = `
+    <div class="cards">
+      <div class="card" style="border-top:2px solid ${T.accent};">
+        <div class="card-label">Total Projects</div>
+        <div class="card-value">${data.projects.length}</div>
+      </div>
+      <div class="card" style="border-top:2px solid ${T.success};">
+        <div class="card-label">Total Sessions</div>
+        <div class="card-value">${fmtNum(data.allTime.sessions)}</div>
+      </div>
+      <div class="card" style="border-top:2px solid ${T.warning};">
+        <div class="card-label">Tokens Saved (All Time)</div>
+        <div class="card-value">${fmtNum(data.allTime.tokensSaved)}</div>
+      </div>
+      <div class="card" style="border-top:2px solid #8b5cf6;">
+        <div class="card-label">Tokens Used (All Time)</div>
+        <div class="card-value">${fmtNum(data.allTime.tokensUsed)}</div>
+      </div>
+    </div>`;
+
+  // Savings period comparison
+  const maxS = Math.max(data.today.tokensSaved + data.today.tokensUsed, data.week.tokensSaved + data.week.tokensUsed, data.month.tokensSaved + data.month.tokensUsed, 1);
+  function periodBar(label: string, saved: number, used: number): string {
+    const total = saved + used;
+    const pS = total > 0 ? (saved / maxS) * 100 : 0;
+    const pU = total > 0 ? (used / maxS) * 100 : 0;
+    return `<div class="savings-bar">
+      <div class="savings-bar-label">${label}</div>
+      <div class="savings-bar-track">
+        <div class="savings-bar-used" style="width:${pU.toFixed(1)}%"></div>
+        <div class="savings-bar-saved" style="width:${pS.toFixed(1)}%"></div>
+      </div>
+      <div class="savings-bar-legend">
+        <span class="legend-used">${fmtNum(used)} used</span>
+        <span class="legend-saved">${fmtNum(saved)} saved</span>
+      </div>
+    </div>`;
+  }
+
+  const savingsChart = `
+    <div class="savings-chart">
+      ${periodBar('Today', data.today.tokensSaved, data.today.tokensUsed)}
+      ${periodBar('This Week', data.week.tokensSaved, data.week.tokensUsed)}
+      ${periodBar('This Month', data.month.tokensSaved, data.month.tokensUsed)}
+    </div>`;
+
+  // Projects table
+  let projectRows = '';
+  if (data.projects.length > 0) {
+    const rows = data.projects.map(p => {
+      const lastDate = new Date(p.lastUsed).toLocaleDateString();
+      const savePct = p.tokensSaved + p.tokensUsed > 0 ? Math.round((p.tokensSaved / (p.tokensSaved + p.tokensUsed)) * 100) : 0;
+      const isActive = p.projectPath === data.currentProject;
+      const activeTag = isActive ? ' <span class="badge badge-green">active</span>' : '';
+      return `<tr>
+        <td><strong>${esc(p.project)}</strong>${activeTag}</td>
+        <td class="mono" style="font-size:11px;color:${T.textMuted}">${esc(p.projectPath)}</td>
+        <td class="mono">${p.sessions}</td>
+        <td class="mono" style="color:${T.success}">${fmtNum(p.tokensSaved)}</td>
+        <td class="mono">${fmtNum(p.tokensUsed)}</td>
+        <td class="mono" style="color:${T.accent}">${savePct}%</td>
+        <td class="mono">${lastDate}</td>
+      </tr>`;
+    }).join('');
+
+    projectRows = `
+      <div class="table-wrap">
+        <h3>All Projects</h3>
+        <table>
+          <thead><tr>
+            <th>Project</th><th>Path</th><th>Sessions</th><th>Saved</th><th>Used</th><th>Efficiency</th><th>Last Used</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  // Recent sessions across all projects
+  let recentTable = '';
+  if (data.recentRuns.length > 0) {
+    const rows = data.recentRuns.slice(0, 15).map(r => {
+      const d = new Date(r.date);
+      const saved = r.tokensRaw - r.tokensPacked;
+      const pct = r.tokensRaw > 0 ? Math.round((saved / r.tokensRaw) * 100) : 0;
+      const compress = r.compressed ? ' <span class="badge badge-green">compressed</span>' : '';
+      const agent = r.agent ? ` <span class="badge badge-blue">${esc(r.agent)}</span>` : '';
+      return `<tr>
+        <td class="mono">${esc(d.toLocaleString())}</td>
+        <td><strong>${esc(r.project || 'unknown')}</strong></td>
+        <td>${esc(r.command || 'pack')}${compress}${agent}</td>
+        <td class="mono">${r.files}</td>
+        <td class="mono">${fmtNum(r.tokensRaw)}</td>
+        <td class="mono">${fmtNum(r.tokensPacked)}</td>
+        <td class="mono" style="color:${T.success}">${fmtNum(saved)} (${pct}%)</td>
+      </tr>`;
+    }).join('');
+
+    recentTable = `
+      <div class="table-wrap">
+        <h3>Recent Sessions (All Projects)</h3>
+        <table>
+          <thead><tr>
+            <th>Time</th><th>Project</th><th>Command</th><th>Files</th><th>Raw</th><th>Packed</th><th>Saved</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  const body = `
+    <h1 class="page-title">System-Wide Overview</h1>
+    ${cards}
+    ${savingsChart}
+    ${projectRows}
+    ${recentTable}`;
+
+  return layout('Projects', '/projects', body, port);
 }
 
 // ---------------------------------------------------------------------------
