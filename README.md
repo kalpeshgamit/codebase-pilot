@@ -73,32 +73,57 @@ codebase-pilot ui    # → http://localhost:7456
 
 ## How It Works
 
-### Architecture Pipeline
+<table>
+<tr>
+<td width="50%">
+
+**Architecture Pipeline**
+
+Your codebase goes through scan → detect → pack → compress → security scan → output. 98K tokens becomes 7K.
 
 <img src="docs/diagrams/pipeline.png" alt="How codebase-pilot works" width="100%" />
 
-**Without codebase-pilot:** Claude reads 98K tokens of your full codebase.
-**With codebase-pilot:** 7K tokens — only the relevant, compressed code. No secrets.
+</td>
+<td width="50%">
 
-### Token Savings
+**Token Savings**
+
+Compression alone saves 70%. Add agent scoping for 93% reduction.
 
 <img src="docs/diagrams/savings.png" alt="Token savings comparison" width="100%" />
 
-### Blast Radius Analysis
+</td>
+</tr>
+<tr>
+<td width="50%">
 
-When you change a file, codebase-pilot traces the full impact across your codebase:
+**Blast Radius Analysis**
+
+Change a file → see every dependent, transitive import, and affected test. Risk scored 0–100.
 
 <img src="docs/diagrams/blast-radius.png" alt="Blast radius analysis" width="100%" />
 
-### Agent Layer Architecture
+</td>
+<td width="50%">
 
-Agents run in layers — lower layers produce context for higher layers. Each agent reads only 2-4 files with the cheapest model that can handle its task.
+**Agent Layer Architecture**
+
+7 layers — haiku for extraction, sonnet for implementation, opus for review gates.
 
 <img src="docs/diagrams/agent-layers.png" alt="Agent layer architecture" width="100%" />
 
-### Multi-Platform Support
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+**Multi-Platform Support** — one command generates configs for Claude Code, Cursor, Windsurf, and OpenAI Codex.
 
 <img src="docs/diagrams/platforms.png" alt="Multi-platform support" width="100%" />
+
+</td>
+</tr>
+</table>
 
 ---
 
