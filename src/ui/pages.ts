@@ -587,7 +587,9 @@ ${headExtra}
 <body>
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <span class="plane">&#9992;</span> codebase-pilot
+      <span class="plane">&#9992;</span>
+      <span>codebase-pilot</span>
+      <span style="font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(88,166,255,0.15);color:#58a6ff;margin-left:4px;-webkit-text-fill-color:#58a6ff;font-weight:500;">v0.2</span>
     </div>
     <nav>
       ${navItems}

@@ -1,7 +1,10 @@
 <p align="center">
-  <h1 align="center">codebase-pilot</h1>
-  <p align="center"><strong>Stop burning tokens. Start coding smarter.</strong></p>
-  <p align="center">AI context engine that packs, compresses, and optimizes any codebase for LLMs.<br/>Save up to 93% tokens with compression + agent scoping. Zero cloud. Zero lock-in.</p>
+  <img src="docs/banner.svg" alt="codebase-pilot" width="100%" />
+</p>
+
+<p align="center">
+  <strong>Stop burning tokens. Start coding smarter.</strong><br/>
+  Zero cloud. Zero lock-in.
 </p>
 
 <p align="center">

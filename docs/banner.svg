@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="1200" height="300">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="50%" stop-color="#161b22"/>
+      <stop offset="100%" stop-color="#0d1117"/>
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#58a6ff"/>
+      <stop offset="50%" stop-color="#3fb950"/>
+      <stop offset="100%" stop-color="#58a6ff"/>
+    </linearGradient>
+    <linearGradient id="iconGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#58a6ff"/>
+      <stop offset="100%" stop-color="#3fb950"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="textGlow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="300" fill="url(#bg)" rx="16"/>
+
+  <!-- Subtle grid pattern -->
+  <g opacity="0.03" stroke="#58a6ff" stroke-width="0.5">
+    <line x1="0" y1="60" x2="1200" y2="60"/>
+    <line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="180" x2="1200" y2="180"/>
+    <line x1="0" y1="240" x2="1200" y2="240"/>
+    <line x1="200" y1="0" x2="200" y2="300"/>
+    <line x1="400" y1="0" x2="400" y2="300"/>
+    <line x1="600" y1="0" x2="600" y2="300"/>
+    <line x1="800" y1="0" x2="800" y2="300"/>
+    <line x1="1000" y1="0" x2="1000" y2="300"/>
+  </g>
+
+  <!-- Decorative accent lines -->
+  <line x1="100" y1="150" x2="380" y2="150" stroke="url(#iconGrad)" stroke-width="1" opacity="0.2"/>
+  <line x1="820" y1="150" x2="1100" y2="150" stroke="url(#iconGrad)" stroke-width="1" opacity="0.2"/>
+
+  <!-- Icon: stylized jet/arrow -->
+  <g transform="translate(510, 60)" filter="url(#glow)">
+    <!-- Jet body as abstract arrow pointing up -->
+    <path d="M90 0 L105 35 L110 70 L105 75 L90 80 L75 75 L70 70 L75 35 Z" fill="url(#iconGrad)" opacity="0.9"/>
+    <!-- Wings -->
+    <path d="M70 45 L30 70 L35 75 L75 58 Z" fill="#3fb950" opacity="0.7"/>
+    <path d="M110 45 L150 70 L145 75 L105 58 Z" fill="#3fb950" opacity="0.7"/>
+    <!-- Cockpit -->
+    <ellipse cx="90" cy="28" rx="5" ry="10" fill="#e6edf3" opacity="0.6"/>
+    <!-- Exhaust -->
+    <ellipse cx="87" cy="80" rx="3" ry="4" fill="#f85149" opacity="0.5"/>
+    <ellipse cx="93" cy="80" rx="3" ry="4" fill="#f85149" opacity="0.5"/>
+  </g>
+
+  <!-- Title -->
+  <text x="600" y="195" text-anchor="middle" font-family="system-ui,-apple-system,'Segoe UI',sans-serif" font-size="48" font-weight="800" letter-spacing="-1" fill="url(#textGrad)" filter="url(#textGlow)">codebase-pilot</text>
+
+  <!-- Tagline -->
+  <text x="600" y="230" text-anchor="middle" font-family="system-ui,-apple-system,'Segoe UI',sans-serif" font-size="16" fill="#8b949e">AI context engine — pack, compress, optimize any codebase for LLMs</text>
+
+  <!-- Stats bar -->
+  <g transform="translate(280, 258)">
+    <text font-family="ui-monospace,'SF Mono',monospace" font-size="12" font-weight="700" fill="#58a6ff">16 <tspan fill="#484f58" font-weight="400">commands</tspan></text>
+    <text x="130" font-family="ui-monospace,'SF Mono',monospace" font-size="12" font-weight="700" fill="#3fb950">93% <tspan fill="#484f58" font-weight="400">reduction</tspan></text>
+    <text x="280" font-family="ui-monospace,'SF Mono',monospace" font-size="12" font-weight="700" fill="#a78bfa">56 <tspan fill="#484f58" font-weight="400">languages</tspan></text>
+    <text x="410" font-family="ui-monospace,'SF Mono',monospace" font-size="12" font-weight="700" fill="#d29922">152 <tspan fill="#484f58" font-weight="400">patterns</tspan></text>
+    <text x="550" font-family="ui-monospace,'SF Mono',monospace" font-size="12" font-weight="700" fill="#f85149">:7456 <tspan fill="#484f58" font-weight="400">dashboard</tspan></text>
+  </g>
+
+  <!-- Border glow -->
+  <rect width="1200" height="300" fill="none" rx="16" stroke="url(#iconGrad)" stroke-width="1" opacity="0.15"/>
+</svg>
