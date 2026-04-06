@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/logo-02.png" alt="codebase-pilot" width="500" />
+  <img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/logo-02.png" alt="codebase-pilot" width="500" />
 </p>
 
 <p align="center">
@@ -81,7 +81,7 @@ codebase-pilot ui    # → http://localhost:7456
 
 Your codebase goes through scan → detect → pack → compress → security scan → output. 98K tokens becomes 7K.
 
-<img src="docs/diagrams/pipeline.png" alt="How codebase-pilot works" width="100%" />
+<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/diagrams/pipeline.png" alt="How codebase-pilot works" width="100%" />
 
 </td>
 <td width="50%">
@@ -90,7 +90,7 @@ Your codebase goes through scan → detect → pack → compress → security sc
 
 Compression alone saves 70%. Add agent scoping for 93% reduction.
 
-<img src="docs/diagrams/savings.png" alt="Token savings comparison" width="100%" />
+<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/diagrams/savings.png" alt="Token savings comparison" width="100%" />
 
 </td>
 </tr>
@@ -101,7 +101,7 @@ Compression alone saves 70%. Add agent scoping for 93% reduction.
 
 Change a file → see every dependent, transitive import, and affected test. Risk scored 0–100.
 
-<img src="docs/diagrams/blast-radius.png" alt="Blast radius analysis" width="100%" />
+<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/diagrams/blast-radius.png" alt="Blast radius analysis" width="100%" />
 
 </td>
 <td width="50%">
@@ -110,7 +110,7 @@ Change a file → see every dependent, transitive import, and affected test. Ris
 
 7 layers — haiku for extraction, sonnet for implementation, opus for review gates.
 
-<img src="docs/diagrams/agent-layers.png" alt="Agent layer architecture" width="100%" />
+<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/diagrams/agent-layers.png" alt="Agent layer architecture" width="100%" />
 
 </td>
 </tr>
@@ -119,7 +119,7 @@ Change a file → see every dependent, transitive import, and affected test. Ris
 
 **Multi-Platform Support** — one command generates configs for Claude Code, Cursor, Windsurf, and OpenAI Codex.
 
-<img src="docs/diagrams/platforms.png" alt="Multi-platform support" width="100%" />
+<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/diagrams/platforms.png" alt="Multi-platform support" width="100%" />
 
 </td>
 </tr>
@@ -157,32 +157,32 @@ Port **7456** = PILOT on phone keypad. Runs as background daemon with real-time 
 ### Dashboard
 Live stat cards, savings chart, recent sessions — auto-updates via SSE.
 
-<img src="docs/screenshots/dashboard.png" alt="Dashboard" width="100%" />
+<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/dashboard.png" alt="Dashboard" width="100%" />
 
 ### Projects (System-Wide)
 All projects in one view — sessions, tokens saved, efficiency per project.
 
-<img src="docs/screenshots/projects.png" alt="Projects" width="100%" />
+<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/projects.png" alt="Projects" width="100%" />
 
 ### Import Graph
 Interactive D3.js force-directed graph. Nodes sized by tokens, colored by module. Drag, zoom, search.
 
-<img src="docs/screenshots/graph.png" alt="Import Graph" width="100%" />
+<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/graph.png" alt="Import Graph" width="100%" />
 
 ### Search
 Full-text search with BM25 ranking. Highlighted matches with file path + line number.
 
-<img src="docs/screenshots/search.png" alt="Search" width="100%" />
+<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/search.png" alt="Search" width="100%" />
 
 ### Agents
 Layer architecture, model assignment, context paths, dependencies.
 
-<img src="docs/screenshots/agents.png" alt="Agents" width="100%" />
+<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/agents.png" alt="Agents" width="100%" />
 
 ### Files
 All files with token counts, language tags, percentage of total.
 
-<img src="docs/screenshots/files.png" alt="Files" width="100%" />
+<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/files.png" alt="Files" width="100%" />
 
 ---
 
