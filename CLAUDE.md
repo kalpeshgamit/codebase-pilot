@@ -52,3 +52,39 @@ src/
 - Read with offset+limit — never full files
 - Plan before write
 - Scope CLI commands to specific paths
+
+
+## Sub-Agent Architecture
+
+Agents defined in `.codebase-pilot/agents.json`. Use dispatch patterns:
+
+```
+Break this into sub-agents using .codebase-pilot/agents.json
+Pattern: [pattern-name]
+Feature: [description]
+```
+
+## Model Selection
+
+| Task | Model |
+|------|-------|
+| File reads, quick fixes, types | haiku |
+| Most coding, API routes, logic | sonnet |
+| Architecture, complex async, review | opus |
+
+## Never Do
+
+- Read files without searching first
+- Read full files — always use offset + limit
+- Run bare git log, git diff, npm test
+- Write code without a plan
+- Use opus for mechanical tasks
+
+## Always Do
+
+- Grep/Glob before Read
+- Plan before write
+- Use sub-agents for cross-package work
+- Use haiku for mechanical sub-tasks
+- Scope all CLI commands to specific paths
+- Run /healthcheck before full-feature dispatch
