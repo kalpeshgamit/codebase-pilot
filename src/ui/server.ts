@@ -355,8 +355,8 @@ export function startUiServer(root: string, port: number): void {
         // Try package's own logo first, then project's
         const selfDir = new URL('.', import.meta.url).pathname;
         const logoPaths = [
-          resolve(selfDir, '..', '..', 'docs', 'logo-02-dark.png'),
-          resolve(root, 'docs', 'logo-02-dark.png'),
+          resolve(selfDir, '..', '..', 'docs', 'logo-04-dark.png'),
+          resolve(root, 'docs', 'logo-04-dark.png'),
           resolve(selfDir, '..', '..', 'docs', 'logo-02.png'),
           resolve(root, 'docs', 'logo-02.png'),
         ];
