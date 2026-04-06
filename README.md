@@ -91,14 +91,30 @@ codebase-pilot ui --status # check status
 
 Port **7456** = PILOT on phone keypad. Runs as background daemon with real-time SSE updates.
 
-| Page | What you see |
-|------|-------------|
-| **Dashboard** | Live stat cards, savings chart, recent sessions, project info |
-| **Graph** | Interactive D3.js force-directed import graph |
-| **Search** | Full-text search with BM25 ranking and highlighted matches |
-| **Agents** | Agent list with model, layer, context paths |
-| **Files** | All files with token counts and percentage bars |
-| **Impact** | Blast radius for any file (click from Files page) |
+### Dashboard
+Live stat cards, savings chart, recent sessions — auto-updates via SSE.
+
+<img src="docs/screenshots/dashboard.png" alt="Dashboard" width="100%" />
+
+### Import Graph
+Interactive D3.js force-directed graph. Nodes sized by tokens, colored by module. Drag, zoom, search.
+
+<img src="docs/screenshots/graph.png" alt="Import Graph" width="100%" />
+
+### Search
+Full-text search with BM25 ranking. Highlighted matches with file path + line number.
+
+<img src="docs/screenshots/search.png" alt="Search" width="100%" />
+
+### Agents
+Layer architecture, model assignment, context paths, dependencies.
+
+<img src="docs/screenshots/agents.png" alt="Agents" width="100%" />
+
+### Files
+All files with token counts, language tags, percentage of total.
+
+<img src="docs/screenshots/files.png" alt="Files" width="100%" />
 
 ---
 
