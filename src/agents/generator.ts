@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import type { ProjectScan, AgentDefinition, AgentsConfig } from '../types.js';
 import { toPosix } from '../utils.js';
 
@@ -63,10 +65,12 @@ export function generateAgents(scan: ProjectScan): AgentsConfig {
     dependsOn: ['standards-agent'],
   };
 
+  // Detect docs directory (docs/, doc/, or README only)
+  const docsDir = ['docs/', 'doc/', 'documentation/'].find(d => existsSync(join(scan.root, d)));
   agents['docs-agent'] = {
     name: 'docs-agent',
     model: 'haiku',
-    context: ['docs/'],
+    context: docsDir ? [docsDir] : ['README.md'],
     task: 'Documentation updates — guides, API docs, README',
     layer: 6,
     dependsOn: ['supervisor-agent'],

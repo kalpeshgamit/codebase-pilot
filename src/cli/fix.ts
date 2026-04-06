@@ -102,7 +102,26 @@ export function resolveMovedPath(root: string, stalePath: string, languages: str
     } catch {}
   }
 
-  // Strategy 4: Search deeper for the name
+  // Strategy 4: Common directory aliases (src ↔ lib, docs ↔ doc)
+  const ALIASES: Record<string, string[]> = {
+    'src': ['lib', 'source', 'app', 'packages'],
+    'lib': ['src', 'source', 'app'],
+    'docs': ['doc', 'documentation'],
+    'doc': ['docs', 'documentation'],
+    'test': ['tests', 'spec', 'specs', '__tests__'],
+    'tests': ['test', 'spec', 'specs', '__tests__'],
+  };
+
+  const cleanName = name.toLowerCase();
+  const aliases = ALIASES[cleanName] || [];
+  for (const alias of aliases) {
+    const aliasPath = stalePath.replace(new RegExp(`(^|/)${name}(/|$)`), `$1${alias}$2`);
+    if (existsSync(join(root, aliasPath))) {
+      return toPosix(aliasPath);
+    }
+  }
+
+  // Strategy 5: Search deeper for the name
   const found = findByName(root, name, 0);
   return found;
 }
