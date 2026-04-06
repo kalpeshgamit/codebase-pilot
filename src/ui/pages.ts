@@ -62,11 +62,12 @@ function layout(title: string, activePage: string, body: string, port: number, h
     --text: #e6edf3;
     --text-muted: #8b949e;
     --text-dim: #484f58;
-    --accent: #58a6ff;
+    --accent: #3fb950;
     --success: #3fb950;
     --warning: #d29922;
     --danger: #f85149;
     --purple: #a78bfa;
+    --blue: #58a6ff;
   }
 
   body.light {
@@ -77,11 +78,12 @@ function layout(title: string, activePage: string, body: string, port: number, h
     --text: #1f2328;
     --text-muted: #656d76;
     --text-dim: #8b949e;
-    --accent: #0969da;
+    --accent: #1a7f37;
     --success: #1a7f37;
     --warning: #9a6700;
     --danger: #cf222e;
     --purple: #8250df;
+    --blue: #0969da;
   }
 
   html { scroll-behavior: smooth; }
@@ -179,7 +181,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
   }
 
   .sidebar nav a.active {
-    background: rgba(88, 166, 255, 0.1);
+    background: rgba(63, 185, 80, 0.1);
     color: var(--accent);
     font-weight: 500;
     border-left: 3px solid var(--accent);
@@ -216,9 +218,9 @@ function layout(title: string, activePage: string, body: string, port: number, h
   }
 
   .theme-toggle:hover {
-    background: rgba(88, 166, 255, 0.15);
+    background: rgba(63, 185, 80, 0.15);
     color: var(--accent);
-    border-color: rgba(88, 166, 255, 0.3);
+    border-color: rgba(63, 185, 80, 0.3);
   }
 
   /* Light theme */
@@ -240,7 +242,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
   body.light .card { background: var(--surface); border-color: var(--border); backdrop-filter: none; }
   body.light .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
   body.light .table-wrap { background: var(--surface); backdrop-filter: none; }
-  body.light .badge-blue { background: rgba(9,105,218,0.1); }
+  body.light .badge-blue { background: rgba(26,127,55,0.1); }
   body.light .badge-green { background: rgba(26,127,55,0.1); }
   body.light .badge-yellow { background: rgba(154,103,0,0.1); }
   body.light .badge-red { background: rgba(207,34,46,0.1); }
@@ -302,8 +304,8 @@ function layout(title: string, activePage: string, body: string, port: number, h
 
   .card:hover {
     transform: translateY(-2px);
-    border-color: rgba(88, 166, 255, 0.3);
-    box-shadow: 0 4px 24px rgba(88, 166, 255, 0.08);
+    border-color: rgba(63, 185, 80, 0.3);
+    box-shadow: 0 4px 24px rgba(63, 185, 80, 0.08);
   }
 
   .card-label {
