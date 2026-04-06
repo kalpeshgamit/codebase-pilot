@@ -8,19 +8,27 @@ import { healthCommand } from '../cli/health.js';
 import { ejectCommand } from '../cli/eject.js';
 import { packCommand } from '../cli/pack.js';
 import { tokensCommand } from '../cli/tokens.js';
+import { watchCommand } from '../cli/watch.js';
+import { serveCommand } from '../cli/serve.js';
+import { impactCommand } from '../cli/impact.js';
+import { evalCommand } from '../cli/eval.js';
+import { searchCommand } from '../cli/search.js';
+import { visualizeCommand } from '../cli/visualize.js';
+import { statsCommand } from '../cli/stats.js';
 
 const program = new Command();
 
 program
   .name('codebase-pilot')
-  .description('Claude Code Optimization Kit — auto-detect, orchestrate, and optimize any project')
-  .version('0.1.0');
+  .description('AI context engine — pack, compress, and optimize any codebase. Save 60-90% tokens.')
+  .version('0.2.0');
 
 program
   .command('init')
   .description('Scan project and generate Claude Code optimization setup')
   .option('-d, --dir <path>', 'Project directory', '.')
   .option('--no-mcp', 'Skip MCP server setup')
+  .option('--platform <names>', 'Generate rules for: cursor,windsurf,codex', '')
   .option('--dry-run', 'Show what would be generated without writing files')
   .action(initCommand);
 
@@ -69,5 +77,53 @@ program
   .option('-l, --limit <n>', 'Show top N files', '20')
   .option('--agent <name>', 'Count tokens for specific agent context')
   .action(tokensCommand);
+
+program
+  .command('watch')
+  .description('Watch for file changes and re-scan automatically')
+  .option('-d, --dir <path>', 'Project directory', '.')
+  .action(watchCommand);
+
+program
+  .command('serve')
+  .description('Start MCP server over stdio for Claude Code integration')
+  .option('-d, --dir <path>', 'Project directory', '.')
+  .action(serveCommand);
+
+program
+  .command('impact')
+  .description('Analyze blast radius and change impact')
+  .option('-d, --dir <path>', 'Project directory', '.')
+  .option('-f, --file <path>', 'Analyze impact of a specific file')
+  .action(impactCommand);
+
+program
+  .command('eval')
+  .description('Benchmark project — tokens, compression, import graph')
+  .option('-d, --dir <path>', 'Project directory', '.')
+  .action(evalCommand);
+
+program
+  .command('search [query]')
+  .description('Full-text search across codebase with ranked results')
+  .option('-d, --dir <path>', 'Project directory', '.')
+  .option('-r, --rebuild', 'Rebuild search index before querying', false)
+  .option('-l, --limit <n>', 'Max results to show', '20')
+  .action(searchCommand);
+
+program
+  .command('visualize')
+  .description('Generate interactive D3.js import graph visualization')
+  .option('-d, --dir <path>', 'Project directory', '.')
+  .option('-o, --output <path>', 'Output HTML file', 'codebase-pilot-graph.html')
+  .action(visualizeCommand);
+
+program
+  .command('stats')
+  .description('Show usage history and token savings (project or system-wide)')
+  .option('-d, --dir <path>', 'Project directory', '.')
+  .option('-g, --global', 'Show system-wide stats across all projects', false)
+  .option('-l, --limit <n>', 'Number of recent sessions to show', '10')
+  .action(statsCommand);
 
 program.parse();

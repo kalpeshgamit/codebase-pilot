@@ -2,6 +2,8 @@ export { detect } from './scanner/detector.js';
 export { generateAgents } from './agents/generator.js';
 export { generateClaudeMd } from './generators/claude-md.js';
 export { generateClaudeignore } from './generators/claudeignore.js';
+export { generatePlatformRules, generateAllPlatforms } from './generators/platform-rules.js';
+export type { Platform } from './generators/platform-rules.js';
 export { createMemoryDb } from './memory/db.js';
 export { toPosix } from './utils.js';
 
@@ -46,3 +48,24 @@ export type { SecretMatch } from './security/scanner.js';
 // Compression exports
 export { compress, compressCode } from './compress/index.js';
 export type { CompressResult } from './compress/index.js';
+
+// Intelligence exports
+export { buildImportGraph, computeBlastRadius, getReverseDependencies } from './intelligence/imports.js';
+export type { BlastRadius, ImportEdge } from './intelligence/imports.js';
+export { detectChanges, hasChanges } from './intelligence/incremental.js';
+export type { IncrementalResult } from './intelligence/incremental.js';
+
+// Usage tracking exports
+export { logPackRun, readPackLogs, getStats } from './packer/usage-logger.js';
+export type { PackRun, UsageStats } from './packer/usage-logger.js';
+
+// Search exports
+export { createSearchIndex } from './intelligence/search.js';
+export type { SearchResult, SearchIndex } from './intelligence/search.js';
+
+// Visualization exports
+export { generateVisualization, buildGraphData } from './intelligence/visualize.js';
+export type { GraphData } from './intelligence/visualize.js';
+
+// MCP server export
+export { startMcpServer } from './mcp/server.js';

@@ -10,6 +10,7 @@ package-lock.json
 # Pack output
 codebase-pilot-output.xml
 codebase-pilot-output.md
+codebase-pilot-graph.html
 
 # Claude Code config (local only)
 .claudeignore

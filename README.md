@@ -1,8 +1,8 @@
 # codebase-pilot
 
-**AI context engine for Claude Code. Pack, compress, and optimize any codebase. Save 60–90% tokens.**
+**AI context engine — pack, compress, and optimize any codebase. Save 60–90% tokens.**
 
-Zero cloud. Zero lock-in. Zero runtime overhead.
+Works with Claude Code, Cursor, Windsurf, Codex. Zero cloud. Zero lock-in.
 
 [![npm version](https://img.shields.io/npm/v/codebase-pilot)](https://www.npmjs.com/package/codebase-pilot)
 [![CI](https://github.com/nicgamit/codebase-pilot/actions/workflows/ci.yml/badge.svg)](https://github.com/nicgamit/codebase-pilot/actions/workflows/ci.yml)
@@ -13,26 +13,28 @@ Zero cloud. Zero lock-in. Zero runtime overhead.
 
 ## What it does
 
-codebase-pilot solves the core AI coding problem: getting the right code into Claude efficiently, without leaking secrets or blowing your context window.
+codebase-pilot solves the core AI coding problem: getting the right code into AI tools efficiently, without leaking secrets or blowing your context window.
 
-- **Pack** your codebase into a single XML or Markdown file for Claude
+- **Pack** your codebase into a single XML or Markdown file
 - **Compress** code by 60–90% — keeps signatures, folds bodies
 - **Scan** for 152 secret patterns before anything reaches an LLM
-- **Count tokens** per file with savings estimates
-- **Scope** packing to a single agent's context paths
-- **Generate** CLAUDE.md, .claudeignore, agents.json, and slash commands
+- **Impact analysis** — blast radius + risk scoring for any file change
+- **MCP server** — 10 tools exposable to Claude Code, Cursor, Zed
+- **Multi-platform** — generates .cursorrules, .windsurfrules, AGENTS.md
+- **Watch mode** — auto-update configs on file changes
+- **Agent orchestration** — layered sub-agents with model routing
+- **Incremental** — hash-based change detection, only re-scans modified files
+- **Benchmark** — evaluate compression, import graph, and timing metrics
 
 ---
 
 ## Installation
 
-### npm (recommended)
-
 ```bash
 npm install -g codebase-pilot
 ```
 
-### npx (no install)
+Or without installing:
 
 ```bash
 npx codebase-pilot init
@@ -41,21 +43,14 @@ npx codebase-pilot init
 ### Verify
 
 ```bash
-codebase-pilot --version
+codebase-pilot --version   # 0.2.0
 ```
 
----
-
-## Uninstall
+### Uninstall
 
 ```bash
 npm uninstall -g codebase-pilot
-```
-
-To also remove project config files:
-
-```bash
-codebase-pilot eject   # removes .codebase-pilot/ from project
+codebase-pilot eject       # remove project config (optional)
 ```
 
 ---
@@ -63,18 +58,45 @@ codebase-pilot eject   # removes .codebase-pilot/ from project
 ## Quick start
 
 ```bash
-# Set up a project
-codebase-pilot init
+# Set up a project (Claude Code + optionally Cursor/Windsurf/Codex)
+codebase-pilot init --platform cursor,windsurf,codex
 
 # See token breakdown + savings estimate
 codebase-pilot tokens
 
-# Pack entire codebase compressed → clipboard
+# Pack compressed → clipboard
 codebase-pilot pack --compress --copy
 
 # Pack just one agent's context
 codebase-pilot pack --agent api-agent --compress --copy
+
+# Blast radius analysis
+codebase-pilot impact --file src/types.ts
+
+# Start MCP server
+codebase-pilot serve
+
+# Watch for changes
+codebase-pilot watch
 ```
+
+---
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `init` | Scan project, generate configs for Claude Code + AI tools |
+| `scan` | Re-detect project structure, update configs |
+| `fix` | Auto-repair stale paths and missing files |
+| `health` | Validate agent setup |
+| `pack` | Pack codebase into XML or Markdown |
+| `tokens` | Token counts per file + daily/weekly savings stats |
+| `impact` | Blast radius and change impact analysis |
+| `watch` | Watch for changes, auto-update configs |
+| `serve` | Start MCP server (stdio transport) |
+| `eval` | Benchmark project — tokens, compression, import graph |
+| `eject` | Export configs, remove dependency |
 
 ---
 
@@ -82,12 +104,6 @@ codebase-pilot pack --agent api-agent --compress --copy
 
 ```
 codebase-pilot tokens
-
-  Token count by file:
-
-    src/registry/frameworks.ts     3,819 tokens  ██████████████░░   6%
-    src/security/patterns.ts       4,376 tokens  ████████████████   7%
-    ...
 
   Total: 60,458 tokens across 71 files
 
@@ -110,42 +126,121 @@ codebase-pilot tokens
 
 ---
 
-## Commands
+## Blast radius / change impact
 
-| Command | Description |
-|---------|-------------|
-| `codebase-pilot init` | Scan project and generate all config files |
-| `codebase-pilot scan` | Re-detect project structure, update configs |
-| `codebase-pilot fix` | Auto-repair drift (stale paths, missing files) |
-| `codebase-pilot health` | Validate agent setup |
-| `codebase-pilot pack` | Pack codebase into AI-friendly XML or Markdown |
-| `codebase-pilot tokens` | Token counts per file + savings estimate |
-| `codebase-pilot eject` | Export all generated files, remove dependency |
+```bash
+codebase-pilot impact --file src/types.ts
 
-### pack options
+  Risk: HIGH (54/100)
 
-```
---format xml|md     Output format (default: xml)
---output <path>     Output file (default: codebase-pilot-output.xml)
---compress          Extract signatures, fold bodies (~60-90% reduction)
---agent <name>      Pack only files in that agent's context paths
---no-security       Skip secret detection
---copy              Write to stdout for piping/clipboard
+  Direct dependents (17):
+    src/agents/generator.ts
+    src/mcp/server.ts
+    src/packer/index.ts
+    ...
+
+  Affected tests (5):
+    tests/agents/generator.test.ts
+    tests/cli/pack.test.ts
+    ...
+
+  Total affected: 27 files
 ```
 
-### tokens options
+```bash
+# Project-wide import graph summary
+codebase-pilot impact
 
+  Most-imported files (highest blast radius):
+    src/types.ts                  17 deps  ████████████████████
+    src/packer/collector.ts       12 deps  ████████████████████
+    src/registry/index.ts          8 deps  ████████████████
 ```
---sort size|name    Sort order (default: size)
---limit <n>         Show top N files (default: 20)
---agent <name>      Count tokens for a specific agent's context
+
+---
+
+## MCP server
+
+Expose all codebase-pilot features to AI tools via MCP (Model Context Protocol):
+
+```bash
+codebase-pilot serve
+```
+
+**10 MCP tools:**
+`scan_project`, `pack_codebase`, `count_tokens`, `health_check`, `scan_secrets`, `list_agents`, `get_agent`, `detect_languages`, `get_savings`, `list_files`
+
+**3 MCP prompts:**
+`review`, `onboard`, `optimize`
+
+### Connect to Claude Code
+
+Add to your `~/.claude.json`:
+
+```json
+{
+  "mcpServers": {
+    "codebase-pilot": {
+      "command": "codebase-pilot",
+      "args": ["serve"]
+    }
+  }
+}
+```
+
+### Connect to Cursor
+
+Add to `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "codebase-pilot": {
+      "command": "codebase-pilot",
+      "args": ["serve"]
+    }
+  }
+}
+```
+
+---
+
+## Multi-platform support
+
+Generate config files for multiple AI coding tools:
+
+```bash
+codebase-pilot init --platform cursor,windsurf,codex
+```
+
+| Platform | Generated file | AI Tool |
+|----------|---------------|---------|
+| (default) | `CLAUDE.md` | Claude Code |
+| `cursor` | `.cursorrules` | Cursor |
+| `windsurf` | `.windsurfrules` | Windsurf |
+| `codex` | `AGENTS.md` | OpenAI Codex |
+
+---
+
+## Watch mode
+
+```bash
+codebase-pilot watch
+
+  Watching for changes...
+  Directory: /path/to/project
+  Press Ctrl+C to stop
+
+  [14:32:01] change: src/routes/users.ts
+  Re-scanning...
+  Updated: agents.json (8 agents)
 ```
 
 ---
 
 ## Security scanning
 
-152 patterns across 15 categories. Runs automatically on every `pack`. Files with secrets are skipped from output.
+152 patterns across 15 categories. Runs automatically on every `pack`.
 
 | Category | Examples |
 |----------|---------|
@@ -163,18 +258,14 @@ codebase-pilot tokens
 | Crypto Keys | RSA, EC, DSA, OpenSSH, PGP private key blocks |
 | Generic | password=, secret=, api_key=, Bearer tokens |
 
-Disable with `--no-security` if you're packing a test fixtures repo.
-
 ---
 
 ## Code compression
 
-Two tiers — always works, gets better with tree-sitter:
-
-**Tier A (default, zero deps):** Regex-based signature extraction across 8 languages. Folds function bodies, keeps signatures, imports, type definitions.
+**Tier A (default):** Regex-based, 8 languages, zero deps:
 
 ```typescript
-// Before (12 lines, ~150 tokens)
+// Before (~150 tokens)
 export async function createUser(data: UserInput): Promise<User> {
   const validated = schema.parse(data);
   const user = await db.user.create({ data: validated });
@@ -182,53 +273,28 @@ export async function createUser(data: UserInput): Promise<User> {
   return user;
 }
 
-// After --compress (1 line, ~20 tokens)
+// After --compress (~20 tokens)
 export async function createUser(data: UserInput): Promise<User> { /* ... */ }
 ```
 
-**Tier B (optional):** tree-sitter AST parsing for accurate statement counting and doc comment preservation. Install `tree-sitter` and language grammars as optional dependencies — Tier B activates automatically.
+**Tier B (optional):** tree-sitter AST for accurate compression. Install optional deps for auto-activation.
 
 ---
 
-## Agent-scoped packing
-
-Pack only the files relevant to a specific agent. This is the biggest token win.
+## Benchmarks
 
 ```bash
-codebase-pilot pack --agent api-agent --compress
-# → packs only packages/api/src/ instead of entire repo
-# → 7K tokens instead of 60K
+codebase-pilot eval
+
+  Project         Files  Raw tokens  Compressed  Ratio  Edges  Time
+  --------------  -----  ----------  ----------  -----  -----  ----
+  codebase-pilot     82      74,239      25,666    65%    116  23ms
+
+  codebase-pilot:
+    Languages:  TypeScript
+    Hub file:   src/types.ts (17 dependents)
+    Timing:     scan=5ms pack=15ms graph=3ms
 ```
-
-Agent context paths come from `.codebase-pilot/agents.json` (generated by `init`).
-
----
-
-## What init generates
-
-```bash
-codebase-pilot init
-```
-
-```
-  Scanning project...
-
-  Detected:
-    Language:   TypeScript (85%), Python (15%)
-    Framework:  Express
-    Database:   Prisma -> PostgreSQL
-    Tests:      Vitest
-    Structure:  Monorepo (3 packages)
-
-  Generating:
-    * CLAUDE.md (express template)
-    * .claudeignore (smart defaults)
-    * .codebase-pilot/agents.json (8 agents, 3 patterns)
-    * .claude/commands/dispatch.md
-    * .claude/commands/healthcheck.md
-```
-
-Existing `CLAUDE.md` and `.claudeignore` are merged, never overwritten.
 
 ---
 
@@ -242,60 +308,22 @@ Existing `CLAUDE.md` and `.claudeignore` are merged, never overwritten.
 | **Tier 2** — Package + tests | 21 | Haskell, Clojure, F#, OCaml, Nim, Crystal, Julia, Perl, Lua, R, Erlang, Groovy, V, Objective-C, D, Ada, Fortran, COBOL, Hack, Gleam, Assembly |
 | **Tier 3** — Extension only | 18 | Lisp, Scheme, Racket, Prolog, Forth, APL, VHDL, Verilog, Tcl, Shell, PowerShell, Terraform, Solidity, Move, Cairo, GraphQL, Protobuf, SQL |
 
-**58 framework detectors** — Next.js, Nuxt, SvelteKit, Remix, Astro, Express, Fastify, NestJS, Django, FastAPI, Flask, Gin, Echo, Fiber, Axum, Actix, Spring Boot, Rails, Laravel, and more.
-
-**39 test runners** — Vitest, Jest, pytest, Go test, Cargo test, JUnit, RSpec, PHPUnit, ExUnit, and more.
-
-**32 ORM detectors** — Prisma, Drizzle, SQLAlchemy, GORM, Diesel, Hibernate, ActiveRecord, Eloquent, and more.
+**58 frameworks** | **39 test runners** | **32 ORM detectors**
 
 ---
 
-## Agent layers
+## Agent orchestration
 
 ```
 Layer 0   healthcheck-agent (haiku)    Pre-flight validation
-Layer 1   schema-agent (haiku)         DB schema only
+Layer 1   schema-agent (haiku)         DB schema
           types-agent (haiku)          TypeScript interfaces
-Layer 2   api-agent (sonnet)           API routes + controllers
+Layer 2   api-agent (sonnet)           API routes
           cli-agent (haiku)            CLI commands
-Layer 3   frontend-agent (haiku)       React/Vue/Svelte pages
+Layer 3   frontend-agent (haiku)       React/Vue/Svelte
 Layer 4   standards-agent (opus)       Code quality gate
-Layer 5   supervisor-agent (opus)      Behavior audit gate
-Layer 6   docs-agent (haiku)           Documentation updates
-```
-
-Use in Claude Code:
-
-```
-/dispatch new-feature Add payment processing
-/dispatch api-feature Subscription CRUD endpoints
-/healthcheck
-```
-
----
-
-## Configuration
-
-`.codebase-pilot/agents.json` is plain JSON — edit directly:
-
-```json
-{
-  "version": "1.0",
-  "project": "my-app",
-  "agents": {
-    "api-agent": {
-      "name": "api-agent",
-      "model": "sonnet",
-      "context": ["packages/api/src/routes/"],
-      "task": "API route implementation",
-      "layer": 2,
-      "dependsOn": ["types-agent"]
-    }
-  },
-  "patterns": {
-    "api-feature": ["schema-agent", "types-agent", "api-agent"]
-  }
-}
+Layer 5   supervisor-agent (opus)      Behavior audit
+Layer 6   docs-agent (haiku)           Documentation
 ```
 
 ---
@@ -303,11 +331,15 @@ Use in Claude Code:
 ## Programmatic API
 
 ```typescript
-import { detect, generateAgents, generateClaudeMd } from 'codebase-pilot';
+import {
+  detect, generateAgents, packProject,
+  buildImportGraph, computeBlastRadius,
+  detectChanges, startMcpServer,
+} from 'codebase-pilot';
 
 const scan = await detect('/path/to/project');
-const agents = generateAgents(scan);
-const claudeMd = generateClaudeMd(scan);
+const blast = computeBlastRadius('/path', 'src/index.ts');
+const packed = packProject({ dir: '/path', format: 'xml', compress: true, noSecurity: false });
 ```
 
 ---
@@ -315,11 +347,14 @@ const claudeMd = generateClaudeMd(scan);
 ## Requirements
 
 - Node.js >= 18.0.0
-- Claude Code CLI (for slash command integration)
 
 ## Contributing
 
 See [CONTRIBUTING.md](docs/CONTRIBUTING.md).
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
 ## Author
 
