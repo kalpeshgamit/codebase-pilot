@@ -759,12 +759,68 @@ export function renderDashboard(data: DashboardData, port: number): string {
       </div>
     </div>`;
 
+  const sseScript = `
+    <div id="live-badge" style="display:none;position:fixed;top:16px;right:24px;
+      background:rgba(63,185,80,0.15);color:${T.success};padding:4px 12px;
+      border-radius:20px;font-size:11px;font-weight:500;z-index:100;
+      animation:fadeIn 0.3s ease;backdrop-filter:blur(8px);
+      border:1px solid rgba(63,185,80,0.3);">
+      <span style="display:inline-block;width:6px;height:6px;background:${T.success};
+        border-radius:50%;margin-right:6px;animation:pulse 2s infinite;"></span>Live
+    </div>
+    <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}</style>
+    <script>
+    (function() {
+      var es = new EventSource('/api/events');
+      var badge = document.getElementById('live-badge');
+
+      es.addEventListener('connected', function() {
+        if (badge) badge.style.display = 'inline-flex';
+      });
+
+      es.addEventListener('stats-update', function(e) {
+        try {
+          var d = JSON.parse(e.data);
+          var cards = document.querySelectorAll('.card-value');
+          if (cards[0] && d.totalFiles) cards[0].textContent = Number(d.totalFiles).toLocaleString();
+          if (cards[1] && d.totalTokens) cards[1].textContent = Number(d.totalTokens).toLocaleString();
+          if (cards[2] && d.today) cards[2].textContent = Number(d.today.sessions).toLocaleString();
+          if (cards[3] && d.week) cards[3].textContent = Number(d.week.tokensSaved).toLocaleString();
+
+          // Flash updated cards
+          cards.forEach(function(c) {
+            c.style.transition = 'color 0.3s';
+            c.style.color = '${T.success}';
+            setTimeout(function() { c.style.color = ''; }, 1500);
+          });
+        } catch(err) {}
+      });
+
+      es.addEventListener('file-change', function(e) {
+        try {
+          var d = JSON.parse(e.data);
+          var toast = document.createElement('div');
+          toast.style.cssText = 'position:fixed;bottom:20px;right:24px;background:rgba(22,27,34,0.95);color:${T.text};padding:10px 16px;border-radius:8px;font-size:12px;z-index:100;animation:fadeIn 0.3s ease;border:1px solid ${T.border};backdrop-filter:blur(12px);font-family:${T.mono};';
+          toast.textContent = d.event + ': ' + d.file;
+          document.body.appendChild(toast);
+          setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; }, 3000);
+          setTimeout(function() { toast.remove(); }, 3500);
+        } catch(err) {}
+      });
+
+      es.onerror = function() {
+        if (badge) badge.style.display = 'none';
+      };
+    })();
+    </script>`;
+
   const body = `
     <h1 class="page-title">${esc(data.projectName)}</h1>
     ${statCards}
     ${savingsChart}
     ${recentTable}
-    ${projectInfo}`;
+    ${projectInfo}
+    ${sseScript}`;
 
   return layout('Dashboard', '/', body, port);
 }

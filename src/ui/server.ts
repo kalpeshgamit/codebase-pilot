@@ -1,10 +1,11 @@
 // src/ui/server.ts — HTTP server for the codebase-pilot web dashboard.
 // Zero external deps — uses node:http only.
 
-import { createServer } from 'node:http';
+import { createServer, type ServerResponse } from 'node:http';
 import { resolve, basename } from 'node:path';
 import { URL } from 'node:url';
 import { existsSync, readFileSync } from 'node:fs';
+import chokidar from 'chokidar';
 
 import { detect } from '../scanner/detector.js';
 import { collectFiles } from '../packer/collector.js';
@@ -155,11 +156,87 @@ export function startUiServer(root: string, port: number): void {
     return searchIndex;
   }
 
+  // ---------------------------------------------------------------------------
+  // SSE — Server-Sent Events for real-time push (zero polling, zero deps)
+  // ---------------------------------------------------------------------------
+
+  const sseClients = new Set<ServerResponse>();
+
+  function broadcast(event: string, data: unknown): void {
+    const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    for (const client of sseClients) {
+      try { client.write(payload); } catch { sseClients.delete(client); }
+    }
+  }
+
+  // File watcher — pushes events to all connected SSE clients
+  const watcher = chokidar.watch(root, {
+    ignored: [
+      '**/node_modules/**', '**/dist/**', '**/.git/**',
+      '**/.codebase-pilot/**', '**/coverage/**', '**/*.log',
+      '**/codebase-pilot-output.*', '**/codebase-pilot-graph.*',
+    ],
+    ignoreInitial: true,
+    persistent: true,
+  });
+
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  watcher.on('all', (event, filePath) => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(async () => {
+      const relative = filePath.replace(root + '/', '');
+      // Push file change event
+      broadcast('file-change', { event, file: relative, time: new Date().toISOString() });
+      // Push updated stats
+      try {
+        const data = await buildDashboardData(root);
+        broadcast('stats-update', {
+          totalFiles: data.totalFiles,
+          totalTokens: data.totalTokens,
+          today: data.today,
+          week: data.week,
+        });
+      } catch { /* ignore */ }
+    }, 1000);
+  });
+
+  // Also watch usage-log for pack run events
+  const usageLogPath = resolve(root, '.codebase-pilot', 'usage-log.jsonl');
+  const usageWatcher = chokidar.watch(usageLogPath, { ignoreInitial: true, persistent: true });
+  usageWatcher.on('change', async () => {
+    try {
+      const data = await buildDashboardData(root);
+      broadcast('stats-update', {
+        totalFiles: data.totalFiles,
+        totalTokens: data.totalTokens,
+        today: data.today,
+        week: data.week,
+        recentRuns: data.recentRuns.slice(0, 5),
+      });
+    } catch { /* ignore */ }
+  });
+
   const server = createServer(async (req, res) => {
     const url = new URL(req.url || '/', `http://localhost:${port}`);
     const pathname = url.pathname;
 
     try {
+      // ---- SSE endpoint ----
+
+      if (pathname === '/api/events') {
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Access-Control-Allow-Origin': '*',
+        });
+        res.write(`event: connected\ndata: ${JSON.stringify({ time: new Date().toISOString() })}\n\n`);
+        sseClients.add(res);
+        req.on('close', () => sseClients.delete(res));
+        return;
+      }
+
       // ---- HTML pages ----
 
       if (pathname === '/' || pathname === '/dashboard') {
@@ -279,15 +356,16 @@ export function startUiServer(root: string, port: number): void {
   });
 
   // Graceful shutdown
-  process.on('SIGINT', () => {
+  function shutdown() {
+    for (const client of sseClients) { try { client.end(); } catch {} }
+    sseClients.clear();
+    watcher.close();
+    usageWatcher.close();
     if (searchIndex) searchIndex.close();
     server.close();
     process.exit(0);
-  });
+  }
 
-  process.on('SIGTERM', () => {
-    if (searchIndex) searchIndex.close();
-    server.close();
-    process.exit(0);
-  });
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 }
