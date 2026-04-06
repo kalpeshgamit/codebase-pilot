@@ -332,28 +332,9 @@ codebase-pilot eject               # remove project configs (optional)
 
 ---
 
-## Requirements
-
-- Node.js >= 18.0.0
-
-## Contributing
-
-See [CONTRIBUTING.md](docs/CONTRIBUTING.md).
-
-## Security
-
-See [SECURITY.md](SECURITY.md) for vulnerability reporting.
-
-## Author
-
-**Kalpesh Gamit (KG)**
-[Website](https://kalpeshgamit.github.io) · [LinkedIn](https://www.linkedin.com/in/kalpeshgamit) · kalpa.hacker@gmail.com
-
-## License
-
-[MIT](LICENSE)
-
----
+<p align="center">
+  Node.js >= 18 · <a href="LICENSE">MIT License</a> · <a href="docs/CONTRIBUTING.md">Contributing</a> · <a href="SECURITY.md">Security</a>
+</p>
 
 <p align="center">
   <strong>Save tokens. Ship faster.</strong><br/>
