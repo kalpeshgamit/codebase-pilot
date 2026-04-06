@@ -9,8 +9,8 @@ export interface ValidationResult {
 
 /**
  * Validate generated config files before writing.
- * Prevents issues like #97, #64, #32, #25, #23 in code-review-graph
- * where invalid hooks/settings were written and reported 4+ times.
+ * Validates generated config files before writing to prevent
+ * invalid hooks, settings, or agent definitions from being saved.
  */
 
 // Valid Claude Code hook events (as of 2026)

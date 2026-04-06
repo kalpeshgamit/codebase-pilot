@@ -43,7 +43,7 @@
     "context-engine",
     "token-optimization",
     "codebase-packer",
-    "repomix",
+    "code-context",
     "sub-agents",
     "agents",
     "orchestration",

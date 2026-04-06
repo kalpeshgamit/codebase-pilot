@@ -15,3 +15,6 @@ codebase-pilot-graph.html
 # Claude Code config (local only)
 .claudeignore
 CLAUDE.md
+
+# Internal planning docs (strategy, roadmaps — not for public)
+docs/superpowers/
