@@ -714,6 +714,28 @@ function toggleTheme() {
   }
   // Initialize Lucide icons
   if (window.lucide) lucide.createIcons();
+
+  // Animate numbers: count up from 0 to target value
+  document.querySelectorAll('.card-value').forEach(function(el) {
+    var raw = el.textContent.replace(/,/g, '');
+    var target = parseFloat(raw);
+    if (isNaN(target) || target === 0) return;
+    var isInt = Number.isInteger(target);
+    var duration = 1200;
+    var start = performance.now();
+    el.textContent = '0';
+
+    function step(now) {
+      var progress = Math.min((now - start) / duration, 1);
+      // Ease out cubic
+      var ease = 1 - Math.pow(1 - progress, 3);
+      var current = target * ease;
+      el.textContent = isInt ? Math.round(current).toLocaleString() : current.toFixed(1);
+      if (progress < 1) requestAnimationFrame(step);
+      else el.textContent = isInt ? Math.round(target).toLocaleString() : target.toLocaleString();
+    }
+    requestAnimationFrame(step);
+  });
 })();
 </script>
 </body>
