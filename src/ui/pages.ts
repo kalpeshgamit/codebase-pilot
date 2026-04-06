@@ -167,7 +167,73 @@ function layout(title: string, activePage: string, body: string, port: number, h
     border-top: 1px solid ${T.border};
     font-size: 11px;
     color: ${T.textMuted};
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
+
+  .theme-toggle {
+    background: rgba(48, 54, 61, 0.5);
+    border: 1px solid ${T.border};
+    border-radius: 6px;
+    padding: 4px 8px;
+    cursor: pointer;
+    color: ${T.textMuted};
+    font-size: 14px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+  }
+
+  .theme-toggle:hover {
+    background: rgba(88, 166, 255, 0.15);
+    color: ${T.accent};
+    border-color: rgba(88, 166, 255, 0.3);
+  }
+
+  /* Light theme */
+  body.light {
+    --bg: #ffffff;
+    --surface: #f6f8fa;
+    --surface-hover: #eef1f4;
+    --border: #d0d7de;
+    --text: #1f2328;
+    --text-muted: #656d76;
+    --accent: #0969da;
+    --success: #1a7f37;
+    --warning: #9a6700;
+    --danger: #cf222e;
+  }
+
+  body.light { background: var(--bg, #fff); color: var(--text, #1f2328); }
+  body.light .sidebar { background: var(--surface, #f6f8fa); border-color: var(--border, #d0d7de); }
+  body.light .sidebar-brand { border-color: var(--border, #d0d7de); }
+  body.light .sidebar-brand img { filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1)); }
+  body.light .sidebar nav a { color: var(--text-muted, #656d76); }
+  body.light .sidebar nav a:hover { background: var(--surface-hover, #eef1f4); color: var(--text, #1f2328); }
+  body.light .sidebar nav a.active { background: rgba(9,105,218,0.1); color: var(--accent, #0969da); }
+  body.light .sidebar-footer { border-color: var(--border, #d0d7de); color: var(--text-muted, #656d76); }
+  body.light .theme-toggle { background: rgba(208,215,222,0.4); border-color: var(--border, #d0d7de); color: var(--text-muted, #656d76); }
+  body.light .theme-toggle:hover { background: rgba(9,105,218,0.1); color: var(--accent, #0969da); }
+  body.light .main { background: var(--bg, #fff); }
+  body.light .card { background: var(--surface, #f6f8fa); border-color: var(--border, #d0d7de); }
+  body.light .card:hover { border-color: rgba(9,105,218,0.4); box-shadow: 0 4px 24px rgba(9,105,218,0.08); }
+  body.light .card-value { color: var(--text, #1f2328); }
+  body.light .card-label { color: var(--text-muted, #656d76); }
+  body.light .page-title { color: var(--text, #1f2328); }
+  body.light .table-wrap { background: var(--surface, #f6f8fa); border-color: var(--border, #d0d7de); }
+  body.light .table-wrap h3 { color: var(--text, #1f2328); border-color: var(--border, #d0d7de); }
+  body.light thead th { color: var(--text-muted, #656d76); border-color: var(--border, #d0d7de); }
+  body.light tbody td { border-color: var(--border, #d0d7de); color: var(--text, #1f2328); }
+  body.light tbody tr:hover { background: var(--surface-hover, #eef1f4); }
+  body.light .bar-bg { background: var(--border, #d0d7de); }
+  body.light .badge-blue { background: rgba(9,105,218,0.1); color: var(--accent, #0969da); }
+  body.light .badge-green { background: rgba(26,127,55,0.1); color: var(--success, #1a7f37); }
+  body.light .savings-bar-track { background: var(--border, #d0d7de); }
+  body.light .savings-bar-label { color: var(--text-muted, #656d76); }
+  body.light .section-title { color: var(--text, #1f2328); }
+  body.light .mono { color: var(--text, #1f2328); }
+  body.light .empty-state { color: var(--text-muted, #656d76); }
 
   /* Main content */
   .main {
@@ -601,12 +667,33 @@ ${headExtra}
       ${navItems}
     </nav>
     <div class="sidebar-footer">
-      v0.2.0 &middot; localhost:${port}
+      <div>v0.2.0 &middot; localhost:${port}</div>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+        <span class="theme-icon">&#9789;</span>
+      </button>
     </div>
   </aside>
   <main class="main">
     ${body}
   </main>
+<script>
+function toggleTheme() {
+  var body = document.body;
+  var isLight = body.classList.toggle('light');
+  localStorage.setItem('cp-theme', isLight ? 'light' : 'dark');
+  var icon = document.querySelector('.theme-icon');
+  if (icon) icon.innerHTML = isLight ? '&#9728;' : '&#9789;';
+}
+// Restore saved theme
+(function() {
+  var saved = localStorage.getItem('cp-theme');
+  if (saved === 'light') {
+    document.body.classList.add('light');
+    var icon = document.querySelector('.theme-icon');
+    if (icon) icon.innerHTML = '&#9728;';
+  }
+})();
+</script>
 </body>
 </html>`;
 }
