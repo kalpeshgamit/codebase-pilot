@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ProjectScan, AgentDefinition, AgentsConfig } from '../types.js';
 import { toPosix } from '../utils.js';
@@ -65,12 +65,27 @@ export function generateAgents(scan: ProjectScan): AgentsConfig {
     dependsOn: ['standards-agent'],
   };
 
-  // Detect docs directory (docs/, doc/, or README only)
+  // Detect docs directory or README location
   const docsDir = ['docs/', 'doc/', 'documentation/'].find(d => existsSync(join(scan.root, d)));
+  let docsContext: string[];
+  if (docsDir) {
+    docsContext = [docsDir];
+  } else if (existsSync(join(scan.root, 'README.md'))) {
+    docsContext = ['README.md'];
+  } else {
+    // Search in subdirectories for README
+    let subReadme: string | undefined;
+    try {
+      subReadme = readdirSync(scan.root)
+        .filter(e => !e.startsWith('.') && e !== 'node_modules' && e !== 'dist')
+        .find(e => existsSync(join(scan.root, e, 'README.md')));
+    } catch { /* root may not exist in tests */ }
+    docsContext = subReadme ? [`${subReadme}/README.md`] : ['README.md'];
+  }
   agents['docs-agent'] = {
     name: 'docs-agent',
     model: 'haiku',
-    context: docsDir ? [docsDir] : ['README.md'],
+    context: docsContext,
     task: 'Documentation updates — guides, API docs, README',
     layer: 6,
     dependsOn: ['supervisor-agent'],

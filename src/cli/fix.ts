@@ -121,7 +121,21 @@ export function resolveMovedPath(root: string, stalePath: string, languages: str
     }
   }
 
-  // Strategy 5: Search deeper for the name
+  // Strategy 5: For files like README.md, search in subdirectories
+  if (!stalePath.includes('/') && extname(stalePath)) {
+    const skipDirsSet = new Set(['node_modules', 'dist', 'build', '.git', 'target', 'vendor', 'venv', '.venv', '__pycache__']);
+    try {
+      for (const entry of readdirSync(root)) {
+        if (entry.startsWith('.') || skipDirsSet.has(entry)) continue;
+        const full = join(root, entry);
+        try { if (!statSync(full).isDirectory()) continue; } catch { continue; }
+        const candidate = toPosix(`${entry}/${stalePath}`);
+        if (existsSync(join(root, candidate))) return candidate;
+      }
+    } catch {}
+  }
+
+  // Strategy 6: Search deeper for the name
   const found = findByName(root, name, 0);
   return found;
 }
