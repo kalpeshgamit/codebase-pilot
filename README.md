@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="docs/banner.svg" alt="codebase-pilot" width="100%" />
+  <img src="docs/logo-02.png" alt="codebase-pilot" width="500" />
 </p>
 
 <p align="center">
   <strong>Stop burning tokens. Start coding smarter.</strong><br/>
-  Zero cloud. Zero lock-in.
+  AI context engine — pack, compress, optimize any codebase for LLMs. Zero cloud. Zero lock-in.
 </p>
 
 <p align="center">

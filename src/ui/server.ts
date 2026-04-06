@@ -349,7 +349,26 @@ export function startUiServer(root: string, port: number): void {
         return;
       }
 
-      // ---- Favicon (prevent 404 noise) ----
+      // ---- Static files (logo, favicon) ----
+
+      if (pathname === '/static/logo.png') {
+        // Try package's own logo first, then project's
+        const selfDir = new URL('.', import.meta.url).pathname;
+        const logoPaths = [
+          resolve(selfDir, '..', '..', 'docs', 'logo-02.png'),  // installed package
+          resolve(root, 'docs', 'logo-02.png'),                   // project local
+        ];
+        for (const lp of logoPaths) {
+          if (existsSync(lp)) {
+            res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
+            res.end(readFileSync(lp));
+            return;
+          }
+        }
+        res.writeHead(204);
+        res.end();
+        return;
+      }
 
       if (pathname === '/favicon.ico') {
         res.writeHead(204);

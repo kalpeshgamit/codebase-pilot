@@ -99,20 +99,27 @@ function layout(title: string, activePage: string, body: string, port: number, h
   }
 
   .sidebar-brand {
-    padding: 20px 16px;
+    padding: 16px;
     border-bottom: 1px solid ${T.border};
-    font-size: 15px;
-    font-weight: 600;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 8px;
-    background: linear-gradient(135deg, ${T.accent}, ${T.success});
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    gap: 6px;
   }
 
-  .sidebar-brand .plane { font-size: 18px; -webkit-text-fill-color: initial; }
+  .sidebar-brand img {
+    width: 140px;
+    height: auto;
+    margin-bottom: 2px;
+  }
+
+  .sidebar-brand .brand-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: ${T.textMuted};
+  }
 
   .sidebar nav {
     flex: 1;
@@ -587,9 +594,11 @@ ${headExtra}
 <body>
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <span class="plane">&#9992;</span>
-      <span>codebase-pilot</span>
-      <span style="font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(88,166,255,0.15);color:#58a6ff;margin-left:4px;-webkit-text-fill-color:#58a6ff;font-weight:500;">v0.2</span>
+      <img src="/static/logo.png" alt="codebase-pilot" onerror="this.style.display='none'" />
+      <div class="brand-meta">
+        <span style="padding:2px 6px;border-radius:4px;background:rgba(88,166,255,0.15);color:${T.accent};font-weight:500;">v0.2</span>
+        <span>port ${port}</span>
+      </div>
     </div>
     <nav>
       ${navItems}
