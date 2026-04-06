@@ -134,6 +134,11 @@ Live stat cards, savings chart, recent sessions — auto-updates via SSE.
 
 <img src="docs/screenshots/dashboard.png" alt="Dashboard" width="100%" />
 
+### Projects (System-Wide)
+All projects in one view — sessions, tokens saved, efficiency per project.
+
+<img src="docs/screenshots/projects.png" alt="Projects" width="100%" />
+
 ### Import Graph
 Interactive D3.js force-directed graph. Nodes sized by tokens, colored by module. Drag, zoom, search.
 
@@ -164,7 +169,7 @@ All files with token counts, language tags, percentage of total.
 | **Security Scanner** | 152 patterns across 15 categories — cloud, payment, AI, crypto, generic |
 | **Blast Radius** | Import graph analysis, risk scoring (0-100), affected test detection |
 | **Full-Text Search** | SQLite FTS5 with BM25 ranking, snippet extraction, highlighted matches |
-| **Web Dashboard** | 6 pages, dark theme, glassmorphism UI, real-time SSE updates |
+| **Web Dashboard** | 7 pages, dark/light theme, glassmorphism UI, real-time SSE updates |
 | **MCP Server** | 10 tools + 3 prompts over stdio — works with Claude Code, Cursor, Zed |
 | **Multi-Platform** | Generates CLAUDE.md, .cursorrules, .windsurfrules, AGENTS.md |
 | **Agent System** | 7-layer sub-agents with haiku/sonnet/opus model routing |
