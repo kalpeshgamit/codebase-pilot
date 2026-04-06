@@ -44,7 +44,7 @@ echo ""
 
 # Install
 echo -e "  Installing codebase-pilot..."
-npm install -g codebase-pilot
+npm install -g codebase-pilot-cli
 
 echo ""
 echo -e "${GREEN}Done!${NC}"

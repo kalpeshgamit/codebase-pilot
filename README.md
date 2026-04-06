@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/codebase-pilot"><img src="https://img.shields.io/npm/v/codebase-pilot?style=flat-square&color=blue" alt="npm" /></a>
+  <a href="https://www.npmjs.com/package/codebase-pilot-cli"><img src="https://img.shields.io/npm/v/codebase-pilot-cli?style=flat-square&color=blue" alt="npm" /></a>
   <a href="https://github.com/kalpeshgamit/codebase-pilot/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/kalpeshgamit/codebase-pilot/ci.yml?style=flat-square&label=CI" alt="CI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" /></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%E2%89%A518-brightgreen?style=flat-square" alt="Node" /></a>
@@ -22,21 +22,21 @@
 <tr><td><strong>npm (recommended)</strong></td><td>
 
 ```bash
-npm install -g codebase-pilot
+npm install -g codebase-pilot-cli
 ```
 
 </td></tr>
 <tr><td><strong>npx (no install)</strong></td><td>
 
 ```bash
-npx codebase-pilot init
+npx codebase-pilot-cli init
 ```
 
 </td></tr>
 <tr><td><strong>Homebrew (macOS)</strong></td><td>
 
 ```bash
-brew install kalpeshgamit/codebase-pilot/codebase-pilot
+brew install kalpeshgamit/codebase-pilot/codebase-pilot-cli
 ```
 
 </td></tr>
@@ -50,7 +50,7 @@ curl -fsSL https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/in
 <tr><td><strong>Uninstall</strong></td><td>
 
 ```bash
-npm uninstall -g codebase-pilot
+npm uninstall -g codebase-pilot-cli
 ```
 
 </td></tr>
@@ -359,7 +359,7 @@ codebase-pilot eval
 ## Uninstall
 
 ```bash
-npm uninstall -g codebase-pilot    # remove CLI
+npm uninstall -g codebase-pilot-cli    # remove CLI
 codebase-pilot eject               # remove project configs (optional)
 ```
 
@@ -371,5 +371,5 @@ codebase-pilot eject               # remove project configs (optional)
 
 <p align="center">
   <strong>Save tokens. Ship faster.</strong><br/>
-  <code>npm install -g codebase-pilot</code>
+  <code>npm install -g codebase-pilot-cli</code>
 </p>
