@@ -21,14 +21,7 @@
     "chokidar": "^4.0.0",
     "commander": "^12.1.0"
   },
-  "optionalDependencies": {
-    "tree-sitter": "^0.22.4",
-    "tree-sitter-typescript": "^0.23.0",
-    "tree-sitter-python": "^0.23.0",
-    "tree-sitter-go": "^0.23.0",
-    "tree-sitter-rust": "^0.23.0",
-    "tree-sitter-json": "^0.24.0"
-  },
+  "optionalDependencies": {},
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",
     "@types/node": "^20.0.0",
