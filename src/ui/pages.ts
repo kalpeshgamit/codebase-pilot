@@ -165,12 +165,12 @@ function layout(title: string, activePage: string, body: string, port: number, h
   .sidebar nav a {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    border-radius: 6px;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 8px;
     color: var(--text-muted);
-    font-size: 14px;
-    transition: background 0.15s, color 0.15s;
+    font-size: 15px;
+    transition: all 0.2s ease;
     text-decoration: none;
   }
 
@@ -181,17 +181,17 @@ function layout(title: string, activePage: string, body: string, port: number, h
   }
 
   .sidebar nav a.active {
-    background: rgba(63, 185, 80, 0.1);
+    background: rgba(63, 185, 80, 0.12);
     color: var(--accent);
-    font-weight: 500;
+    font-weight: 600;
     border-left: 3px solid var(--accent);
-    padding-left: 9px;
+    padding-left: 11px;
   }
 
   .sidebar nav .nav-icon {
-    width: 20px;
+    width: 24px;
     text-align: center;
-    font-size: 14px;
+    font-size: 18px;
   }
 
   .sidebar-footer {
@@ -395,7 +395,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
   .bar-fill {
     height: 100%;
     border-radius: 3px;
-    background: linear-gradient(90deg, var(--accent), var(--success));
+    background: linear-gradient(90deg, var(--accent), #2ea043);
     animation: barGrow 0.8s ease both;
   }
 
@@ -408,8 +408,8 @@ function layout(title: string, activePage: string, body: string, port: number, h
     font-weight: 500;
   }
 
-  .badge-blue { background: rgba(88,166,255,0.15); color: var(--accent); }
-  .badge-green { background: rgba(63,185,80,0.15); color: var(--success); }
+  .badge-blue { background: rgba(63,185,80,0.12); color: var(--accent); }
+  .badge-green { background: rgba(63,185,80,0.15); color: var(--success); border: 1px solid rgba(63,185,80,0.25); }
   .badge-yellow { background: rgba(210,153,34,0.15); color: var(--warning); }
   .badge-red { background: rgba(248,81,73,0.15); color: var(--danger); }
 
