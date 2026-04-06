@@ -1,215 +1,165 @@
-# codebase-pilot
+<p align="center">
+  <h1 align="center">codebase-pilot</h1>
+  <p align="center"><strong>Stop burning tokens. Start coding smarter.</strong></p>
+  <p align="center">AI context engine that packs, compresses, and optimizes any codebase for LLMs.<br/>Save 60–90% tokens. Zero cloud. Zero lock-in.</p>
+</p>
 
-**AI context engine — pack, compress, and optimize any codebase. Save 60–90% tokens.**
-
-Works with Claude Code, Cursor, Windsurf, Codex. Zero cloud. Zero lock-in.
-
-[![npm version](https://img.shields.io/npm/v/codebase-pilot)](https://www.npmjs.com/package/codebase-pilot)
-[![CI](https://github.com/kalpeshgamit/codebase-pilot/actions/workflows/ci.yml/badge.svg)](https://github.com/kalpeshgamit/codebase-pilot/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
+<p align="center">
+  <a href="https://www.npmjs.com/package/codebase-pilot"><img src="https://img.shields.io/npm/v/codebase-pilot?style=flat-square&color=blue" alt="npm" /></a>
+  <a href="https://github.com/kalpeshgamit/codebase-pilot/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/kalpeshgamit/codebase-pilot/ci.yml?style=flat-square&label=CI" alt="CI" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" /></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%E2%89%A518-brightgreen?style=flat-square" alt="Node" /></a>
+</p>
 
 ---
 
-## Feature Checklist
+## Quick Start
 
-| Category | Feature | Status |
-|----------|---------|:------:|
-| **Context Engine** | Pack codebase to XML/Markdown | Done |
-| | Code compression (60-90% reduction) | Done |
-| | Agent-scoped packing | Done |
-| | Token counting + savings tracker | Done |
-| | Daily/weekly/monthly usage stats | Done |
-| **Security** | 152 secret patterns (15 categories) | Done |
-| | Auto-scan on every pack | Done |
-| | Cloud, Payment, AI, Crypto, Generic patterns | Done |
-| **Intelligence** | Import graph builder (TS/JS/Python/Go/Rust) | Done |
-| | Blast radius analysis (risk 0-100) | Done |
-| | Full-text search (FTS5 + BM25 ranking) | Done |
-| | Incremental updates (SHA-256 hashing) | Done |
-| | D3.js interactive visualization | Done |
-| **Web Dashboard** | Dashboard with live stats | Done |
-| | Interactive import graph | Done |
-| | Live search with highlights | Done |
-| | Agent overview with layers | Done |
-| | File browser with token heatmap | Done |
-| | Real-time updates (SSE) | Done |
-| | Background daemon (port 7456) | Done |
-| **MCP Server** | 10 tools (scan, pack, tokens, search, etc.) | Done |
-| | 3 prompts (review, onboard, optimize) | Done |
-| | stdio transport (Claude Code, Cursor, Zed) | Done |
-| **Multi-Platform** | Claude Code (CLAUDE.md, .claudeignore) | Done |
-| | Cursor (.cursorrules) | Done |
-| | Windsurf (.windsurfrules) | Done |
-| | OpenAI Codex (AGENTS.md) | Done |
-| **Detection** | 56 languages (3 tiers) | Done |
-| | 58 framework detectors | Done |
-| | 39 test runner detectors | Done |
-| | 32 ORM/database detectors | Done |
-| | Monorepo-aware scanning | Done |
-| **Agent System** | Layered sub-agents (7 layers) | Done |
-| | Model routing (haiku/sonnet/opus) | Done |
-| | Dispatch patterns + slash commands | Done |
-| **DevOps** | Watch mode (auto-update on changes) | Done |
-| | Benchmarking (eval command) | Done |
-| | Config validation before write | Done |
-| | Eject (zero lock-in) | Done |
-| | CI/CD (Linux/macOS/Windows) | Done |
+```bash
+npm install -g codebase-pilot
+
+# Set up any project
+codebase-pilot init
+
+# Pack + compress for AI context
+codebase-pilot pack --compress --copy
+
+# Web dashboard
+codebase-pilot ui    # → http://localhost:7456
+```
+
+---
+
+## How It Works
+
+```
+Your Codebase                    codebase-pilot                      AI Tool
+─────────────                    ──────────────                      ───────
+                                      │
+  92 files ──────── scan ───────→  detect languages                Claude Code
+  98K tokens                       frameworks, ORMs                  Cursor
+                                   test runners                      Windsurf
+                                      │                              Codex
+                                      ▼
+                              pack + compress
+                              ───────────────
+                              security scan (152 patterns)
+                              code compression (signatures only)
+                              agent scoping (relevant files only)
+                                      │
+                                      ▼
+                                  ~7K tokens ──────────→  paste / MCP
+                                  (93% reduction)
+```
+
+**Without codebase-pilot:** Claude reads 98K tokens of your full codebase.
+**With codebase-pilot:** 7K tokens — only the relevant, compressed code. No secrets.
+
+---
+
+## Token Savings
+
+| Approach | Tokens | Reduction |
+|----------|-------:|:---------:|
+| Manual file reads | ~98K | — |
+| `pack` | ~74K | 25% |
+| `pack --compress` | ~29K | **70%** |
+| `pack --agent <name> --compress` | ~7K | **93%** |
+
+The `tokens` command tracks your actual savings over time:
+
+```
+  Savings estimate (per session):
+    Without codebase-pilot:   ~98,798 tokens
+    With pack --compress:      ~29,274 tokens
+    Pilot saves:              ~69,524 tokens per session
+
+  Your savings (from pack runs):
+    Today:      3 sessions  — ~92,232 tokens saved
+    This week:  5 sessions  — ~147,498 tokens saved
+```
 
 ---
 
 ## Web Dashboard
 
 ```bash
-codebase-pilot ui        # start → http://localhost:7456
-codebase-pilot ui --stop # stop daemon
+codebase-pilot ui          # → http://localhost:7456
+codebase-pilot ui --stop   # stop daemon
+codebase-pilot ui --status # check status
 ```
 
-**Port 7456** = PILOT on phone keypad. Runs as background daemon — survives terminal close.
+Port **7456** = PILOT on phone keypad. Runs as background daemon with real-time SSE updates.
 
-### Dashboard
-Live stats with glassmorphism cards, savings chart, recent sessions.
-Auto-updates via SSE — no refresh needed.
-
-### Import Graph
-Interactive D3.js force-directed graph. Nodes sized by tokens, colored by module.
-Drag, zoom, search, click-to-focus.
-
-### Search
-Full-text search with BM25 ranking. Live results with highlighted matches.
-
-### Agents
-Agent list with model assignment, layer number, context paths, dependencies.
-
-### Files
-All files with token counts, language tags, percentage bars. Click for blast radius.
-
-### APIs
-| Endpoint | Returns |
-|----------|---------|
-| `/api/stats` | Token savings (today/week/month/all-time) |
-| `/api/search?q=<query>` | FTS5 search results with snippets |
-| `/api/graph` | Full import graph (nodes + edges) |
-| `/api/events` | SSE stream (real-time updates) |
+| Page | What you see |
+|------|-------------|
+| **Dashboard** | Live stat cards, savings chart, recent sessions, project info |
+| **Graph** | Interactive D3.js force-directed import graph |
+| **Search** | Full-text search with BM25 ranking and highlighted matches |
+| **Agents** | Agent list with model, layer, context paths |
+| **Files** | All files with token counts and percentage bars |
+| **Impact** | Blast radius for any file (click from Files page) |
 
 ---
 
-## Installation
+## Features
 
-```bash
-npm install -g codebase-pilot
-```
-
-Or without installing:
-
-```bash
-npx codebase-pilot init
-```
-
-### Verify
-
-```bash
-codebase-pilot --version   # 0.2.0
-```
-
-### Uninstall
-
-```bash
-npm uninstall -g codebase-pilot
-codebase-pilot eject       # remove project config (optional)
-```
-
----
-
-## Quick start
-
-```bash
-# Set up a project (Claude Code + optionally Cursor/Windsurf/Codex)
-codebase-pilot init --platform cursor,windsurf,codex
-
-# See token breakdown + savings estimate
-codebase-pilot tokens
-
-# Pack compressed → clipboard
-codebase-pilot pack --compress --copy
-
-# Pack just one agent's context
-codebase-pilot pack --agent api-agent --compress --copy
-
-# Blast radius analysis
-codebase-pilot impact --file src/types.ts
-
-# Web dashboard (runs in background)
-codebase-pilot ui
-
-# Search codebase
-codebase-pilot search "createUser"
-
-# Start MCP server
-codebase-pilot serve
-
-# Watch for changes
-codebase-pilot watch
-```
+| Feature | Details |
+|---------|---------|
+| **Pack & Compress** | XML/Markdown output, regex-based compression (8 languages), agent-scoped packing |
+| **Security Scanner** | 152 patterns across 15 categories — cloud, payment, AI, crypto, generic |
+| **Blast Radius** | Import graph analysis, risk scoring (0-100), affected test detection |
+| **Full-Text Search** | SQLite FTS5 with BM25 ranking, snippet extraction, highlighted matches |
+| **Web Dashboard** | 6 pages, dark theme, glassmorphism UI, real-time SSE updates |
+| **MCP Server** | 10 tools + 3 prompts over stdio — works with Claude Code, Cursor, Zed |
+| **Multi-Platform** | Generates CLAUDE.md, .cursorrules, .windsurfrules, AGENTS.md |
+| **Agent System** | 7-layer sub-agents with haiku/sonnet/opus model routing |
+| **Watch Mode** | Chokidar file watching, debounced re-scan, auto-update configs |
+| **Incremental** | SHA-256 hash-based change detection — only re-scans modified files |
+| **Visualization** | D3.js interactive force-directed import graph (drag, zoom, search) |
+| **Benchmarks** | `eval` command — tokens, compression ratio, import edges, timing |
+| **Usage Stats** | Per-project + system-wide savings tracking (today/week/month) |
+| **56 Languages** | 3 tiers: 17 full ecosystem, 21 package+test, 18 extension-only |
+| **58 Frameworks** | Next.js, Django, Gin, Axum, Spring Boot, Rails, Laravel, and more |
+| **39 Test Runners** | Vitest, pytest, Go test, Cargo test, JUnit, RSpec, and more |
+| **32 ORMs** | Prisma, SQLAlchemy, GORM, Diesel, Hibernate, ActiveRecord, and more |
+| **Config Validation** | Validates agents.json, hooks before writing — prevents invalid configs |
+| **Zero Cloud** | No API calls, no accounts, no telemetry. Everything runs locally |
 
 ---
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `init` | Scan project, generate configs for Claude Code + AI tools |
-| `scan` | Re-detect project structure, update configs |
-| `fix` | Auto-repair stale paths and missing files |
-| `health` | Validate agent setup |
-| `pack` | Pack codebase into XML or Markdown |
-| `tokens` | Token counts per file + daily/weekly savings stats |
-| `impact` | Blast radius and change impact analysis |
-| `search` | Full-text search with BM25 ranking |
-| `visualize` | Generate interactive D3.js import graph HTML |
-| `watch` | Watch for changes, auto-update configs |
-| `serve` | Start MCP server (stdio transport) |
-| `ui` | Web dashboard at http://localhost:7456 (daemon) |
-| `stats` | Usage history — project or system-wide (`--global`) |
-| `eval` | Benchmark project — tokens, compression, import graph |
-| `eject` | Export configs, remove dependency |
+```
+codebase-pilot init [--platform cursor,windsurf,codex]  # scan + generate configs
+codebase-pilot scan                                      # re-detect + update
+codebase-pilot pack [--compress] [--agent <name>]        # pack for AI context
+codebase-pilot tokens [--agent <name>]                   # token breakdown + savings
+codebase-pilot impact [--file <path>]                    # blast radius analysis
+codebase-pilot search <query>                            # full-text search
+codebase-pilot visualize                                 # D3.js import graph HTML
+codebase-pilot ui [--stop | --status]                    # web dashboard (port 7456)
+codebase-pilot serve                                     # MCP server (stdio)
+codebase-pilot watch                                     # file watcher
+codebase-pilot stats [--global]                          # usage history
+codebase-pilot eval                                      # benchmarks
+codebase-pilot health                                    # validate agent setup
+codebase-pilot fix                                       # auto-repair stale paths
+codebase-pilot eject                                     # remove dependency
+```
 
 ---
 
-## Token savings
+## Blast Radius
 
-```
-codebase-pilot tokens
-
-  Total: 60,458 tokens across 71 files
-
-  Savings estimate (per session):
-    Without codebase-pilot:   ~60,458 tokens  (manual file reads)
-    With pack --compress:      ~24,183 tokens
-    Pilot saves:              ~36,275 tokens per session
-
-  Your savings (from pack runs):
-    Today:      3 sessions  — ~108,825 tokens saved
-    This week:  9 sessions  — ~326,475 tokens saved
-```
-
-| Approach | Tokens | Reduction |
-|----------|--------|-----------|
-| No tool (manual file reads) | ~60K | baseline |
-| `pack` | ~45K | ~25% |
-| `pack --compress` | ~24K | ~60% |
-| `pack --agent <name> --compress` | ~7K | **~90%** |
-
----
-
-## Blast radius / change impact
+Trace the impact of any file change across your codebase:
 
 ```bash
 codebase-pilot impact --file src/types.ts
 
-  Risk: HIGH (54/100)
+  Risk: HIGH (53/100)
 
-  Direct dependents (17):
+  Direct dependents (18):
     src/agents/generator.ts
     src/mcp/server.ts
     src/packer/index.ts
@@ -223,50 +173,27 @@ codebase-pilot impact --file src/types.ts
   Total affected: 27 files
 ```
 
-```bash
-# Project-wide import graph summary
-codebase-pilot impact
-
-  Most-imported files (highest blast radius):
-    src/types.ts                  17 deps  ████████████████████
-    src/packer/collector.ts       12 deps  ████████████████████
-    src/registry/index.ts          8 deps  ████████████████
-```
-
 ---
 
-## MCP server
+## MCP Server
 
-Expose all codebase-pilot features to AI tools via MCP (Model Context Protocol):
+Expose codebase-pilot to any MCP-compatible AI tool:
 
 ```bash
 codebase-pilot serve
 ```
 
-**10 MCP tools:**
-`scan_project`, `pack_codebase`, `count_tokens`, `health_check`, `scan_secrets`, `list_agents`, `get_agent`, `detect_languages`, `get_savings`, `list_files`
+<details>
+<summary><strong>10 Tools + 3 Prompts</strong></summary>
 
-**3 MCP prompts:**
-`review`, `onboard`, `optimize`
+**Tools:** `scan_project`, `pack_codebase`, `count_tokens`, `health_check`, `scan_secrets`, `list_agents`, `get_agent`, `detect_languages`, `get_savings`, `list_files`
 
-### Connect to Claude Code
+**Prompts:** `review`, `onboard`, `optimize`
 
-Add to your `~/.claude.json`:
+</details>
 
-```json
-{
-  "mcpServers": {
-    "codebase-pilot": {
-      "command": "codebase-pilot",
-      "args": ["serve"]
-    }
-  }
-}
-```
-
-### Connect to Cursor
-
-Add to `.cursor/mcp.json`:
+<details>
+<summary><strong>Connect to Claude Code</strong></summary>
 
 ```json
 {
@@ -279,69 +206,45 @@ Add to `.cursor/mcp.json`:
 }
 ```
 
----
+Same config works for Cursor (`.cursor/mcp.json`) and other MCP clients.
 
-## Multi-platform support
-
-Generate config files for multiple AI coding tools:
-
-```bash
-codebase-pilot init --platform cursor,windsurf,codex
-```
-
-| Platform | Generated file | AI Tool |
-|----------|---------------|---------|
-| (default) | `CLAUDE.md` | Claude Code |
-| `cursor` | `.cursorrules` | Cursor |
-| `windsurf` | `.windsurfrules` | Windsurf |
-| `codex` | `AGENTS.md` | OpenAI Codex |
+</details>
 
 ---
 
-## Watch mode
+## Security Scanner
 
-```bash
-codebase-pilot watch
+152 regex patterns across 15 categories. Runs automatically on every `pack` — files with detected secrets are excluded from output.
 
-  Watching for changes...
-  Directory: /path/to/project
-  Press Ctrl+C to stop
-
-  [14:32:01] change: src/routes/users.ts
-  Re-scanning...
-  Updated: agents.json (8 agents)
-```
-
----
-
-## Security scanning
-
-152 patterns across 15 categories. Runs automatically on every `pack`.
+<details>
+<summary><strong>Categories</strong></summary>
 
 | Category | Examples |
 |----------|---------|
 | Cloud | AWS, GCP, Azure, DigitalOcean, Supabase, Cloudflare |
-| VCS / CI | GitHub tokens, GitLab, Bitbucket, CircleCI, Travis |
+| VCS / CI | GitHub, GitLab, Bitbucket, CircleCI, Travis |
 | Payment | Stripe, Razorpay, Square, Braintree, Plaid, PayPal |
-| AI LLMs | OpenAI, Anthropic, Groq, Perplexity, xAI, Cerebras |
-| AI Infra | HuggingFace, Replicate, Together, Fireworks, Cohere |
-| AI DevTools | LangSmith, LangFuse, Pinecone, Weaviate, Qdrant |
-| Messaging | Slack, Twilio, SendGrid, Mailgun, Resend, Postmark |
-| Database | MongoDB, PostgreSQL, Redis, PlanetScale, Neon, Turso |
-| Dev Infra | npm, Docker, Doppler, Vault, Trigger.dev, PostHog |
-| Monitoring | Sentry, Datadog, New Relic, Grafana, Honeycomb |
+| AI LLMs | OpenAI, Anthropic, Groq, Perplexity, xAI |
+| AI Infra | HuggingFace, Replicate, Together, Fireworks |
+| AI DevTools | LangSmith, Pinecone, Weaviate, Qdrant |
+| Messaging | Slack, Twilio, SendGrid, Mailgun, Resend |
+| Database | MongoDB, PostgreSQL, Redis, PlanetScale, Neon |
+| Dev Infra | npm, Docker, Doppler, Vault, PostHog |
+| Monitoring | Sentry, Datadog, New Relic, Grafana |
 | Crypto | Ethereum, Solana, Bitcoin private keys |
-| Crypto Keys | RSA, EC, DSA, OpenSSH, PGP private key blocks |
+| Crypto Keys | RSA, EC, DSA, OpenSSH, PGP blocks |
 | Generic | password=, secret=, api_key=, Bearer tokens |
+
+</details>
 
 ---
 
-## Code compression
+## Code Compression
 
-**Tier A (default):** Regex-based, 8 languages, zero deps:
+Keeps function signatures, folds bodies. Claude still understands the full API surface.
 
 ```typescript
-// Before (~150 tokens)
+// Before (150 tokens)
 export async function createUser(data: UserInput): Promise<User> {
   const validated = schema.parse(data);
   const user = await db.user.create({ data: validated });
@@ -349,46 +252,17 @@ export async function createUser(data: UserInput): Promise<User> {
   return user;
 }
 
-// After --compress (~20 tokens)
+// After --compress (20 tokens)
 export async function createUser(data: UserInput): Promise<User> { /* ... */ }
 ```
 
-**Tier B (optional):** tree-sitter AST for accurate compression. Install optional deps for auto-activation.
+Supports: TypeScript, JavaScript, Python, Go, Rust, Java, Ruby, PHP.
 
 ---
 
-## Benchmarks
+## Agent Orchestration
 
-```bash
-codebase-pilot eval
-
-  Project         Files  Raw tokens  Compressed  Ratio  Edges  Time
-  --------------  -----  ----------  ----------  -----  -----  ----
-  codebase-pilot     82      74,239      25,666    65%    116  23ms
-
-  codebase-pilot:
-    Languages:  TypeScript
-    Hub file:   src/types.ts (17 dependents)
-    Timing:     scan=5ms pack=15ms graph=3ms
-```
-
----
-
-## Language support
-
-56 languages across 3 tiers:
-
-| Tier | Count | Languages |
-|------|-------|-----------|
-| **Tier 1** — Full ecosystem | 17 | TypeScript, JavaScript, Python, Go, Rust, Java, Kotlin, Ruby, PHP, C#, Swift, Dart, Elixir, Scala, C++, C, Zig |
-| **Tier 2** — Package + tests | 21 | Haskell, Clojure, F#, OCaml, Nim, Crystal, Julia, Perl, Lua, R, Erlang, Groovy, V, Objective-C, D, Ada, Fortran, COBOL, Hack, Gleam, Assembly |
-| **Tier 3** — Extension only | 18 | Lisp, Scheme, Racket, Prolog, Forth, APL, VHDL, Verilog, Tcl, Shell, PowerShell, Terraform, Solidity, Move, Cairo, GraphQL, Protobuf, SQL |
-
-**58 frameworks** | **39 test runners** | **32 ORM detectors**
-
----
-
-## Agent orchestration
+Agents run in layers — lower layers produce context for higher layers. Each agent reads only 2-4 files with the cheapest model that can handle its task.
 
 ```
 Layer 0   healthcheck-agent (haiku)    Pre-flight validation
@@ -404,18 +278,23 @@ Layer 6   docs-agent (haiku)           Documentation
 
 ---
 
-## Programmatic API
+## Benchmarks
 
-```typescript
-import {
-  detect, generateAgents, packProject,
-  buildImportGraph, computeBlastRadius,
-  detectChanges, startMcpServer,
-} from 'codebase-pilot';
+```bash
+codebase-pilot eval
 
-const scan = await detect('/path/to/project');
-const blast = computeBlastRadius('/path', 'src/index.ts');
-const packed = packProject({ dir: '/path', format: 'xml', compress: true, noSecurity: false });
+  Project         Files  Raw tokens  Compressed  Ratio  Edges  Time
+  --------------  -----  ----------  ----------  -----  -----  ----
+  codebase-pilot     92      98,798      29,274    70%    134  45ms
+```
+
+---
+
+## Uninstall
+
+```bash
+npm uninstall -g codebase-pilot    # remove CLI
+codebase-pilot eject               # remove project configs (optional)
 ```
 
 ---
@@ -435,10 +314,15 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 ## Author
 
 **Kalpesh Gamit (KG)**
-- Website: [kalpeshgamit.github.io](https://kalpeshgamit.github.io)
-- LinkedIn: [linkedin.com/in/kalpeshgamit](https://www.linkedin.com/in/kalpeshgamit)
-- Email: kalpa.hacker@gmail.com
+[Website](https://kalpeshgamit.github.io) · [LinkedIn](https://www.linkedin.com/in/kalpeshgamit) · kalpa.hacker@gmail.com
 
 ## License
 
 [MIT](LICENSE)
+
+---
+
+<p align="center">
+  <strong>Save tokens. Ship faster.</strong><br/>
+  <code>npm install -g codebase-pilot</code>
+</p>
