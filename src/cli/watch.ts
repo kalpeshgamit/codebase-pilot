@@ -113,8 +113,8 @@ export async function watchCommand(options: WatchOptions): Promise<void> {
   watcher.on('change', (path) => onFileChange('change', path));
   watcher.on('unlink', (path) => onFileChange('delete', path));
 
-  watcher.on('error', (err: Error) => {
-    console.error(`  Watcher error: ${err.message}`);
+  watcher.on('error', (err: unknown) => {
+    console.error(`  Watcher error: ${err instanceof Error ? err.message : String(err)}`);
   });
 
   // Graceful shutdown
