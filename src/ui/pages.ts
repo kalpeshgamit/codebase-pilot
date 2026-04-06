@@ -30,18 +30,18 @@ const T = {
 
 function layout(title: string, activePage: string, body: string, port: number, headExtra = ''): string {
   const nav = [
-    { href: '/', label: 'Dashboard', icon: '&#9632;' },
-    { href: '/projects', label: 'Projects', icon: '&#9670;' },
-    { href: '/graph', label: 'Graph', icon: '&#9679;' },
-    { href: '/search', label: 'Search', icon: '&#8981;' },
-    { href: '/agents', label: 'Agents', icon: '&#9881;' },
-    { href: '/files', label: 'Files', icon: '&#9776;' },
+    { href: '/', label: 'Dashboard', icon: 'layout-dashboard' },
+    { href: '/projects', label: 'Projects', icon: 'folder-kanban' },
+    { href: '/graph', label: 'Graph', icon: 'git-branch' },
+    { href: '/search', label: 'Search', icon: 'search' },
+    { href: '/agents', label: 'Agents', icon: 'bot' },
+    { href: '/files', label: 'Files', icon: 'file-code-2' },
   ];
 
   const navItems = nav
     .map(n => {
       const active = n.href === activePage ? ' class="active"' : '';
-      return `<a href="${n.href}"${active}><span class="nav-icon">${n.icon}</span>${n.label}</a>`;
+      return `<a href="${n.href}"${active}><i data-lucide="${n.icon}" class="nav-icon"></i>${n.label}</a>`;
     })
     .join('\n        ');
 
@@ -189,9 +189,14 @@ function layout(title: string, activePage: string, body: string, port: number, h
   }
 
   .sidebar nav .nav-icon {
-    width: 24px;
-    text-align: center;
-    font-size: 18px;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .sidebar-footer {
@@ -671,6 +676,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
     .savings-chart { flex-direction: column; }
   }
 </style>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 ${headExtra}
 </head>
 <body>
@@ -684,7 +690,8 @@ ${headExtra}
     <div class="sidebar-footer">
       <div>v0.2.0 &middot; localhost:${port}</div>
       <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
-        <span class="theme-icon">&#9789;</span>
+        <i data-lucide="moon" class="theme-icon-dark" style="width:14px;height:14px;"></i>
+        <i data-lucide="sun" class="theme-icon-light" style="width:14px;height:14px;display:none;"></i>
       </button>
     </div>
   </aside>
@@ -693,20 +700,20 @@ ${headExtra}
   </main>
 <script>
 function toggleTheme() {
-  var body = document.body;
-  var isLight = body.classList.toggle('light');
+  var isLight = document.body.classList.toggle('light');
   localStorage.setItem('cp-theme', isLight ? 'light' : 'dark');
-  var icon = document.querySelector('.theme-icon');
-  if (icon) icon.innerHTML = isLight ? '&#9728;' : '&#9789;';
+  document.querySelectorAll('.theme-icon-dark').forEach(function(el) { el.style.display = isLight ? 'none' : ''; });
+  document.querySelectorAll('.theme-icon-light').forEach(function(el) { el.style.display = isLight ? '' : 'none'; });
 }
-// Restore saved theme
 (function() {
   var saved = localStorage.getItem('cp-theme');
   if (saved === 'light') {
     document.body.classList.add('light');
-    var icon = document.querySelector('.theme-icon');
-    if (icon) icon.innerHTML = '&#9728;';
+    document.querySelectorAll('.theme-icon-dark').forEach(function(el) { el.style.display = 'none'; });
+    document.querySelectorAll('.theme-icon-light').forEach(function(el) { el.style.display = ''; });
   }
+  // Initialize Lucide icons
+  if (window.lucide) lucide.createIcons();
 })();
 </script>
 </body>
