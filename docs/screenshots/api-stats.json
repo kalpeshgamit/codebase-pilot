@@ -1,0 +1,71 @@
+{
+    "today": {
+        "sessions": 3,
+        "tokensSaved": 92232,
+        "tokensUsed": 109569
+    },
+    "week": {
+        "sessions": 5,
+        "tokensSaved": 147498,
+        "tokensUsed": 125455
+    },
+    "month": {
+        "sessions": 5,
+        "tokensSaved": 147498,
+        "tokensUsed": 125455
+    },
+    "allTime": {
+        "sessions": 5,
+        "tokensSaved": 147498,
+        "tokensUsed": 125455
+    },
+    "recent": [
+        {
+            "date": "2026-04-06T10:14:22.984Z",
+            "project": "codebase-pilot",
+            "projectPath": "/Users/kalpesh/Sites/AI/codebase-pilot",
+            "tokensRaw": 73437,
+            "tokensPacked": 73437,
+            "files": 84,
+            "compressed": false,
+            "command": "pack"
+        },
+        {
+            "date": "2026-04-06T10:14:22.871Z",
+            "project": "codebase-pilot",
+            "projectPath": "/Users/kalpesh/Sites/AI/codebase-pilot",
+            "tokensRaw": 54927,
+            "tokensPacked": 11391,
+            "files": 54,
+            "agent": "codebase-pilot-cli-agent",
+            "compressed": true,
+            "command": "pack"
+        },
+        {
+            "date": "2026-04-06T10:14:22.763Z",
+            "project": "codebase-pilot",
+            "projectPath": "/Users/kalpesh/Sites/AI/codebase-pilot",
+            "tokensRaw": 73437,
+            "tokensPacked": 24741,
+            "files": 84,
+            "compressed": true,
+            "command": "pack"
+        },
+        {
+            "date": "2026-04-03T09:02:10.255Z",
+            "tokensRaw": 35576,
+            "tokensPacked": 7943,
+            "files": 41,
+            "agent": "codebase-pilot-cli-agent",
+            "compressed": true
+        },
+        {
+            "date": "2026-04-03T09:02:10.166Z",
+            "tokensRaw": 35576,
+            "tokensPacked": 7943,
+            "files": 41,
+            "agent": "codebase-pilot-cli-agent",
+            "compressed": true
+        }
+    ]
+}

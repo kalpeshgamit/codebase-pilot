@@ -11,20 +11,86 @@ Works with Claude Code, Cursor, Windsurf, Codex. Zero cloud. Zero lock-in.
 
 ---
 
-## What it does
+## Feature Checklist
 
-codebase-pilot solves the core AI coding problem: getting the right code into AI tools efficiently, without leaking secrets or blowing your context window.
+| Category | Feature | Status |
+|----------|---------|:------:|
+| **Context Engine** | Pack codebase to XML/Markdown | Done |
+| | Code compression (60-90% reduction) | Done |
+| | Agent-scoped packing | Done |
+| | Token counting + savings tracker | Done |
+| | Daily/weekly/monthly usage stats | Done |
+| **Security** | 152 secret patterns (15 categories) | Done |
+| | Auto-scan on every pack | Done |
+| | Cloud, Payment, AI, Crypto, Generic patterns | Done |
+| **Intelligence** | Import graph builder (TS/JS/Python/Go/Rust) | Done |
+| | Blast radius analysis (risk 0-100) | Done |
+| | Full-text search (FTS5 + BM25 ranking) | Done |
+| | Incremental updates (SHA-256 hashing) | Done |
+| | D3.js interactive visualization | Done |
+| **Web Dashboard** | Dashboard with live stats | Done |
+| | Interactive import graph | Done |
+| | Live search with highlights | Done |
+| | Agent overview with layers | Done |
+| | File browser with token heatmap | Done |
+| | Real-time updates (SSE) | Done |
+| | Background daemon (port 7456) | Done |
+| **MCP Server** | 10 tools (scan, pack, tokens, search, etc.) | Done |
+| | 3 prompts (review, onboard, optimize) | Done |
+| | stdio transport (Claude Code, Cursor, Zed) | Done |
+| **Multi-Platform** | Claude Code (CLAUDE.md, .claudeignore) | Done |
+| | Cursor (.cursorrules) | Done |
+| | Windsurf (.windsurfrules) | Done |
+| | OpenAI Codex (AGENTS.md) | Done |
+| **Detection** | 56 languages (3 tiers) | Done |
+| | 58 framework detectors | Done |
+| | 39 test runner detectors | Done |
+| | 32 ORM/database detectors | Done |
+| | Monorepo-aware scanning | Done |
+| **Agent System** | Layered sub-agents (7 layers) | Done |
+| | Model routing (haiku/sonnet/opus) | Done |
+| | Dispatch patterns + slash commands | Done |
+| **DevOps** | Watch mode (auto-update on changes) | Done |
+| | Benchmarking (eval command) | Done |
+| | Config validation before write | Done |
+| | Eject (zero lock-in) | Done |
+| | CI/CD (Linux/macOS/Windows) | Done |
 
-- **Pack** your codebase into a single XML or Markdown file
-- **Compress** code by 60–90% — keeps signatures, folds bodies
-- **Scan** for 152 secret patterns before anything reaches an LLM
-- **Impact analysis** — blast radius + risk scoring for any file change
-- **MCP server** — 10 tools exposable to Claude Code, Cursor, Zed
-- **Multi-platform** — generates .cursorrules, .windsurfrules, AGENTS.md
-- **Watch mode** — auto-update configs on file changes
-- **Agent orchestration** — layered sub-agents with model routing
-- **Incremental** — hash-based change detection, only re-scans modified files
-- **Benchmark** — evaluate compression, import graph, and timing metrics
+---
+
+## Web Dashboard
+
+```bash
+codebase-pilot ui        # start → http://localhost:7456
+codebase-pilot ui --stop # stop daemon
+```
+
+**Port 7456** = PILOT on phone keypad. Runs as background daemon — survives terminal close.
+
+### Dashboard
+Live stats with glassmorphism cards, savings chart, recent sessions.
+Auto-updates via SSE — no refresh needed.
+
+### Import Graph
+Interactive D3.js force-directed graph. Nodes sized by tokens, colored by module.
+Drag, zoom, search, click-to-focus.
+
+### Search
+Full-text search with BM25 ranking. Live results with highlighted matches.
+
+### Agents
+Agent list with model assignment, layer number, context paths, dependencies.
+
+### Files
+All files with token counts, language tags, percentage bars. Click for blast radius.
+
+### APIs
+| Endpoint | Returns |
+|----------|---------|
+| `/api/stats` | Token savings (today/week/month/all-time) |
+| `/api/search?q=<query>` | FTS5 search results with snippets |
+| `/api/graph` | Full import graph (nodes + edges) |
+| `/api/events` | SSE stream (real-time updates) |
 
 ---
 
@@ -73,6 +139,12 @@ codebase-pilot pack --agent api-agent --compress --copy
 # Blast radius analysis
 codebase-pilot impact --file src/types.ts
 
+# Web dashboard (runs in background)
+codebase-pilot ui
+
+# Search codebase
+codebase-pilot search "createUser"
+
 # Start MCP server
 codebase-pilot serve
 
@@ -93,8 +165,12 @@ codebase-pilot watch
 | `pack` | Pack codebase into XML or Markdown |
 | `tokens` | Token counts per file + daily/weekly savings stats |
 | `impact` | Blast radius and change impact analysis |
+| `search` | Full-text search with BM25 ranking |
+| `visualize` | Generate interactive D3.js import graph HTML |
 | `watch` | Watch for changes, auto-update configs |
 | `serve` | Start MCP server (stdio transport) |
+| `ui` | Web dashboard at http://localhost:7456 (daemon) |
+| `stats` | Usage history — project or system-wide (`--global`) |
 | `eval` | Benchmark project — tokens, compression, import graph |
 | `eject` | Export configs, remove dependency |
 
