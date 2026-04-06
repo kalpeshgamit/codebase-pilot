@@ -129,9 +129,12 @@ program
 
 program
   .command('ui')
-  .description('Start web dashboard at http://localhost:7456')
+  .description('Start web dashboard (runs as background daemon)')
   .option('-d, --dir <path>', 'Project directory', '.')
   .option('-p, --port <number>', 'Port number', '7456')
+  .option('--stop', 'Stop the running UI server', false)
+  .option('--status', 'Check if UI server is running', false)
+  .option('--foreground', 'Run in foreground (blocking)', false)
   .action(uiCommand);
 
 program.parse();
