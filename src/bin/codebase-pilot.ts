@@ -15,6 +15,7 @@ import { evalCommand } from '../cli/eval.js';
 import { searchCommand } from '../cli/search.js';
 import { visualizeCommand } from '../cli/visualize.js';
 import { statsCommand } from '../cli/stats.js';
+import { uiCommand } from '../cli/ui.js';
 
 const program = new Command();
 
@@ -125,5 +126,12 @@ program
   .option('-g, --global', 'Show system-wide stats across all projects', false)
   .option('-l, --limit <n>', 'Number of recent sessions to show', '10')
   .action(statsCommand);
+
+program
+  .command('ui')
+  .description('Start web dashboard at http://localhost:7456')
+  .option('-d, --dir <path>', 'Project directory', '.')
+  .option('-p, --port <number>', 'Port number', '7456')
+  .action(uiCommand);
 
 program.parse();
