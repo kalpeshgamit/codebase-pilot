@@ -711,6 +711,9 @@ function toggleTheme() {
     document.body.classList.add('light');
     document.querySelectorAll('.theme-icon-dark').forEach(function(el) { el.style.display = 'none'; });
     document.querySelectorAll('.theme-icon-light').forEach(function(el) { el.style.display = ''; });
+  } else {
+    // Default is dark — ensure it's set
+    localStorage.setItem('cp-theme', 'dark');
   }
   // Initialize Lucide icons
   if (window.lucide) lucide.createIcons();
