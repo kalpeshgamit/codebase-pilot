@@ -15,6 +15,16 @@ export interface CollectOptions {
   claudeignorePatterns?: string[];
 }
 
+// Max file size: 1MB — prevents hangs on minified files (#975, #903 fix)
+const MAX_FILE_SIZE = 1_048_576;
+
+// Skipped file tracking for warnings (#752 fix — never silently skip)
+const skippedFiles: Array<{ path: string; reason: string }> = [];
+
+export function getSkippedFiles(): Array<{ path: string; reason: string }> {
+  return skippedFiles;
+}
+
 export function collectFiles(root: string, options: CollectOptions): CollectedFile[] {
   const skipDirs = getSkipDirs();
   const claudeignore = loadClaudeignore(root);
@@ -65,11 +75,30 @@ export function collectFiles(root: string, options: CollectOptions): CollectedFi
           if (!inScope) continue;
         }
 
-        // Skip binary files (simple heuristic)
-        if (isBinaryExt(extname(entry))) continue;
+        // Skip binary files by extension
+        if (isBinaryExt(extname(entry))) {
+          skippedFiles.push({ path: relPath, reason: 'binary extension' });
+          continue;
+        }
+
+        // Skip files exceeding size limit (#975 fix — prevents hang on minified files)
+        if (stat.size > MAX_FILE_SIZE) {
+          skippedFiles.push({ path: relPath, reason: `exceeds ${(MAX_FILE_SIZE / 1024 / 1024).toFixed(0)}MB limit (${(stat.size / 1024 / 1024).toFixed(1)}MB)` });
+          continue;
+        }
+
+        // Skip empty files gracefully (#869 fix)
+        if (stat.size === 0) continue;
 
         try {
           const content = readFileSync(fullPath, 'utf8');
+
+          // Skip files with binary content (null bytes = binary, #752 fix)
+          if (content.includes('\0')) {
+            skippedFiles.push({ path: relPath, reason: 'binary content (null bytes)' });
+            continue;
+          }
+
           const ext = extname(entry);
           const lang = getLanguageByExt(ext) || getLanguageByExt(ext.toLowerCase());
 
@@ -80,7 +109,8 @@ export function collectFiles(root: string, options: CollectOptions): CollectedFi
             tokens: Math.ceil(content.length / 4),
           });
         } catch {
-          // Skip files that can't be read as utf8
+          // File can't be read as UTF-8 — warn, don't silently skip (#752 fix)
+          skippedFiles.push({ path: relPath, reason: 'not valid UTF-8' });
         }
       }
     }
@@ -91,16 +121,45 @@ export function collectFiles(root: string, options: CollectOptions): CollectedFi
 }
 
 function loadClaudeignore(root: string): string[] {
+  const patterns: string[] = [];
+
+  // Load .claudeignore
   const ignorePath = join(root, '.claudeignore');
-  if (!existsSync(ignorePath)) return [];
-  try {
-    return readFileSync(ignorePath, 'utf8')
-      .split('\n')
-      .map(l => l.trim())
-      .filter(l => l && !l.startsWith('#'));
-  } catch {
-    return [];
+  if (existsSync(ignorePath)) {
+    try {
+      const lines = readFileSync(ignorePath, 'utf8')
+        .split('\n')
+        .map(l => l.trim())
+        .filter(l => l && !l.startsWith('#'));
+      patterns.push(...lines);
+    } catch { /* ignore */ }
   }
+
+  // Load .gitignore (#776 fix — respect gitignore when scanning)
+  const gitignorePath = join(root, '.gitignore');
+  if (existsSync(gitignorePath)) {
+    try {
+      const lines = readFileSync(gitignorePath, 'utf8')
+        .split('\n')
+        .map(l => l.trim())
+        .filter(l => l && !l.startsWith('#'));
+      patterns.push(...lines);
+    } catch { /* ignore */ }
+  }
+
+  // Load .git/info/exclude (#375 fix — often used for local-only ignores)
+  const excludePath = join(root, '.git', 'info', 'exclude');
+  if (existsSync(excludePath)) {
+    try {
+      const lines = readFileSync(excludePath, 'utf8')
+        .split('\n')
+        .map(l => l.trim())
+        .filter(l => l && !l.startsWith('#'));
+      patterns.push(...lines);
+    } catch { /* ignore */ }
+  }
+
+  return patterns;
 }
 
 function matchesClaudeignore(filePath: string, patterns: string[]): boolean {

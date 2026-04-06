@@ -538,9 +538,16 @@ async function handleMessage(root: string, msg: JsonRpcRequest): Promise<void> {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         });
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+        // Sanitize error — never leak internal details (#1429 fix)
+        const internal = err instanceof Error ? err.message : String(err);
+        const safe = internal.includes('ENOENT') ? 'File or directory not found'
+          : internal.includes('EACCES') ? 'Permission denied'
+          : internal.includes('SQLITE') ? 'Database error — try rebuilding index'
+          : 'Tool execution failed';
+        // Log full error server-side for debugging
+        process.stderr.write(`[mcp] Tool "${toolName}" error: ${internal}\n`);
         sendResult(id, {
-          content: [{ type: 'text', text: JSON.stringify({ error: message }) }],
+          content: [{ type: 'text', text: JSON.stringify({ error: safe }) }],
           isError: true,
         });
       }
