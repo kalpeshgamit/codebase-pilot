@@ -54,6 +54,36 @@ function layout(title: string, activePage: string, body: string, port: number, h
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-hover: #1c2129;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --text-dim: #484f58;
+    --accent: #58a6ff;
+    --success: #3fb950;
+    --warning: #d29922;
+    --danger: #f85149;
+    --purple: #a78bfa;
+  }
+
+  body.light {
+    --bg: #ffffff;
+    --surface: #f6f8fa;
+    --surface-hover: #eaeef2;
+    --border: #d0d7de;
+    --text: #1f2328;
+    --text-muted: #656d76;
+    --text-dim: #8b949e;
+    --accent: #0969da;
+    --success: #1a7f37;
+    --warning: #9a6700;
+    --danger: #cf222e;
+    --purple: #8250df;
+  }
+
   html { scroll-behavior: smooth; }
 
   @keyframes fadeIn {
@@ -71,8 +101,8 @@ function layout(title: string, activePage: string, body: string, port: number, h
   }
 
   body {
-    background: ${T.bg};
-    color: ${T.text};
+    background: var(--bg);
+    color: var(--text);
     font-family: ${T.font};
     font-size: 14px;
     line-height: 1.5;
@@ -80,15 +110,15 @@ function layout(title: string, activePage: string, body: string, port: number, h
     min-height: 100vh;
   }
 
-  a { color: ${T.accent}; text-decoration: none; }
+  a { color: var(--accent); text-decoration: none; }
   a:hover { text-decoration: underline; }
 
   /* Sidebar */
   .sidebar {
     width: 220px;
     min-height: 100vh;
-    background: ${T.surface};
-    border-right: 1px solid ${T.border};
+    background: var(--surface);
+    border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     position: fixed;
@@ -100,7 +130,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
 
   .sidebar-brand {
     padding: 16px;
-    border-bottom: 1px solid ${T.border};
+    border-bottom: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -119,7 +149,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
     align-items: center;
     gap: 6px;
     font-size: 10px;
-    color: ${T.textMuted};
+    color: var(--text-muted);
   }
 
   .sidebar nav {
@@ -136,23 +166,23 @@ function layout(title: string, activePage: string, body: string, port: number, h
     gap: 10px;
     padding: 8px 12px;
     border-radius: 6px;
-    color: ${T.textMuted};
+    color: var(--text-muted);
     font-size: 14px;
     transition: background 0.15s, color 0.15s;
     text-decoration: none;
   }
 
   .sidebar nav a:hover {
-    background: ${T.surfaceHover};
-    color: ${T.text};
+    background: var(--surface-hover);
+    color: var(--text);
     text-decoration: none;
   }
 
   .sidebar nav a.active {
     background: rgba(88, 166, 255, 0.1);
-    color: ${T.accent};
+    color: var(--accent);
     font-weight: 500;
-    border-left: 3px solid ${T.accent};
+    border-left: 3px solid var(--accent);
     padding-left: 9px;
   }
 
@@ -164,9 +194,9 @@ function layout(title: string, activePage: string, body: string, port: number, h
 
   .sidebar-footer {
     padding: 12px 16px;
-    border-top: 1px solid ${T.border};
+    border-top: 1px solid var(--border);
     font-size: 11px;
-    color: ${T.textMuted};
+    color: var(--text-muted);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -174,11 +204,11 @@ function layout(title: string, activePage: string, body: string, port: number, h
 
   .theme-toggle {
     background: rgba(48, 54, 61, 0.5);
-    border: 1px solid ${T.border};
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 4px 8px;
     cursor: pointer;
-    color: ${T.textMuted};
+    color: var(--text-muted);
     font-size: 14px;
     transition: all 0.2s ease;
     display: flex;
@@ -187,7 +217,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
 
   .theme-toggle:hover {
     background: rgba(88, 166, 255, 0.15);
-    color: ${T.accent};
+    color: var(--accent);
     border-color: rgba(88, 166, 255, 0.3);
   }
 
@@ -205,35 +235,18 @@ function layout(title: string, activePage: string, body: string, port: number, h
     --danger: #cf222e;
   }
 
-  body.light { background: var(--bg, #fff); color: var(--text, #1f2328); }
-  body.light .sidebar { background: var(--surface, #f6f8fa); border-color: var(--border, #d0d7de); }
-  body.light .sidebar-brand { border-color: var(--border, #d0d7de); }
-  body.light .sidebar-brand img { filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1)); }
-  body.light .sidebar nav a { color: var(--text-muted, #656d76); }
-  body.light .sidebar nav a:hover { background: var(--surface-hover, #eef1f4); color: var(--text, #1f2328); }
-  body.light .sidebar nav a.active { background: rgba(9,105,218,0.1); color: var(--accent, #0969da); }
-  body.light .sidebar-footer { border-color: var(--border, #d0d7de); color: var(--text-muted, #656d76); }
-  body.light .theme-toggle { background: rgba(208,215,222,0.4); border-color: var(--border, #d0d7de); color: var(--text-muted, #656d76); }
-  body.light .theme-toggle:hover { background: rgba(9,105,218,0.1); color: var(--accent, #0969da); }
-  body.light .main { background: var(--bg, #fff); }
-  body.light .card { background: var(--surface, #f6f8fa); border-color: var(--border, #d0d7de); }
-  body.light .card:hover { border-color: rgba(9,105,218,0.4); box-shadow: 0 4px 24px rgba(9,105,218,0.08); }
-  body.light .card-value { color: var(--text, #1f2328); }
-  body.light .card-label { color: var(--text-muted, #656d76); }
-  body.light .page-title { color: var(--text, #1f2328); }
-  body.light .table-wrap { background: var(--surface, #f6f8fa); border-color: var(--border, #d0d7de); }
-  body.light .table-wrap h3 { color: var(--text, #1f2328); border-color: var(--border, #d0d7de); }
-  body.light thead th { color: var(--text-muted, #656d76); border-color: var(--border, #d0d7de); }
-  body.light tbody td { border-color: var(--border, #d0d7de); color: var(--text, #1f2328); }
-  body.light tbody tr:hover { background: var(--surface-hover, #eef1f4); }
-  body.light .bar-bg { background: var(--border, #d0d7de); }
-  body.light .badge-blue { background: rgba(9,105,218,0.1); color: var(--accent, #0969da); }
-  body.light .badge-green { background: rgba(26,127,55,0.1); color: var(--success, #1a7f37); }
-  body.light .savings-bar-track { background: var(--border, #d0d7de); }
-  body.light .savings-bar-label { color: var(--text-muted, #656d76); }
-  body.light .section-title { color: var(--text, #1f2328); }
-  body.light .mono { color: var(--text, #1f2328); }
-  body.light .empty-state { color: var(--text-muted, #656d76); }
+  /* Light mode specific overrides (CSS vars handle most, these handle rgba/special cases) */
+  body.light .sidebar-brand img { filter: drop-shadow(0 2px 6px rgba(0,0,0,0.08)); }
+  body.light .card { background: var(--surface); border-color: var(--border); backdrop-filter: none; }
+  body.light .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+  body.light .table-wrap { background: var(--surface); backdrop-filter: none; }
+  body.light .badge-blue { background: rgba(9,105,218,0.1); }
+  body.light .badge-green { background: rgba(26,127,55,0.1); }
+  body.light .badge-yellow { background: rgba(154,103,0,0.1); }
+  body.light .badge-red { background: rgba(207,34,46,0.1); }
+  body.light .search-box { background: var(--surface); color: var(--text); }
+  body.light .search-result { background: var(--surface); border-color: var(--border); }
+  body.light a { color: var(--accent); }
 
   /* Main content */
   .main {
@@ -259,7 +272,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
     font-weight: 700;
     margin-bottom: 24px;
     letter-spacing: -0.01em;
-    color: ${T.text};
+    color: var(--text);
     animation: fadeIn 0.3s ease both;
   }
 
@@ -295,7 +308,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
 
   .card-label {
     font-size: 12px;
-    color: ${T.textMuted};
+    color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 6px;
@@ -305,13 +318,13 @@ function layout(title: string, activePage: string, body: string, port: number, h
     font-size: 2.2rem;
     font-weight: 700;
     letter-spacing: -0.02em;
-    color: ${T.text};
+    color: var(--text);
     font-family: ${T.mono};
   }
 
   .card-sub {
     font-size: 12px;
-    color: ${T.textMuted};
+    color: var(--text-muted);
     margin-top: 4px;
   }
 
@@ -332,8 +345,8 @@ function layout(title: string, activePage: string, body: string, port: number, h
     padding: 14px 20px;
     font-size: 14px;
     font-weight: 600;
-    border-bottom: 1px solid ${T.border};
-    color: ${T.text};
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
   }
 
   table {
@@ -345,33 +358,33 @@ function layout(title: string, activePage: string, body: string, port: number, h
     text-align: left;
     padding: 10px 16px;
     font-size: 12px;
-    color: ${T.textMuted};
+    color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    border-bottom: 1px solid ${T.border};
+    border-bottom: 1px solid var(--border);
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
   }
 
-  thead th:hover { color: ${T.text}; }
+  thead th:hover { color: var(--text); }
 
   tbody td {
     padding: 10px 16px;
     font-size: 13px;
-    border-bottom: 1px solid ${T.border};
+    border-bottom: 1px solid var(--border);
   }
 
   tbody tr:last-child td { border-bottom: none; }
 
-  tbody tr:hover { background: ${T.surfaceHover}; }
+  tbody tr:hover { background: var(--surface-hover); }
 
   .mono { font-family: ${T.mono}; font-size: 12px; }
 
   /* Bar */
   .bar-bg {
     height: 6px;
-    background: ${T.border};
+    background: var(--border);
     border-radius: 3px;
     overflow: hidden;
     min-width: 80px;
@@ -380,7 +393,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
   .bar-fill {
     height: 100%;
     border-radius: 3px;
-    background: linear-gradient(90deg, ${T.accent}, ${T.success});
+    background: linear-gradient(90deg, var(--accent), var(--success));
     animation: barGrow 0.8s ease both;
   }
 
@@ -393,10 +406,10 @@ function layout(title: string, activePage: string, body: string, port: number, h
     font-weight: 500;
   }
 
-  .badge-blue { background: rgba(88,166,255,0.15); color: ${T.accent}; }
-  .badge-green { background: rgba(63,185,80,0.15); color: ${T.success}; }
-  .badge-yellow { background: rgba(210,153,34,0.15); color: ${T.warning}; }
-  .badge-red { background: rgba(248,81,73,0.15); color: ${T.danger}; }
+  .badge-blue { background: rgba(88,166,255,0.15); color: var(--accent); }
+  .badge-green { background: rgba(63,185,80,0.15); color: var(--success); }
+  .badge-yellow { background: rgba(210,153,34,0.15); color: var(--warning); }
+  .badge-red { background: rgba(248,81,73,0.15); color: var(--danger); }
 
   /* Savings chart */
   .savings-chart {
@@ -407,21 +420,21 @@ function layout(title: string, activePage: string, body: string, port: number, h
 
   .savings-bar {
     flex: 1;
-    background: ${T.surface};
-    border: 1px solid ${T.border};
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 16px 20px;
   }
 
   .savings-bar-label {
     font-size: 12px;
-    color: ${T.textMuted};
+    color: var(--text-muted);
     margin-bottom: 8px;
   }
 
   .savings-bar-track {
     height: 24px;
-    background: ${T.border};
+    background: var(--border);
     border-radius: 4px;
     overflow: hidden;
     display: flex;
@@ -429,12 +442,12 @@ function layout(title: string, activePage: string, body: string, port: number, h
 
   .savings-bar-used {
     height: 100%;
-    background: ${T.accent};
+    background: var(--accent);
   }
 
   .savings-bar-saved {
     height: 100%;
-    background: ${T.success};
+    background: var(--success);
   }
 
   .savings-bar-legend {
@@ -442,7 +455,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
     gap: 16px;
     margin-top: 8px;
     font-size: 11px;
-    color: ${T.textMuted};
+    color: var(--text-muted);
   }
 
   .savings-bar-legend span::before {
@@ -455,8 +468,8 @@ function layout(title: string, activePage: string, body: string, port: number, h
     vertical-align: middle;
   }
 
-  .legend-used::before { background: ${T.accent} !important; }
-  .legend-saved::before { background: ${T.success} !important; }
+  .legend-used::before { background: var(--accent) !important; }
+  .legend-saved::before { background: var(--success) !important; }
 
   /* Section */
   .section {
@@ -467,7 +480,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
     font-size: 16px;
     font-weight: 600;
     margin-bottom: 12px;
-    color: ${T.text};
+    color: var(--text);
   }
 
   /* Search */
@@ -475,10 +488,10 @@ function layout(title: string, activePage: string, body: string, port: number, h
     width: 100%;
     max-width: 600px;
     padding: 12px 16px;
-    background: ${T.surface};
-    border: 1px solid ${T.border};
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 8px;
-    color: ${T.text};
+    color: var(--text);
     font-size: 15px;
     font-family: ${T.font};
     outline: none;
@@ -486,45 +499,45 @@ function layout(title: string, activePage: string, body: string, port: number, h
     margin-bottom: 20px;
   }
 
-  .search-box:focus { border-color: ${T.accent}; }
-  .search-box::placeholder { color: ${T.textMuted}; }
+  .search-box:focus { border-color: var(--accent); }
+  .search-box::placeholder { color: var(--text-muted); }
 
   .search-result {
-    background: ${T.surface};
-    border: 1px solid ${T.border};
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 16px 20px;
     margin-bottom: 8px;
     transition: border-color 0.2s;
   }
 
-  .search-result:hover { border-color: ${T.accent}; }
+  .search-result:hover { border-color: var(--accent); }
 
   .search-result-path {
     font-family: ${T.mono};
     font-size: 13px;
-    color: ${T.accent};
+    color: var(--accent);
     margin-bottom: 4px;
   }
 
   .search-result-snippet {
     font-family: ${T.mono};
     font-size: 12px;
-    color: ${T.textMuted};
+    color: var(--text-muted);
     white-space: pre-wrap;
     word-break: break-all;
   }
 
   .search-result-snippet mark {
     background: rgba(210, 153, 34, 0.3);
-    color: ${T.warning};
+    color: var(--warning);
     border-radius: 2px;
     padding: 0 2px;
   }
 
   .search-result-meta {
     font-size: 11px;
-    color: ${T.textMuted};
+    color: var(--text-muted);
     margin-top: 4px;
     display: flex;
     gap: 16px;
@@ -533,14 +546,14 @@ function layout(title: string, activePage: string, body: string, port: number, h
   .empty-state {
     text-align: center;
     padding: 48px 24px;
-    color: ${T.textMuted};
+    color: var(--text-muted);
     font-size: 14px;
   }
 
   /* Agents */
   .agent-card {
-    background: ${T.surface};
-    border: 1px solid ${T.border};
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 20px;
     margin-bottom: 12px;
@@ -556,12 +569,12 @@ function layout(title: string, activePage: string, body: string, port: number, h
   .agent-card-name {
     font-size: 15px;
     font-weight: 600;
-    color: ${T.text};
+    color: var(--text);
   }
 
   .agent-card-task {
     font-size: 13px;
-    color: ${T.textMuted};
+    color: var(--text-muted);
     margin-bottom: 10px;
   }
 
@@ -578,13 +591,13 @@ function layout(title: string, activePage: string, body: string, port: number, h
     background: rgba(88,166,255,0.08);
     padding: 2px 8px;
     border-radius: 4px;
-    color: ${T.accent};
+    color: var(--accent);
   }
 
   /* Layer diagram */
   .layer-diagram {
-    background: ${T.surface};
-    border: 1px solid ${T.border};
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 24px;
     margin-bottom: 24px;
@@ -600,7 +613,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
   .layer-label {
     width: 60px;
     font-size: 12px;
-    color: ${T.textMuted};
+    color: var(--text-muted);
     text-align: right;
     flex-shrink: 0;
   }
@@ -630,7 +643,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
     flex: 1;
     max-width: 300px;
     height: 12px;
-    background: ${T.border};
+    background: var(--border);
     border-radius: 6px;
     overflow: hidden;
   }
@@ -824,7 +837,7 @@ export function renderDashboard(data: DashboardData, port: number): string {
         <td class="mono">${r.files}</td>
         <td class="mono">${fmtNum(r.tokensRaw)}</td>
         <td class="mono">${fmtNum(r.tokensPacked)}</td>
-        <td class="mono" style="color:${T.success}">${fmtNum(saved)} (${pct}%)</td>
+        <td class="mono" style="color:var(--success)">${fmtNum(saved)} (${pct}%)</td>
       </tr>`;
     }).join('');
 
@@ -849,19 +862,19 @@ export function renderDashboard(data: DashboardData, port: number): string {
     <div class="section">
       <div class="section-title">Project Info</div>
       <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px;">
-        <div><span style="color:${T.textMuted}">Languages:</span> ${langTags || 'N/A'}</div>
-        <div><span style="color:${T.textMuted}">Framework:</span> ${data.framework ? esc(data.framework) : 'None detected'}</div>
-        <div><span style="color:${T.textMuted}">Test runner:</span> ${data.testRunner ? esc(data.testRunner) : 'None detected'}</div>
+        <div><span style="color:var(--text-muted)">Languages:</span> ${langTags || 'N/A'}</div>
+        <div><span style="color:var(--text-muted)">Framework:</span> ${data.framework ? esc(data.framework) : 'None detected'}</div>
+        <div><span style="color:var(--text-muted)">Test runner:</span> ${data.testRunner ? esc(data.testRunner) : 'None detected'}</div>
       </div>
     </div>`;
 
   const sseScript = `
     <div id="live-badge" style="display:none;position:fixed;top:16px;right:24px;
-      background:rgba(63,185,80,0.15);color:${T.success};padding:4px 12px;
+      background:rgba(63,185,80,0.15);color:var(--success);padding:4px 12px;
       border-radius:20px;font-size:11px;font-weight:500;z-index:100;
       animation:fadeIn 0.3s ease;backdrop-filter:blur(8px);
       border:1px solid rgba(63,185,80,0.3);">
-      <span style="display:inline-block;width:6px;height:6px;background:${T.success};
+      <span style="display:inline-block;width:6px;height:6px;background:var(--success);
         border-radius:50%;margin-right:6px;animation:pulse 2s infinite;"></span>Live
     </div>
     <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}</style>
@@ -886,7 +899,7 @@ export function renderDashboard(data: DashboardData, port: number): string {
           // Flash updated cards
           cards.forEach(function(c) {
             c.style.transition = 'color 0.3s';
-            c.style.color = '${T.success}';
+            c.style.color = 'var(--success)';
             setTimeout(function() { c.style.color = ''; }, 1500);
           });
         } catch(err) {}
@@ -896,7 +909,7 @@ export function renderDashboard(data: DashboardData, port: number): string {
         try {
           var d = JSON.parse(e.data);
           var toast = document.createElement('div');
-          toast.style.cssText = 'position:fixed;bottom:20px;right:24px;background:rgba(22,27,34,0.95);color:${T.text};padding:10px 16px;border-radius:8px;font-size:12px;z-index:100;animation:fadeIn 0.3s ease;border:1px solid ${T.border};backdrop-filter:blur(12px);font-family:${T.mono};';
+          toast.style.cssText = 'position:fixed;bottom:20px;right:24px;background:rgba(22,27,34,0.95);color:var(--text);padding:10px 16px;border-radius:8px;font-size:12px;z-index:100;animation:fadeIn 0.3s ease;border:1px solid var(--border);backdrop-filter:blur(12px);font-family:${T.mono};';
           toast.textContent = d.event + ': ' + d.file;
           document.body.appendChild(toast);
           setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; }, 3000);
@@ -956,7 +969,7 @@ export function renderGraph(data: GraphPageData, port: number): string {
   svg.call(d3.zoom().on('zoom', function(e) { g.attr('transform', e.transform); }));
 
   var groupColors = {};
-  var palette = ['${T.accent}', '${T.success}', '${T.warning}', '${T.danger}', '#bc8cff', '#f778ba', '#79c0ff', '#7ee787'];
+  var palette = ['var(--accent)', 'var(--success)', 'var(--warning)', 'var(--danger)', '#bc8cff', '#f778ba', '#79c0ff', '#7ee787'];
   var ci = 0;
   data.nodes.forEach(function(n) {
     if (!groupColors[n.group]) groupColors[n.group] = palette[ci++ % palette.length];
@@ -972,7 +985,7 @@ export function renderGraph(data: GraphPageData, port: number): string {
     .selectAll('line')
     .data(data.edges)
     .join('line')
-    .attr('stroke', '${T.border}')
+    .attr('stroke', 'var(--border)')
     .attr('stroke-width', 1)
     .attr('stroke-opacity', 0.6);
 
@@ -981,8 +994,8 @@ export function renderGraph(data: GraphPageData, port: number): string {
     .data(data.nodes)
     .join('circle')
     .attr('r', function(d) { return Math.max(4, Math.sqrt(d.tokens / 50) + 3); })
-    .attr('fill', function(d) { return groupColors[d.group] || '${T.accent}'; })
-    .attr('stroke', '${T.bg}')
+    .attr('fill', function(d) { return groupColors[d.group] || 'var(--accent)'; })
+    .attr('stroke', '#0d1117')
     .attr('stroke-width', 1.5)
     .style('cursor', 'pointer')
     .call(d3.drag()
@@ -1003,13 +1016,13 @@ export function renderGraph(data: GraphPageData, port: number): string {
     tooltipEl.appendChild(document.createTextNode(d.tokens + ' tokens'));
     tooltipEl.appendChild(document.createElement('br'));
     tooltipEl.appendChild(document.createTextNode('group: ' + d.group));
-    d3.select(e.target).attr('stroke', '${T.accent}').attr('stroke-width', 2.5);
+    d3.select(e.target).attr('stroke', 'var(--accent)').attr('stroke-width', 2.5);
   }).on('mousemove', function(e) {
     tooltipEl.style.left = (e.pageX + 12) + 'px';
     tooltipEl.style.top = (e.pageY - 12) + 'px';
   }).on('mouseout', function(e) {
     tooltipEl.style.display = 'none';
-    d3.select(e.target).attr('stroke', '${T.bg}').attr('stroke-width', 1.5);
+    d3.select(e.target).attr('stroke', '#0d1117').attr('stroke-width', 1.5);
   }).on('click', function(e, d) {
     window.location.href = '/impact?file=' + encodeURIComponent(d.id);
   });
@@ -1039,11 +1052,11 @@ export function renderGraph(data: GraphPageData, port: number): string {
   const body = `
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
       <h1 class="page-title" style="margin-bottom:0">Import Graph</h1>
-      <span id="graph-stats" class="mono" style="color:${T.textMuted};font-size:12px;"></span>
+      <span id="graph-stats" class="mono" style="color:var(--text-muted);font-size:12px;"></span>
     </div>
     <input type="text" id="graph-search" class="search-box" placeholder="Filter nodes..." style="margin-bottom:12px;">
-    <div id="graph-container" style="width:100%;height:calc(100vh - 140px);background:${T.surface};border:1px solid ${T.border};border-radius:8px;position:relative;overflow:hidden;"></div>
-    <div id="graph-tooltip" style="display:none;position:fixed;background:${T.surface};border:1px solid ${T.border};border-radius:6px;padding:8px 12px;font-size:12px;pointer-events:none;z-index:100;color:${T.text};max-width:400px;"></div>
+    <div id="graph-container" style="width:100%;height:calc(100vh - 140px);background:var(--surface);border:1px solid var(--border);border-radius:8px;position:relative;overflow:hidden;"></div>
+    <div id="graph-tooltip" style="display:none;position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;pointer-events:none;z-index:100;color:var(--text);max-width:400px;"></div>
     ${graphScript}`;
 
   return layout('Graph', '/graph', body, port);
@@ -1214,7 +1227,7 @@ export function renderAgents(data: AgentsPageData, port: number): string {
       <h1 class="page-title">Agents</h1>
       <div class="empty-state">
         No agents configured.<br>
-        Run <code style="font-family:${T.mono};color:${T.accent}">codebase-pilot init</code> to generate agents.json.
+        Run <code style="font-family:${T.mono};color:var(--accent)">codebase-pilot init</code> to generate agents.json.
       </div>`;
     return layout('Agents', '/agents', body, port);
   }
@@ -1243,7 +1256,7 @@ export function renderAgents(data: AgentsPageData, port: number): string {
   const cards = data.agents.map(a => {
     const deps = a.dependsOn.length > 0
       ? a.dependsOn.map(d => `<span class="badge badge-yellow">${esc(d)}</span>`).join(' ')
-      : `<span style="color:${T.textMuted};font-size:12px;">none</span>`;
+      : `<span style="color:var(--text-muted);font-size:12px;">none</span>`;
     const ctx = a.context.map(c => `<span class="agent-context">${esc(c)}</span>`).join(' ');
     return `
       <div class="agent-card">
@@ -1255,11 +1268,11 @@ export function renderAgents(data: AgentsPageData, port: number): string {
         <div class="agent-card-task">${esc(a.task)}</div>
         <div class="agent-card-details">
           <div style="margin-right:16px;">
-            <div style="color:${T.textMuted};font-size:11px;margin-bottom:4px;">Context</div>
-            ${ctx || `<span style="color:${T.textMuted};font-size:12px;">none</span>`}
+            <div style="color:var(--text-muted);font-size:11px;margin-bottom:4px;">Context</div>
+            ${ctx || `<span style="color:var(--text-muted);font-size:12px;">none</span>`}
           </div>
           <div>
-            <div style="color:${T.textMuted};font-size:11px;margin-bottom:4px;">Depends on</div>
+            <div style="color:var(--text-muted);font-size:11px;margin-bottom:4px;">Depends on</div>
             ${deps}
           </div>
         </div>
@@ -1292,7 +1305,7 @@ export function renderFiles(data: FilesPageData, port: number): string {
     const barPct = ((f.tokens / maxTokens) * 100).toFixed(1);
     return `<tr>
       <td class="mono"><a href="/impact?file=${encodeURIComponent(f.relativePath)}">${esc(f.relativePath)}</a></td>
-      <td>${f.language ? esc(f.language) : `<span style="color:${T.textMuted}">-</span>`}</td>
+      <td>${f.language ? esc(f.language) : `<span style="color:var(--text-muted)">-</span>`}</td>
       <td class="mono" style="text-align:right;">${fmtNum(f.tokens)}</td>
       <td style="text-align:right;">${pct}%</td>
       <td><div class="bar-bg"><div class="bar-fill" style="width:${barPct}%"></div></div></td>
@@ -1331,7 +1344,7 @@ export function renderFiles(data: FilesPageData, port: number): string {
   const body = `
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
       <h1 class="page-title" style="margin-bottom:0">Files</h1>
-      <span class="mono" style="color:${T.textMuted};font-size:12px;">${fmtNum(data.files.length)} files, ${fmtNum(data.totalTokens)} tokens total</span>
+      <span class="mono" style="color:var(--text-muted);font-size:12px;">${fmtNum(data.files.length)} files, ${fmtNum(data.totalTokens)} tokens total</span>
     </div>
     <div class="table-wrap">
       <table id="files-table">
@@ -1370,7 +1383,7 @@ export function renderImpact(data: ImpactPageData, port: number): string {
     : 'badge-red';
 
   const depList = (items: string[], label: string) => {
-    if (items.length === 0) return `<div class="section"><div class="section-title">${label} (0)</div><div style="color:${T.textMuted};font-size:13px;">None</div></div>`;
+    if (items.length === 0) return `<div class="section"><div class="section-title">${label} (0)</div><div style="color:var(--text-muted);font-size:13px;">None</div></div>`;
     const list = items.map(f =>
       `<div style="padding:4px 0;"><a href="/impact?file=${encodeURIComponent(f)}" class="mono" style="font-size:12px;">${esc(f)}</a></div>`
     ).join('');
@@ -1379,7 +1392,7 @@ export function renderImpact(data: ImpactPageData, port: number): string {
 
   const body = `
     <h1 class="page-title">Impact Analysis</h1>
-    <div style="font-family:${T.mono};font-size:14px;color:${T.accent};margin-bottom:20px;">${esc(data.file)}</div>
+    <div style="font-family:${T.mono};font-size:14px;color:var(--accent);margin-bottom:20px;">${esc(data.file)}</div>
 
     <div class="info-grid">
       <div class="card">
@@ -1401,7 +1414,7 @@ export function renderImpact(data: ImpactPageData, port: number): string {
     </div>
 
     <div class="risk-meter">
-      <span style="font-size:12px;color:${T.textMuted};">Risk</span>
+      <span style="font-size:12px;color:var(--text-muted);">Risk</span>
       <div class="risk-meter-bar">
         <div class="risk-meter-fill" style="width:${data.riskScore}%;background:${color};"></div>
       </div>
@@ -1449,15 +1462,15 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
   // System-wide stat cards
   const cards = `
     <div class="cards">
-      <div class="card" style="border-top:2px solid ${T.accent};">
+      <div class="card" style="border-top:2px solid var(--accent);">
         <div class="card-label">Total Projects</div>
         <div class="card-value">${data.projects.length}</div>
       </div>
-      <div class="card" style="border-top:2px solid ${T.success};">
+      <div class="card" style="border-top:2px solid var(--success);">
         <div class="card-label">Total Sessions</div>
         <div class="card-value">${fmtNum(data.allTime.sessions)}</div>
       </div>
-      <div class="card" style="border-top:2px solid ${T.warning};">
+      <div class="card" style="border-top:2px solid var(--warning);">
         <div class="card-label">Tokens Saved (All Time)</div>
         <div class="card-value">${fmtNum(data.allTime.tokensSaved)}</div>
       </div>
@@ -1503,11 +1516,11 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
       const activeTag = isActive ? ' <span class="badge badge-green">active</span>' : '';
       return `<tr>
         <td><strong>${esc(p.project)}</strong>${activeTag}</td>
-        <td class="mono" style="font-size:11px;color:${T.textMuted}">${esc(p.projectPath)}</td>
+        <td class="mono" style="font-size:11px;color:var(--text-muted)">${esc(p.projectPath)}</td>
         <td class="mono">${p.sessions}</td>
-        <td class="mono" style="color:${T.success}">${fmtNum(p.tokensSaved)}</td>
+        <td class="mono" style="color:var(--success)">${fmtNum(p.tokensSaved)}</td>
         <td class="mono">${fmtNum(p.tokensUsed)}</td>
-        <td class="mono" style="color:${T.accent}">${savePct}%</td>
+        <td class="mono" style="color:var(--accent)">${savePct}%</td>
         <td class="mono">${lastDate}</td>
       </tr>`;
     }).join('');
@@ -1540,7 +1553,7 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
         <td class="mono">${r.files}</td>
         <td class="mono">${fmtNum(r.tokensRaw)}</td>
         <td class="mono">${fmtNum(r.tokensPacked)}</td>
-        <td class="mono" style="color:${T.success}">${fmtNum(saved)} (${pct}%)</td>
+        <td class="mono" style="color:var(--success)">${fmtNum(saved)} (${pct}%)</td>
       </tr>`;
     }).join('');
 
