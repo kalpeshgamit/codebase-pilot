@@ -596,10 +596,6 @@ ${headExtra}
   <aside class="sidebar">
     <div class="sidebar-brand">
       <img src="/static/logo.png" alt="codebase-pilot" onerror="this.style.display='none'" />
-      <div class="brand-meta">
-        <span style="padding:2px 6px;border-radius:4px;background:rgba(88,166,255,0.15);color:${T.accent};font-weight:500;">v0.2</span>
-        <span>port ${port}</span>
-      </div>
     </div>
     <nav>
       ${navItems}
