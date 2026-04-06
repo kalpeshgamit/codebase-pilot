@@ -108,9 +108,11 @@ function layout(title: string, activePage: string, body: string, port: number, h
   }
 
   .sidebar-brand img {
-    width: 140px;
+    width: 170px;
     height: auto;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+    mix-blend-mode: lighten;
   }
 
   .sidebar-brand .brand-meta {
