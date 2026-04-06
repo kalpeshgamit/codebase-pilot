@@ -701,7 +701,7 @@ ${headExtra}
   <aside class="sidebar">
     <div class="sidebar-brand">
       <img src="/static/logo.png" alt="codebase-pilot" onerror="this.style.display='none'" />
-      <div class="brand-text">codebase-pilot</div>
+      <div class="brand-text">Codebase Pilot</div>
     </div>
     <nav>
       ${navItems}
