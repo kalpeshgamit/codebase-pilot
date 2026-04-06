@@ -5,7 +5,7 @@ dist/
 *.log
 coverage/
 .codebase-pilot/
-package-lock.json
+# package-lock.json — committed for CI reproducibility
 
 # Pack output
 codebase-pilot-output.xml
