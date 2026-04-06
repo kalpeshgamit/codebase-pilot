@@ -1,5 +1,5 @@
 import { resolve, basename } from 'node:path';
-import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync, openSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync, openSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { spawn } from 'node:child_process';
@@ -144,8 +144,9 @@ export async function uiCommand(options: UiOptions): Promise<void> {
   const logFile = getLogFile();
   const logFd = openSync(logFile, 'a');
 
-  // Resolve daemon.js relative to the main binary
-  const daemonPath = join(resolve(process.argv[1], '..'), '..', 'ui', 'daemon.js');
+  // Resolve daemon.js relative to the real binary path (follows symlinks from npm link/global)
+  const realBin = realpathSync(process.argv[1]);
+  const daemonPath = join(resolve(realBin, '..'), '..', 'ui', 'daemon.js');
 
   const child = spawn(process.execPath, [daemonPath, root, String(port)], {
     detached: true,
