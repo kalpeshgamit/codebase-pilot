@@ -694,7 +694,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
     .savings-chart { flex-direction: column; }
   }
 </style>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 ${headExtra}
 </head>
 <body>
