@@ -111,8 +111,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
     width: 170px;
     height: auto;
     margin-bottom: 4px;
-    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
-    mix-blend-mode: lighten;
+    filter: drop-shadow(0 2px 12px rgba(0,0,0,0.4));
   }
 
   .sidebar-brand .brand-meta {
