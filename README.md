@@ -13,11 +13,49 @@
 
 ---
 
-## Quick Start
+## Installation
+
+<table>
+<tr><td><strong>npm (recommended)</strong></td><td>
 
 ```bash
 npm install -g codebase-pilot
+```
 
+</td></tr>
+<tr><td><strong>npx (no install)</strong></td><td>
+
+```bash
+npx codebase-pilot init
+```
+
+</td></tr>
+<tr><td><strong>Homebrew (macOS)</strong></td><td>
+
+```bash
+brew install kalpeshgamit/codebase-pilot/codebase-pilot
+```
+
+</td></tr>
+<tr><td><strong>Install script</strong></td><td>
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/install.sh | bash
+```
+
+</td></tr>
+<tr><td><strong>Uninstall</strong></td><td>
+
+```bash
+npm uninstall -g codebase-pilot
+```
+
+</td></tr>
+</table>
+
+## Quick Start
+
+```bash
 # Set up any project
 codebase-pilot init
 
