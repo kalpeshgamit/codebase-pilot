@@ -104,21 +104,39 @@ function loadClaudeignore(root: string): string[] {
 }
 
 function matchesClaudeignore(filePath: string, patterns: string[]): boolean {
+  const segments = filePath.split('/');
+
   for (const pattern of patterns) {
-    // Simple glob matching
     if (pattern.endsWith('/')) {
-      // Directory pattern
+      // Directory pattern — match ANY segment, not just prefix (#91 fix)
+      const dirName = pattern.slice(0, -1);
+      if (segments.some(s => s === dirName)) return true;
+      // Also match as path prefix
       if (filePath.startsWith(pattern) || filePath.includes('/' + pattern)) return true;
     } else if (pattern.startsWith('*.')) {
       // Extension pattern
       if (filePath.endsWith(pattern.slice(1))) return true;
+    } else if (pattern.startsWith('**/')) {
+      // Recursive glob — match anywhere in path
+      const rest = pattern.slice(3);
+      if (rest.endsWith('/')) {
+        const dirName = rest.slice(0, -1);
+        if (segments.some(s => s === dirName)) return true;
+      } else if (rest.includes('*')) {
+        const regex = new RegExp(rest.replace(/\*/g, '[^/]*'));
+        if (segments.some(s => regex.test(s))) return true;
+      } else {
+        if (segments.some(s => s === rest)) return true;
+      }
     } else if (pattern.includes('*')) {
-      // Simple wildcard
-      const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
+      // Wildcard glob
+      const regex = new RegExp('^' + pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*') + '$');
       if (regex.test(filePath)) return true;
     } else {
       // Exact match or path prefix
       if (filePath === pattern || filePath.startsWith(pattern + '/')) return true;
+      // Segment match — e.g. "bin" matches "packages/api/bin/foo.js"
+      if (!pattern.includes('/') && segments.some(s => s === pattern)) return true;
     }
   }
   return false;

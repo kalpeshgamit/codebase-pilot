@@ -2,11 +2,17 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ProjectScan } from '../types.js';
 
-const BASE_CLAUDEIGNORE = `# Dependencies
+const BASE_CLAUDEIGNORE = `# Dependencies — all ecosystems (#91 fix: segment-based matching)
 node_modules/
 vendor/
 .venv/
 __pycache__/
+.bundle/
+bower_components/
+jspm_packages/
+pip-wheel-metadata/
+eggs/
+.eggs/
 
 # Build output
 dist/
@@ -16,6 +22,31 @@ out/
 *.min.css
 *.bundle.js
 target/
+_build/
+cmake-build-*/
+.output/
+.next/
+.nuxt/
+.svelte-kit/
+
+# Platform-specific deps & build (#91 fix: nested dirs in monorepos)
+.gradle/
+.maven/
+bin/
+obj/
+.dart_tool/
+.pub-cache/
+.pub/
+Pods/
+.swiftpm/
+_deps/
+zig-cache/
+zig-out/
+.stack-work/
+.cabal-sandbox/
+mix.lock
+_opam/
+node_modules/.cache/
 
 # Lock files
 package-lock.json
@@ -25,34 +56,57 @@ poetry.lock
 Gemfile.lock
 Cargo.lock
 go.sum
+composer.lock
+pubspec.lock
+Podfile.lock
+flake.lock
 
 # Compiled / generated
 *.pyc
+*.pyo
 *.class
 *.o
 *.so
+*.dylib
+*.dll
+*.a
+*.obj
+*.beam
+*.hi
 
 # Logs & temp files
 *.log
 *.tmp
 *.cache
+*.swp
+*.swo
 .DS_Store
+Thumbs.db
+desktop.ini
 
 # Large data files
 *.csv
 *.parquet
 *.sqlite
 *.db
+*.sql.gz
 
 # Coverage & test artifacts
 coverage/
 .nyc_output/
 htmlcov/
+.tox/
+.pytest_cache/
+__snapshots__/
 
 # IDE / editor
 .idea/
 .vscode/
 *.swp
+*.code-workspace
+.project
+.classpath
+.settings/
 
 # codebase-pilot index
 .codebase-pilot/

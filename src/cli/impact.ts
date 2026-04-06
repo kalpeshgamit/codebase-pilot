@@ -17,8 +17,11 @@ export async function impactCommand(options: ImpactOptions): Promise<void> {
     console.log(`  Blast radius for: ${relPath}`);
     console.log('');
 
+    process.stdout.write('  Building import graph...');
     const graph = buildImportGraph(root);
+    process.stdout.write(' analyzing...');
     const result = computeBlastRadius(root, relPath, graph);
+    process.stdout.write(' done\n');
 
     const riskColors: Record<string, string> = {
       low: '\x1b[32m',      // green

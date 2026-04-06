@@ -23,9 +23,24 @@ export function createSearchIndex(root: string): SearchIndex {
   if (!existsSync(dbDir)) mkdirSync(dbDir, { recursive: true });
 
   const dbPath = join(dbDir, 'search.db');
-  const db = new Database(dbPath);
+  let db: InstanceType<typeof Database>;
+  try {
+    db = new Database(dbPath);
+  } catch (err) {
+    // Graceful fallback if better-sqlite3 fails (ABI mismatch, missing native module)
+    console.error('  Warning: SQLite not available. Search index disabled.');
+    console.error(`  ${(err as Error).message}`);
+    return {
+      search: () => [],
+      rebuild: () => ({ files: 0, duration: 0 }),
+      close: () => {},
+    };
+  }
 
+  // WAL mode for concurrent read safety (#110 fix)
   db.pragma('journal_mode = WAL');
+  // Busy timeout prevents "database is locked" on concurrent access
+  db.pragma('busy_timeout = 5000');
 
   db.exec(`
     CREATE VIRTUAL TABLE IF NOT EXISTS files_fts USING fts5(

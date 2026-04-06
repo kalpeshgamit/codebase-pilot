@@ -67,7 +67,9 @@ export function buildImportGraph(root: string): Map<string, Set<string>> {
     if (!lang) continue;
 
     const imports = extractImports(file.content, file.relativePath, lang, root);
-    graph.set(file.relativePath, new Set(imports));
+    // Normalize all paths at storage time (#65, #20 fix — prevents relative/absolute mismatch)
+    const normalizedImports = imports.map(p => p.replace(/\\/g, '/').replace(/^\.\//, ''));
+    graph.set(file.relativePath, new Set(normalizedImports));
   }
 
   return graph;
