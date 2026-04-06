@@ -3,7 +3,7 @@
 ## Setup
 
 ```bash
-git clone https://github.com/nicgamit/codebase-pilot
+git clone https://github.com/kalpeshgamit/codebase-pilot
 cd codebase-pilot
 npm install --legacy-peer-deps
 ```

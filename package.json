@@ -66,13 +66,13 @@
     "email": "kalpa.hacker@gmail.com",
     "url": "https://kalpeshgamit.github.io"
   },
-  "homepage": "https://github.com/nicgamit/codebase-pilot#readme",
+  "homepage": "https://github.com/kalpeshgamit/codebase-pilot#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nicgamit/codebase-pilot.git"
+    "url": "git+https://github.com/kalpeshgamit/codebase-pilot.git"
   },
   "bugs": {
-    "url": "https://github.com/nicgamit/codebase-pilot/issues"
+    "url": "https://github.com/kalpeshgamit/codebase-pilot/issues"
   },
   "engines": {
     "node": ">=18.0.0"

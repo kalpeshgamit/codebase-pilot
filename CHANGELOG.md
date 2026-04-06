@@ -107,7 +107,7 @@
 | Real-time updates | None | **SSE (Server-Sent Events)** |
 | Background daemon | No | **Yes (port 7456)** |
 
-[0.2.0]: https://github.com/nicgamit/codebase-pilot/releases/tag/v0.2.0
+[0.2.0]: https://github.com/kalpeshgamit/codebase-pilot/releases/tag/v0.2.0
 
 ## [0.1.0] — 2026-04-03
 
@@ -141,4 +141,4 @@
 **CI / cross-platform**
 - GitHub Actions: ubuntu, macos, windows x Node 18, 20, 22
 
-[0.1.0]: https://github.com/nicgamit/codebase-pilot/releases/tag/v0.1.0
+[0.1.0]: https://github.com/kalpeshgamit/codebase-pilot/releases/tag/v0.1.0
