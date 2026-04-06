@@ -50,6 +50,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <title>${title} - codebase-pilot</title>
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -140,10 +141,27 @@ function layout(title: string, activePage: string, body: string, port: number, h
   }
 
   .sidebar-brand img {
-    width: 170px;
+    width: 150px;
     height: auto;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
     filter: drop-shadow(0 2px 12px rgba(0,0,0,0.4));
+  }
+
+  .brand-text {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--accent), #2ea043);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  body.light .brand-text {
+    background: linear-gradient(135deg, #1a7f37, #0969da);
+    -webkit-background-clip: text;
+    background-clip: text;
   }
 
   .sidebar-brand .brand-meta {
@@ -683,6 +701,7 @@ ${headExtra}
   <aside class="sidebar">
     <div class="sidebar-brand">
       <img src="/static/logo.png" alt="codebase-pilot" onerror="this.style.display='none'" />
+      <div class="brand-text">codebase-pilot</div>
     </div>
     <nav>
       ${navItems}
