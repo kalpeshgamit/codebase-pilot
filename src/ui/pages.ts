@@ -709,18 +709,19 @@ ${headExtra}
     <nav>
       ${navItems}
     </nav>
-    <div class="sidebar-footer">
-      <div style="display:flex;flex-direction:column;gap:6px;">
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <span style="padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;">npm v0.2.0</span>
-          <span style="padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;">Node &ge;18</span>
-        </div>
-        <div>localhost:${port}</div>
+    <div class="sidebar-footer" style="flex-direction:column;gap:8px;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <a href="https://github.com/kalpeshgamit/codebase-pilot" target="_blank" style="padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;text-decoration:none;">GitHub</a>
+        <a href="https://www.npmjs.com/package/codebase-pilot-cli" target="_blank" style="padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;text-decoration:none;">npm v0.2.1</a>
+        <span style="padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;">Node &ge;18</span>
       </div>
-      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
-        <i data-lucide="moon" class="theme-icon-dark" style="width:14px;height:14px;"></i>
-        <i data-lucide="sun" class="theme-icon-light" style="width:14px;height:14px;display:none;"></i>
-      </button>
+      <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+        <span>localhost:${port}</span>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+          <i data-lucide="moon" class="theme-icon-dark" style="width:14px;height:14px;"></i>
+          <i data-lucide="sun" class="theme-icon-light" style="width:14px;height:14px;display:none;"></i>
+        </button>
+      </div>
     </div>
   </aside>
   <main class="main">
