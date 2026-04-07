@@ -60,13 +60,20 @@ npm uninstall -g codebase-pilot-cli
 ## Quick Start
 
 ```bash
-# Set up any project
+# 1. Install
+npm install -g codebase-pilot-cli
+
+# 2. Set up your project
+cd your-project
 codebase-pilot init
 
-# Pack + compress for AI context
+# 3. Pack + compress for AI context
 codebase-pilot pack --compress --copy
 
-# Web dashboard
+# 4. Scan for secrets before committing
+codebase-pilot scan-secrets
+
+# 5. Open web dashboard
 codebase-pilot ui    # → http://localhost:7456
 ```
 
@@ -224,6 +231,7 @@ Pattern categories, risk levels, detected secrets — side by side.
 codebase-pilot init [--platform cursor,windsurf,codex]  # scan + generate configs
 codebase-pilot scan                                      # re-detect + update
 codebase-pilot pack [--compress] [--agent <name>]        # pack for AI context
+codebase-pilot scan-secrets [--path <dir>]               # security scan — 180 patterns
 codebase-pilot tokens [--agent <name>]                   # token breakdown + savings
 codebase-pilot impact [--file <path>]                    # blast radius analysis
 codebase-pilot search <query>                            # full-text search
@@ -304,7 +312,12 @@ Same config works for Cursor (`.cursor/mcp.json`) and other MCP clients.
 
 ## Security Scanner
 
-152 regex patterns across 15 categories. Runs automatically on every `pack` — files with detected secrets are excluded from output.
+```bash
+codebase-pilot scan-secrets           # scan current project
+codebase-pilot scan-secrets --path .  # specify directory
+```
+
+180 patterns across 15 categories. Runs automatically on every `pack` — files with detected secrets are excluded from output.
 
 <details>
 <summary><strong>Categories</strong></summary>
