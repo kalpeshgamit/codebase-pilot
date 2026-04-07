@@ -711,9 +711,9 @@ ${headExtra}
     </nav>
     <div class="sidebar-footer" style="flex-direction:column;gap:8px;">
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <a href="https://github.com/kalpeshgamit/codebase-pilot" target="_blank" style="padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;text-decoration:none;">GitHub</a>
-        <a href="https://www.npmjs.com/package/codebase-pilot-cli" target="_blank" style="padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;text-decoration:none;">npm v0.2.1</a>
-        <span style="padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;">Node &ge;18</span>
+        <a href="https://github.com/kalpeshgamit/codebase-pilot" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;text-decoration:none;"><i data-lucide="github" style="width:11px;height:11px;"></i>GitHub</a>
+        <a href="https://www.npmjs.com/package/codebase-pilot-cli" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;text-decoration:none;"><i data-lucide="package" style="width:11px;height:11px;"></i>npm v0.2.1</a>
+        <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;"><i data-lucide="hexagon" style="width:11px;height:11px;"></i>Node &ge;18</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
         <span>localhost:${port}</span>
