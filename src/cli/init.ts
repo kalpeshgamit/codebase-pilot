@@ -119,14 +119,20 @@ export async function initCommand(options: InitOptions): Promise<void> {
       try { settings = JSON.parse(readFileSync(settingsPath, 'utf8')); } catch { /* ignore */ }
     }
     const hooks = (settings.hooks || {}) as Record<string, unknown[]>;
-    const existing = hooks.UserPromptSubmit as Array<{ command?: string }> | undefined;
-    const hasOurHook = existing?.some(h => h.command?.includes('codebase-pilot-log-prompt'));
+    // Check if our hook already exists (nested format: [{hooks:[{command:...}]}])
+    const existing = hooks.UserPromptSubmit as Array<{ hooks?: Array<{ command?: string }> }> | undefined;
+    const hasOurHook = existing?.some(entry =>
+      entry.hooks?.some(h => h.command?.includes('codebase-pilot-log-prompt'))
+    );
     if (!hasOurHook) {
       if (!hooks.UserPromptSubmit) hooks.UserPromptSubmit = [];
+      // Claude Code schema requires { hooks: [...] } wrapper
       (hooks.UserPromptSubmit as unknown[]).push({
-        type: 'command',
-        command: 'codebase-pilot-log-prompt',
-        timeout: 5,
+        hooks: [{
+          type: 'command',
+          command: 'codebase-pilot-log-prompt',
+          timeout: 5,
+        }],
       });
       settings.hooks = hooks;
       const settingsDir = resolve(root, '.claude');
