@@ -1262,18 +1262,29 @@ export function renderDashboard(data: DashboardData, port: number): string {
       </div>`;
   }
 
-  // Project info
-  const langTags = data.languages.map(l =>
-    `<span class="badge badge-blue">${esc(l.name)} ${l.percentage}%</span>`
-  ).join(' ');
+  // Project info with language distribution bar
+  const langColors = ['var(--blue)', 'var(--success)', 'var(--purple)', '#ff6800', '#d29922', 'var(--accent)', '#f85149', '#bc8cff'];
+  const langBar = data.languages.length > 0 ? `
+    <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;margin-bottom:8px;">
+      ${data.languages.filter(l => l.percentage > 0).map((l, i) =>
+        `<div style="flex:${l.percentage};background:${langColors[i % langColors.length]};" title="${esc(l.name)} ${l.percentage}%"></div>`
+      ).join('')}
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+      ${data.languages.filter(l => l.percentage > 0).map((l, i) =>
+        `<span style="display:flex;align-items:center;gap:4px;font-size:11px;"><span style="width:8px;height:8px;background:${langColors[i % langColors.length]};border-radius:2px;"></span>${esc(l.name)} ${l.percentage}%</span>`
+      ).join('')}
+    </div>` : '';
 
   const projectInfo = `
-    <div class="section">
-      <div class="section-title">Project Info</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-top:20px;">
+      <div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin-bottom:12px;letter-spacing:0.5px;">Project Info</div>
+      ${langBar}
       <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px;">
-        <div><span style="color:var(--text-muted)">Languages:</span> ${langTags || 'N/A'}</div>
-        <div><span style="color:var(--text-muted)">Framework:</span> ${data.framework ? esc(data.framework) : 'None detected'}</div>
-        <div><span style="color:var(--text-muted)">Test runner:</span> ${data.testRunner ? esc(data.testRunner) : 'None detected'}</div>
+        ${data.framework ? `<div><span style="color:var(--text-muted);margin-right:6px;">Framework</span><strong>${esc(data.framework)}</strong></div>` : ''}
+        ${data.testRunner ? `<div><span style="color:var(--text-muted);margin-right:6px;">Tests</span><strong>${esc(data.testRunner)}</strong></div>` : ''}
+        <div><span style="color:var(--text-muted);margin-right:6px;">Files</span><strong>${fmtNum(data.totalFiles)}</strong></div>
+        <div><span style="color:var(--text-muted);margin-right:6px;">Tokens</span><strong>${fmtShort(data.totalTokens)}</strong></div>
       </div>
     </div>`;
 
@@ -1686,8 +1697,22 @@ export function renderGraph(data: GraphPageData, port: number): string {
       <h1 class="page-title" style="margin-bottom:0">Import Graph</h1>
       <span id="graph-stats" class="mono" style="color:var(--text-muted);font-size:12px;"></span>
     </div>
+    <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;">
+        <span style="color:var(--text-muted);">Nodes</span> <strong style="color:var(--blue);">${data.nodes.length}</strong>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;">
+        <span style="color:var(--text-muted);">Edges</span> <strong style="color:var(--purple);">${data.edges.length}</strong>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;">
+        <span style="color:var(--text-muted);">Directories</span> <strong style="color:var(--accent);">${new Set(data.nodes.map(n => n.group)).size}</strong>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;">
+        <span style="color:var(--text-muted);">Total tokens</span> <strong style="color:#ff6800;">${fmtShort(data.nodes.reduce((s, n) => s + n.tokens, 0))}</strong>
+      </div>
+    </div>
     <input type="text" id="graph-search" class="search-box" placeholder="Filter nodes..." style="margin-bottom:12px;">
-    <div id="graph-container" style="width:100%;height:calc(100vh - 170px);background:var(--surface);border:1px solid var(--border);border-radius:8px;position:relative;overflow:hidden;"></div>
+    <div id="graph-container" style="width:100%;height:calc(100vh - 220px);background:var(--surface);border:1px solid var(--border);border-radius:8px;position:relative;overflow:hidden;"></div>
     <div id="node-drawer" style="position:fixed;top:0;right:0;width:360px;height:100vh;background:var(--bg);border-left:1px solid var(--border);transform:translateX(100%);transition:transform 0.25s ease;overflow-y:auto;z-index:999;box-shadow:-8px 0 30px rgba(0,0,0,0.3);">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:1;">
         <strong style="font-size:14px;">File Details</strong>
@@ -2158,6 +2183,28 @@ export function renderImpact(data: ImpactPageData, port: number): string {
         <div class="risk-meter-fill" style="width:${data.riskScore}%;background:${color};"></div>
       </div>
       <span style="font-size:12px;color:${color};">${data.riskScore}/100</span>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;">
+      <div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin-bottom:12px;letter-spacing:0.5px;">Impact Flow</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <div style="background:var(--accent);color:var(--bg);padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;font-family:${T.mono};">${esc(data.file.split('/').pop() || data.file)}</div>
+        ${data.directDependents.length > 0 ? `<span style="color:var(--text-dim);">affects</span>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          ${data.directDependents.slice(0, 5).map(f => `<span style="background:rgba(255,104,0,0.15);color:#ff6800;padding:3px 8px;border-radius:4px;font-size:10px;font-family:${T.mono};">${esc(f.split('/').pop() || f)}</span>`).join('')}
+          ${data.directDependents.length > 5 ? `<span style="color:var(--text-dim);font-size:10px;">+${data.directDependents.length - 5} more</span>` : ''}
+        </div>` : '<span style="color:var(--success);font-size:11px;">No dependents — isolated change</span>'}
+        ${data.affectedTests.length > 0 ? `<span style="color:var(--text-dim);">tests</span>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          ${data.affectedTests.slice(0, 3).map(f => `<span style="background:rgba(136,98,232,0.15);color:var(--purple);padding:3px 8px;border-radius:4px;font-size:10px;font-family:${T.mono};">${esc(f.split('/').pop() || f)}</span>`).join('')}
+          ${data.affectedTests.length > 3 ? `<span style="color:var(--text-dim);font-size:10px;">+${data.affectedTests.length - 3} more</span>` : ''}
+        </div>` : ''}
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:20px;">
+      <a href="/graph" style="background:var(--surface);border:1px solid var(--border);color:var(--blue);text-decoration:none;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;">View in Graph</a>
+      <a href="/files" style="background:var(--surface);border:1px solid var(--border);color:var(--text-muted);text-decoration:none;padding:8px 16px;border-radius:8px;font-size:12px;">All Files</a>
     </div>
 
     ${depList(data.directDependents, 'Direct Dependents')}
