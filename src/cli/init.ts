@@ -111,6 +111,33 @@ export async function initCommand(options: InitOptions): Promise<void> {
     }
   } catch { /* ignore — MCP setup is optional */ }
 
+  // Set up Claude Code hook to capture actual prompts
+  try {
+    const settingsPath = resolve(root, '.claude', 'settings.json');
+    let settings: Record<string, unknown> = {};
+    if (existsSync(settingsPath)) {
+      try { settings = JSON.parse(readFileSync(settingsPath, 'utf8')); } catch { /* ignore */ }
+    }
+    const hooks = (settings.hooks || {}) as Record<string, unknown[]>;
+    const existing = hooks.UserPromptSubmit as Array<{ command?: string }> | undefined;
+    const hasOurHook = existing?.some(h => h.command?.includes('codebase-pilot-log-prompt'));
+    if (!hasOurHook) {
+      if (!hooks.UserPromptSubmit) hooks.UserPromptSubmit = [];
+      (hooks.UserPromptSubmit as unknown[]).push({
+        type: 'command',
+        command: 'codebase-pilot-log-prompt',
+        timeout: 5,
+      });
+      settings.hooks = hooks;
+      const settingsDir = resolve(root, '.claude');
+      if (!existsSync(settingsDir)) mkdirSync(settingsDir, { recursive: true });
+      writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf8');
+      console.log('');
+      console.log('  Prompt tracking:');
+      console.log('    \x1b[32m✓ .claude/settings.json hook configured\x1b[0m — all prompts will be logged');
+    }
+  } catch { /* ignore — hook setup is optional */ }
+
   console.log('');
   console.log('  Done! Start Claude Code and try:');
   console.log('    /healthcheck           — verify agent setup');

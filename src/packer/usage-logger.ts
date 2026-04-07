@@ -104,6 +104,34 @@ export function readGlobalLogs(): PackRun[] {
 }
 
 // ---------------------------------------------------------------------------
+// Prompt log (actual user prompts from Claude Code hooks)
+// ---------------------------------------------------------------------------
+
+export interface PromptEntry {
+  date: string;
+  type: 'prompt';
+  project: string;
+  projectPath: string;
+  sessionId?: string;
+  prompt: string;
+  promptLength: number;
+  branch?: string;
+}
+
+export function readPromptLogs(): PromptEntry[] {
+  const path = join(getGlobalDir(), 'prompts.jsonl');
+  if (!existsSync(path)) return [];
+  try {
+    return readFileSync(path, 'utf8')
+      .split('\n')
+      .filter(l => l.trim())
+      .map(l => JSON.parse(l) as PromptEntry);
+  } catch {
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Stats computation
 // ---------------------------------------------------------------------------
 

@@ -10,7 +10,7 @@ import { WsServer } from './ws.js';
 import { detect } from '../scanner/detector.js';
 import { collectFiles } from '../packer/collector.js';
 import { buildImportGraph, getReverseDependencies, computeBlastRadius } from '../intelligence/imports.js';
-import { readGlobalLogs, getStats, getProjectSummaries, getRecentRuns, readPackLogs } from '../packer/usage-logger.js';
+import { readGlobalLogs, getStats, getProjectSummaries, getRecentRuns, readPackLogs, readPromptLogs } from '../packer/usage-logger.js';
 import { formatTokenCount } from '../packer/token-counter.js';
 import { createSearchIndex } from '../intelligence/search.js';
 import { scanForSecrets } from '../security/scanner.js';
@@ -248,8 +248,11 @@ export function startUiServer(root: string, port: number): { broadcast: (event: 
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         const totalSaved = sorted.reduce((s, r) => s + Math.max(0, r.tokensRaw - r.tokensPacked), 0);
         const totalUsed = sorted.reduce((s, r) => s + r.tokensPacked, 0);
+        const promptLogs = readPromptLogs()
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         const data: PromptsPageData = {
           runs: sorted,
+          promptLogs,
           totalSaved,
           totalUsed,
           totalSessions: globalLogs.length,
@@ -381,6 +384,12 @@ export function startUiServer(root: string, port: number): { broadcast: (event: 
         const idx = getSearchIndex();
         const results = idx.search(q, 50);
         jsonResponse(res, { results });
+        return;
+      }
+
+      if (pathname === '/api/prompt-logs') {
+        const prompts = readPromptLogs();
+        jsonResponse(res, { prompts: prompts.slice(-200).reverse() });
         return;
       }
 

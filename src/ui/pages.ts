@@ -2189,6 +2189,16 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
 // Prompts (all pack sessions system-wide, real-time, DESC)
 // ---------------------------------------------------------------------------
 
+export interface PromptLogEntry {
+  date: string;
+  project: string;
+  projectPath: string;
+  prompt: string;
+  promptLength: number;
+  branch?: string;
+  sessionId?: string;
+}
+
 export interface PromptsPageData {
   runs: Array<{
     date: string;
@@ -2201,6 +2211,7 @@ export interface PromptsPageData {
     compressed: boolean;
     agent?: string;
   }>;
+  promptLogs: PromptLogEntry[];
   totalSaved: number;
   totalUsed: number;
   totalSessions: number;
@@ -2537,9 +2548,46 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
     });
     </script>`;
 
+  // User Prompts section (actual Claude Code prompts captured via hook)
+  const promptRows = data.promptLogs.slice(0, 100).map((p, i) => {
+    const d = new Date(p.date);
+    const timeStr = d.toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const branchBadge = p.branch
+      ? `<span class="badge" style="background:rgba(136,98,232,0.15);color:var(--purple);font-size:10px;">${esc(p.branch)}</span>`
+      : '';
+    const truncated = p.prompt.length > 120 ? esc(p.prompt.slice(0, 120)) + '…' : esc(p.prompt);
+    return `<tr style="animation:fadeIn 0.3s ease both;animation-delay:${Math.min(i * 0.02, 0.5)}s">
+      <td class="mono" style="font-size:11px;color:var(--text-muted)">${esc(timeStr)}</td>
+      <td><strong>${esc(p.project)}</strong></td>
+      <td>${branchBadge}</td>
+      <td style="max-width:500px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.prompt)}">${truncated}</td>
+      <td class="mono" style="font-size:11px;color:var(--text-dim)">${p.promptLength > 0 ? `~${Math.ceil(p.promptLength / 4)} tokens` : ''}</td>
+    </tr>`;
+  }).join('');
+
+  const userPromptsHtml = data.promptLogs.length > 0 ? `
+    <div class="table-wrap" style="margin-top:32px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <h3 style="margin:0;">User Prompts (Claude Code) <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--blue);background:rgba(88,166,255,0.12);border:1px solid rgba(88,166,255,0.25);border-radius:20px;padding:2px 10px;margin-left:8px;">Hook</span></h3>
+        <div style="font-size:12px;color:var(--text-muted);">${data.promptLogs.length} prompts captured</div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Time</th><th>Project</th><th>Branch</th><th>Prompt</th><th>Est. Tokens</th>
+        </tr></thead>
+        <tbody>${promptRows}</tbody>
+      </table>
+    </div>` : `
+    <div style="margin-top:32px;padding:24px;background:var(--surface);border-radius:12px;border:1px solid var(--border);text-align:center;">
+      <div style="font-size:14px;color:var(--text-muted);margin-bottom:8px;">No prompts captured yet</div>
+      <div style="font-size:12px;color:var(--text-dim);">Run <code style="background:var(--bg);padding:2px 6px;border-radius:4px;">codebase-pilot init</code> in your project to auto-configure Claude Code prompt tracking.</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:8px;">Uses Claude Code <code>UserPromptSubmit</code> hook — captures every prompt you type.</div>
+    </div>`;
+
   const body = `
     <h1 class="page-title">Prompts</h1>
     ${summaryCards}
+    ${userPromptsHtml}
     ${tableHtml}
     ${sseScript}
     ${drawerHtml}`;
