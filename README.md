@@ -185,6 +185,11 @@ All files with token counts, language tags, percentage of total.
 
 <img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/files.png" alt="Files" width="100%" />
 
+### Security
+Pattern categories, risk levels, detected secrets — side by side.
+
+<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/security.png" alt="Security" width="100%" />
+
 ---
 
 ## Features
