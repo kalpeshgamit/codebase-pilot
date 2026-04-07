@@ -2,15 +2,18 @@
 // Hook script for Claude Code UserPromptSubmit — logs actual prompts.
 // Called via stdin JSON: { prompt, session_id, cwd, hook_event_name }
 // Writes to ~/.codebase-pilot/prompts.jsonl
+// NOTE: No child_process import — reads .git/HEAD directly for branch name.
 
-import { appendFileSync, mkdirSync, existsSync } from 'node:fs';
+import { appendFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import { homedir } from 'node:os';
-import { execFileSync } from 'node:child_process';
 
 function getGitBranch(cwd: string): string | undefined {
   try {
-    return execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 2000 }).trim();
+    // Read .git/HEAD directly — no child_process needed
+    const head = readFileSync(join(cwd, '.git', 'HEAD'), 'utf8').trim();
+    if (head.startsWith('ref: refs/heads/')) return head.slice(16);
+    return head.slice(0, 8); // detached HEAD — return short hash
   } catch { return undefined; }
 }
 

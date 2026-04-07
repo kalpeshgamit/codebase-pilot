@@ -1,0 +1,74 @@
+# SafeSkill permissions manifest for codebase-pilot
+# https://safeskill.dev/docs/permissions
+
+name: codebase-pilot-cli
+description: "AI context engine — pack, compress, optimize any codebase for LLMs. Zero cloud."
+
+permissions:
+  filesystem:
+    read:
+      - purpose: "Scan project files for packing and compression"
+        scope: "project directory only"
+      - purpose: "Read config from .codebase-pilot/ and ~/.codebase-pilot/"
+        scope: "project and user home config dirs"
+    write:
+      - purpose: "Write pack output, config, logs, search index"
+        scope: ".codebase-pilot/ dir and codebase-pilot-output.*"
+      - purpose: "Write global history and prompt logs"
+        scope: "~/.codebase-pilot/"
+
+  network:
+    outbound: false
+    inbound:
+      - purpose: "Web dashboard UI server"
+        scope: "localhost only (port 7456)"
+        protocol: "http + websocket"
+
+  child_process:
+    - command: "git rev-parse --abbrev-ref HEAD"
+      purpose: "Get current branch name for tracking"
+      user_input: false
+    - command: "git log -1 --format=%s"
+      purpose: "Get last commit message for tracking"
+      user_input: false
+    - command: "git status --porcelain"
+      purpose: "Count uncommitted changes"
+      user_input: false
+    - command: "node daemon.js"
+      purpose: "Start background daemon process"
+      user_input: false
+    - command: "launchctl / systemctl / schtasks"
+      purpose: "System service management (install/uninstall)"
+      user_input: false
+
+  environment:
+    - variable: HOME
+      purpose: "Locate ~/.codebase-pilot/ config directory"
+    - variable: USERPROFILE
+      purpose: "Windows equivalent of HOME"
+    - variable: USERNAME
+      purpose: "Windows Task Scheduler user identification"
+    - variable: USER
+      purpose: "Unix user identification"
+
+  database:
+    - type: "sqlite (better-sqlite3)"
+      purpose: "Full-text search index (FTS5)"
+      scope: "local in-memory or .codebase-pilot/"
+      external: false
+
+security:
+  telemetry: false
+  analytics: false
+  external_api_calls: false
+  credential_storage: false
+  code_execution: false
+  ai_api_access: false
+
+data_flow:
+  - source: "os.homedir()"
+    sink: "child_process.spawn()"
+    explanation: "Home dir used to locate daemon log file path. Spawn starts own daemon code, not arbitrary commands."
+  - source: "fs.readFileSync()"
+    sink: "child_process.spawn()"
+    explanation: "PID file read to check if daemon is running. Spawn starts new daemon if needed. No file contents used as arguments."
