@@ -9,7 +9,7 @@ import { homedir } from 'node:os';
 import { Worker } from 'node:worker_threads';
 import chokidar from 'chokidar';
 
-import { startUiServer } from './server.js';
+import { startUiServer, warmCache, invalidateCache } from './server.js';
 import { readPackLogs, readGlobalLogs, getStats, getProjectSummaries, logPackRun } from '../packer/usage-logger.js';
 
 const root = process.argv[2] || process.cwd();
@@ -23,6 +23,9 @@ const AUTOPILOT_DEBOUNCE_MS = 60 * 1000;       // 60s
 // ---------------------------------------------------------------------------
 
 const { broadcast, actualPort } = startUiServer(root, port);
+
+// Pre-warm cache so first page load is fast
+warmCache(root);
 
 // Write actual port to PID file so CLI --status shows the right URL
 actualPort.then((usedPort) => {
@@ -117,6 +120,9 @@ watcher.on('error', (err) => {
 watcher.on('all', async (event, filePath) => {
   const relative = filePath.replace(root + '/', '');
   broadcast('file-change', { event, file: relative, time: new Date().toISOString() });
+
+  // Invalidate cache so next page load picks up the changes
+  if (['add', 'change', 'unlink'].includes(event)) invalidateCache();
 
   if (existsSync(filePath)) {
     try {

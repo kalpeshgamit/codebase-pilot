@@ -64,12 +64,63 @@ function htmlResponse(res: import('node:http').ServerResponse, html: string): vo
 }
 
 // ---------------------------------------------------------------------------
+// Cache — collectFiles + detect are expensive; cache with 60s TTL
+// ---------------------------------------------------------------------------
+
+const CACHE_TTL_MS = 60_000;
+let cachedFiles: ReturnType<typeof collectFiles> | null = null;
+let cachedFilesTime = 0;
+let cachedScan: { languages: Array<{ name: string; percentage: number }>; framework: string | null; testRunner: string | null } | null = null;
+let cachedScanTime = 0;
+
+function getCachedFiles(root: string): ReturnType<typeof collectFiles> {
+  if (cachedFiles && Date.now() - cachedFilesTime < CACHE_TTL_MS) return cachedFiles;
+  cachedFiles = collectFiles(root, {});
+  cachedFilesTime = Date.now();
+  return cachedFiles;
+}
+
+async function getCachedScan(root: string) {
+  if (cachedScan && Date.now() - cachedScanTime < CACHE_TTL_MS) return cachedScan;
+  try {
+    const scan = await detect(root);
+    cachedScan = {
+      languages: scan.languages.map(l => ({ name: l.name, percentage: l.percentage })),
+      framework: scan.framework,
+      testRunner: scan.testRunner,
+    };
+  } catch {
+    cachedScan = { languages: [], framework: null, testRunner: null };
+  }
+  cachedScanTime = Date.now();
+  return cachedScan;
+}
+
+/** Invalidate cache (called after file changes) */
+export function invalidateCache(): void {
+  cachedFiles = null;
+  cachedScan = null;
+}
+
+/** Pre-warm cache on startup (non-blocking) */
+export function warmCache(root: string): void {
+  // Run in next tick so it doesn't block server startup
+  setTimeout(async () => {
+    try {
+      getCachedFiles(root);
+      await getCachedScan(root);
+      process.stderr.write('[codebase-pilot] cache warmed\n');
+    } catch { /* ignore */ }
+  }, 100);
+}
+
+// ---------------------------------------------------------------------------
 // Data builders
 // ---------------------------------------------------------------------------
 
 async function buildDashboardData(root: string): Promise<DashboardData> {
   const projectName = basename(root);
-  const files = collectFiles(root, {});
+  const files = getCachedFiles(root);
   const totalFiles = files.length;
   const totalTokens = files.reduce((s, f) => s + f.tokens, 0);
 
@@ -79,18 +130,7 @@ async function buildDashboardData(root: string): Promise<DashboardData> {
   const month = getStats(logs, 30);
   const recentRuns = getRecentRuns(logs, 10);
 
-  let languages: DashboardData['languages'] = [];
-  let framework: string | null = null;
-  let testRunner: string | null = null;
-
-  try {
-    const scan = await detect(root);
-    languages = scan.languages.map(l => ({ name: l.name, percentage: l.percentage }));
-    framework = scan.framework;
-    testRunner = scan.testRunner;
-  } catch {
-    // scan may fail on some projects — degrade gracefully
-  }
+  const scan = await getCachedScan(root);
 
   return {
     projectName,
@@ -100,14 +140,14 @@ async function buildDashboardData(root: string): Promise<DashboardData> {
     week,
     month,
     recentRuns,
-    languages,
-    framework,
-    testRunner,
+    languages: scan.languages,
+    framework: scan.framework,
+    testRunner: scan.testRunner,
   };
 }
 
 function buildFilesData(root: string): FilesPageData {
-  const files = collectFiles(root, {});
+  const files = getCachedFiles(root);
   const totalTokens = files.reduce((s, f) => s + f.tokens, 0);
   return {
     files: files.map(f => ({ relativePath: f.relativePath, language: f.language, tokens: f.tokens })),
@@ -265,7 +305,7 @@ export function startUiServer(root: string, port: number): { broadcast: (event: 
       }
 
       if (pathname === '/security') {
-        const files = collectFiles(root, {});
+        const files = getCachedFiles(root);
         const categories = new Map<string, number>();
         for (const p of SECRET_PATTERNS) {
           categories.set(p.category, (categories.get(p.category) || 0) + 1);
