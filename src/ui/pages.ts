@@ -1141,8 +1141,8 @@ export function renderDashboard(data: DashboardData, port: number): string {
           <div class="savings-bar-saved" style="width:${pctSaved.toFixed(1)}%"></div>
         </div>
         <div class="savings-bar-legend">
-          <span class="legend-used">${fmtNum(used)} used</span>
-          <span class="legend-saved">${fmtNum(saved)} saved</span>
+          <span class="legend-used">${fmtShort(used)} used</span>
+          <span class="legend-saved">${fmtShort(saved)} saved</span>
         </div>
       </div>`;
   }
@@ -1853,7 +1853,7 @@ export function renderFiles(data: FilesPageData, port: number): string {
   const body = `
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
       <h1 class="page-title" style="margin-bottom:0">Files</h1>
-      <span class="mono" style="color:var(--text-muted);font-size:12px;">${fmtNum(data.files.length)} files, ${fmtNum(data.totalTokens)} tokens total</span>
+      <span class="mono" style="color:var(--text-muted);font-size:12px;">${fmtNum(data.files.length)} files, ${fmtShort(data.totalTokens)} tokens total</span>
       <span id="files-loaded" class="mono" style="color:var(--text-dim);font-size:11px;">${Math.min(BATCH, sorted.length)} of ${sorted.length} loaded</span>
     </div>
     <div class="table-wrap">
@@ -2014,8 +2014,8 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
         <div class="savings-bar-saved" style="width:${pS.toFixed(1)}%"></div>
       </div>
       <div class="savings-bar-legend">
-        <span class="legend-used">${fmtNum(used)} used</span>
-        <span class="legend-saved">${fmtNum(saved)} saved</span>
+        <span class="legend-used">${fmtShort(used)} used</span>
+        <span class="legend-saved">${fmtShort(saved)} saved</span>
       </div>
     </div>`;
   }
@@ -2039,8 +2039,8 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
         <td><strong>${esc(p.project)}</strong>${activeTag}</td>
         <td class="mono" style="font-size:11px;color:var(--text-muted)">${esc(p.projectPath)}</td>
         <td class="mono">${p.sessions}</td>
-        <td class="mono" style="color:var(--success)">${fmtNum(p.tokensSaved)}</td>
-        <td class="mono">${fmtNum(p.tokensUsed)}</td>
+        <td class="mono" style="color:var(--success)">${fmtShort(p.tokensSaved)}</td>
+        <td class="mono">${fmtShort(p.tokensUsed)}</td>
         <td class="mono" style="color:var(--accent)">${savePct}%</td>
         <td class="mono">${lastDate}</td>
       </tr>`;
