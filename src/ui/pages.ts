@@ -1081,14 +1081,25 @@ export function renderGraph(data: GraphPageData, port: number): string {
     .attr('stroke', '#0d1117')
     .attr('stroke-width', 1.5);
 
-  // Click detection: listen on the container, find which node was clicked
-  document.getElementById('graph-container').addEventListener('click', function(e) {
-    if (_dragActive) { _dragActive = false; return; }
-    var circle = e.target;
-    if (circle.tagName !== 'circle') return;
-    var nodeData = d3.select(circle.parentNode).datum();
-    if (nodeData) openDrawer(nodeData);
-  }, true);
+  // Click detection: listen directly on the SVG element in capture phase
+  var svgEl = document.querySelector('#graph-container svg');
+  if (svgEl) {
+    svgEl.addEventListener('click', function(e) {
+      if (_dragActive) { _dragActive = false; return; }
+      // Walk up from click target to find circle or its parent g
+      var target = e.target;
+      var gNode = null;
+      while (target && target !== svgEl) {
+        if (target.tagName === 'circle') { gNode = target.parentNode; break; }
+        if (target.tagName === 'text') { gNode = target.parentNode; break; }
+        target = target.parentNode;
+      }
+      if (gNode) {
+        var nodeData = d3.select(gNode).datum();
+        if (nodeData) openDrawer(nodeData);
+      }
+    }, true);
+  }
 
   var labels = nodeG.append('text')
     .text(function(d) { return d.id.split('/').pop().replace(/\.\w+$/, ''); })
@@ -1125,7 +1136,7 @@ export function renderGraph(data: GraphPageData, port: number): string {
   function openDrawer(d) {
     var drawer = document.getElementById('node-drawer');
     var drawerBody = document.getElementById('drawer-body');
-    drawer.classList.add('open');
+    drawer.style.transform = 'translateX(0)';
     drawerBody.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</div>';
 
     fetch('/api/impact?file=' + encodeURIComponent(d.id))
@@ -1192,13 +1203,10 @@ export function renderGraph(data: GraphPageData, port: number): string {
     <div id="node-drawer" style="position:fixed;top:0;right:0;width:360px;height:100vh;background:var(--bg);border-left:1px solid var(--border);transform:translateX(100%);transition:transform 0.25s ease;overflow-y:auto;z-index:999;box-shadow:-8px 0 30px rgba(0,0,0,0.3);">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:1;">
         <strong style="font-size:14px;">File Details</strong>
-        <button onclick="document.getElementById('node-drawer').classList.remove('open')" style="background:var(--surface);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-size:16px;line-height:1;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;">&times;</button>
+        <button onclick="document.getElementById('node-drawer').style.transform='translateX(100%)'" style="background:var(--surface);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-size:16px;line-height:1;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;">&times;</button>
       </div>
       <div id="drawer-body" style="padding:20px;"></div>
     </div>
-    <style>
-      #node-drawer.open { transform: translateX(0); }
-    </style>
     <div id="graph-tooltip" style="display:none;position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;pointer-events:none;z-index:100;color:var(--text);max-width:400px;"></div>
     ${graphScript}`;
 
