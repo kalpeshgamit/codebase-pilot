@@ -1,0 +1,71 @@
+name: Token Report
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  token-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pack & analyze
+        id: pilot
+        uses: kalpeshgamit/codebase-pilot@main
+        with:
+          command: 'pack --compress --dry-run'
+
+      - name: Scan secrets
+        id: secrets
+        uses: kalpeshgamit/codebase-pilot@main
+        with:
+          command: 'scan-secrets'
+        continue-on-error: true
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        env:
+          PILOT_FILES: ${{ steps.pilot.outputs.files }}
+          PILOT_RAW: ${{ steps.pilot.outputs.tokens_raw }}
+          PILOT_PACKED: ${{ steps.pilot.outputs.tokens_packed }}
+          PILOT_PCT: ${{ steps.pilot.outputs.savings_pct }}
+          PILOT_COST: ${{ steps.pilot.outputs.cost_saved }}
+          PILOT_SECRETS: ${{ steps.secrets.outputs.secrets_found }}
+        with:
+          script: |
+            const files = process.env.PILOT_FILES || '0';
+            const raw = process.env.PILOT_RAW || '0';
+            const packed = process.env.PILOT_PACKED || '0';
+            const pct = process.env.PILOT_PCT || '0';
+            const cost = process.env.PILOT_COST || '$0.00';
+            const secrets = process.env.PILOT_SECRETS || '0';
+
+            const secretsRow = Number(secrets) > 0
+              ? `| Secrets detected | ${secrets} |`
+              : '| Secrets | Clean |';
+
+            const body = [
+              '## codebase-pilot Token Report',
+              '',
+              '| Metric | Value |',
+              '|--------|-------|',
+              `| Files | ${files} |`,
+              `| Raw tokens | ${Number(raw).toLocaleString()} |`,
+              `| Packed tokens | ${Number(packed).toLocaleString()} |`,
+              `| Savings | ${pct}% |`,
+              `| Cost saved | ${cost} per prompt |`,
+              secretsRow,
+              '',
+              '> Powered by [codebase-pilot](https://github.com/kalpeshgamit/codebase-pilot)',
+            ].join('\n');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

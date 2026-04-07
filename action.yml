@@ -1,0 +1,79 @@
+name: 'codebase-pilot'
+description: 'Pack, compress, and scan your codebase for AI context optimization. Save 60-90% tokens.'
+author: 'Kalpesh Gamit (KG)'
+
+branding:
+  icon: 'zap'
+  color: 'green'
+
+inputs:
+  command:
+    description: 'Command to run: pack, scan-secrets, tokens, eval, impact'
+    required: false
+    default: 'pack --compress --dry-run'
+  dir:
+    description: 'Project directory'
+    required: false
+    default: '.'
+  node-version:
+    description: 'Node.js version'
+    required: false
+    default: '20'
+
+outputs:
+  files:
+    description: 'Number of files packed'
+    value: ${{ steps.run.outputs.files }}
+  tokens-raw:
+    description: 'Raw token count'
+    value: ${{ steps.run.outputs.tokens_raw }}
+  tokens-packed:
+    description: 'Packed token count'
+    value: ${{ steps.run.outputs.tokens_packed }}
+  savings-pct:
+    description: 'Savings percentage'
+    value: ${{ steps.run.outputs.savings_pct }}
+  cost-saved:
+    description: 'Estimated cost saved (USD)'
+    value: ${{ steps.run.outputs.cost_saved }}
+  secrets-found:
+    description: 'Number of secrets detected'
+    value: ${{ steps.run.outputs.secrets_found }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Install codebase-pilot
+      shell: bash
+      run: npm install -g codebase-pilot-cli@latest
+
+    - name: Run codebase-pilot
+      id: run
+      shell: bash
+      run: |
+        set +e
+        OUTPUT=$(codebase-pilot ${{ inputs.command }} -d "${{ inputs.dir }}" 2>&1)
+        EXIT_CODE=$?
+        echo "$OUTPUT"
+
+        # Parse output for structured data
+        FILES=$(echo "$OUTPUT" | grep -oE 'Files:\s+[0-9]+' | grep -oE '[0-9]+' | head -1)
+        RAW=$(echo "$OUTPUT" | grep -oE 'Raw:\s+~[0-9,]+' | grep -oE '[0-9,]+' | head -1 | tr -d ',')
+        PACKED=$(echo "$OUTPUT" | grep -oE 'Packed:\s+~[0-9,]+' | grep -oE '[0-9,]+' | head -1 | tr -d ',')
+        SAVINGS=$(echo "$OUTPUT" | grep -oE '[0-9]+% reduction' | grep -oE '[0-9]+' | head -1)
+        COST=$(echo "$OUTPUT" | grep -oE 'saves? ~\$[0-9.]+' | grep -oE '\$[0-9.]+' | head -1)
+        SECRETS=$(echo "$OUTPUT" | grep -oE '[0-9]+ potential secret' | grep -oE '[0-9]+' | head -1)
+
+        echo "files=${FILES:-0}" >> $GITHUB_OUTPUT
+        echo "tokens_raw=${RAW:-0}" >> $GITHUB_OUTPUT
+        echo "tokens_packed=${PACKED:-0}" >> $GITHUB_OUTPUT
+        echo "savings_pct=${SAVINGS:-0}" >> $GITHUB_OUTPUT
+        echo "cost_saved=${COST:-\$0.00}" >> $GITHUB_OUTPUT
+        echo "secrets_found=${SECRETS:-0}" >> $GITHUB_OUTPUT
+
+        exit $EXIT_CODE

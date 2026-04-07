@@ -495,6 +495,39 @@ The Prompts page shows:
 
 ---
 
+## GitHub Action
+
+Add token analysis to every PR:
+
+```yaml
+# .github/workflows/token-report.yml
+name: Token Report
+on: [pull_request]
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: kalpeshgamit/codebase-pilot@main
+        with:
+          command: 'pack --compress --dry-run'
+```
+
+**PR comment output:**
+
+| Metric | Value |
+|--------|-------|
+| Files | 95 |
+| Raw tokens | 125,228 |
+| Packed tokens | 35,388 |
+| Savings | 72% |
+| Cost saved | $0.27 per prompt |
+| Secrets | Clean |
+
+Available commands: `pack --compress --dry-run`, `scan-secrets`, `tokens`, `eval`, `impact --file <path>`
+
+---
+
 ## Benchmarks
 
 ```bash
