@@ -1062,24 +1062,23 @@ export function renderGraph(data: GraphPageData, port: number): string {
     .attr('stroke-width', 1)
     .attr('stroke-opacity', 0.6);
 
-  var dragStartPos = null;
+  var dragMoved = false;
   var nodeG = g.append('g')
     .selectAll('g')
     .data(data.nodes)
     .join('g')
     .style('cursor', 'pointer')
+    .on('click', function(e, d) {
+      if (!dragMoved) {
+        e.stopPropagation();
+        openDrawer(d);
+      }
+    })
     .call(d3.drag()
-      .on('start', function(e, d) { dragStartPos = {x: e.x, y: e.y}; if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-      .on('drag', function(e, d) { d.fx = e.x; d.fy = e.y; })
-      .on('end', function(e, d) {
-        if (!e.active) sim.alphaTarget(0);
-        d.fx = null; d.fy = null;
-        // Detect click: drag distance < 5px
-        if (dragStartPos && Math.abs(e.x - dragStartPos.x) < 5 && Math.abs(e.y - dragStartPos.y) < 5) {
-          openDrawer(d);
-        }
-        dragStartPos = null;
-      })
+      .clickDistance(4)
+      .on('start', function(e, d) { dragMoved = false; if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on('drag', function(e, d) { dragMoved = true; d.fx = e.x; d.fy = e.y; })
+      .on('end', function(e, d) { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; setTimeout(function() { dragMoved = false; }, 50); })
     );
 
   var node = nodeG.append('circle')
