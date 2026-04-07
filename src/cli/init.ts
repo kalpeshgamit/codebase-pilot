@@ -7,6 +7,8 @@ import { generateAgentsJson } from '../generators/agents-json.js';
 import { generateSlashCommands } from '../generators/slash-commands.js';
 import { updateGitignore } from '../generators/gitignore.js';
 import { generatePlatformRules, type Platform } from '../generators/platform-rules.js';
+import { collectFiles } from '../packer/collector.js';
+import { scanForSecrets, isEnvFile } from '../security/scanner.js';
 
 interface InitOptions {
   dir: string;
@@ -65,6 +67,24 @@ export async function initCommand(options: InitOptions): Promise<void> {
       const result = generatePlatformRules(root, scan, platform);
       console.log(`    ${result.created ? '✓' : '~'} ${result.path} (${platform})`);
     }
+  }
+
+  // Quick security scan
+  console.log('');
+  console.log('  Security scan:');
+  const files = collectFiles(root, {});
+  let secretCount = 0;
+  let secretFiles = 0;
+  for (const f of files) {
+    if (isEnvFile(f.relativePath)) { secretFiles++; secretCount++; continue; }
+    const secrets = scanForSecrets(f.content, f.relativePath);
+    if (secrets.length > 0) { secretFiles++; secretCount += secrets.length; }
+  }
+  if (secretCount > 0) {
+    console.log(`    \x1b[33m⚠ ${secretCount} potential secret${secretCount > 1 ? 's' : ''} in ${secretFiles} file${secretFiles > 1 ? 's' : ''}\x1b[0m`);
+    console.log(`    Run \x1b[36mcodebase-pilot scan-secrets\x1b[0m for details`);
+  } else {
+    console.log('    \x1b[32m✓ No secrets detected\x1b[0m');
   }
 
   console.log('');

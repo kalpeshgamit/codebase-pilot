@@ -192,6 +192,21 @@ export function startUiServer(root: string, port: number): void {
       const relative = filePath.replace(root + '/', '');
       // Push file change event
       broadcast('file-change', { event, file: relative, time: new Date().toISOString() });
+      // Real-time secret detection on changed files
+      try {
+        const { readFileSync: readF } = await import('node:fs');
+        if (existsSync(filePath)) {
+          const content = readF(filePath, 'utf8');
+          const secrets = scanForSecrets(content, relative);
+          if (secrets.length > 0) {
+            broadcast('secret-alert', {
+              file: relative,
+              secrets: secrets.map(s => ({ pattern: s.pattern, risk: s.risk, line: s.line })),
+              time: new Date().toISOString(),
+            });
+          }
+        }
+      } catch { /* binary files or read errors */ }
       // Push updated stats
       try {
         const data = await buildDashboardData(root);
@@ -325,7 +340,7 @@ export function startUiServer(root: string, port: number): void {
           if (secrets.length > 0) {
             detectedFiles.push({
               file: file.relativePath,
-              secrets: secrets.map(s => ({ pattern: s.pattern, line: s.line })),
+              secrets: secrets.map(s => ({ pattern: s.pattern, risk: s.risk, line: s.line })),
             });
           }
         }

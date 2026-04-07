@@ -16,6 +16,7 @@ import { searchCommand } from '../cli/search.js';
 import { visualizeCommand } from '../cli/visualize.js';
 import { statsCommand } from '../cli/stats.js';
 import { uiCommand } from '../cli/ui.js';
+import { scanSecretsCommand } from '../cli/scan-secrets.js';
 
 const program = new Command();
 
@@ -136,5 +137,11 @@ program
   .option('--status', 'Check if UI server is running', false)
   .option('--foreground', 'Run in foreground (blocking)', false)
   .action(uiCommand);
+
+program
+  .command('scan-secrets')
+  .description('Scan codebase for leaked secrets and credentials')
+  .option('-d, --dir <path>', 'Project directory', '.')
+  .action(scanSecretsCommand);
 
 program.parse();

@@ -1,8 +1,29 @@
+export type RiskLevel = 'critical' | 'high' | 'medium' | 'low';
+
 export interface SecretPattern {
   name: string;
   regex: RegExp;
   category: string;
+  risk: RiskLevel;
 }
+
+const CATEGORY_RISK: Record<string, RiskLevel> = {
+  cloud: 'critical',
+  payment: 'critical',
+  database: 'critical',
+  'crypto-key': 'critical',
+  vcs: 'high',
+  ai: 'high',
+  'ai-infra': 'high',
+  'ai-devtools': 'high',
+  auth: 'high',
+  devinfra: 'medium',
+  messaging: 'medium',
+  monitoring: 'medium',
+  social: 'medium',
+  crypto: 'medium',
+  generic: 'low',
+};
 
 export const SECRET_PATTERNS: SecretPattern[] = [
   // ═══════════════════════════════════════════
@@ -215,4 +236,4 @@ export const SECRET_PATTERNS: SecretPattern[] = [
   { name: 'Generic Bearer Token', category: 'generic', regex: /[Bb]earer\s+[A-Za-z0-9\-_\.]{20,}/ },
   { name: 'Base64 High Entropy', category: 'generic', regex: /(?:key|secret|token|password)\s*[=:]\s*['"]?[A-Za-z0-9+/]{40,}={0,2}['"]/i },
   { name: 'Hex High Entropy', category: 'generic', regex: /(?:key|secret|token)\s*[=:]\s*['"]?[0-9a-fA-F]{32,}['"]/i },
-];
+].map(p => ({ ...p, risk: CATEGORY_RISK[p.category] || 'low' as RiskLevel }));

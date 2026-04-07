@@ -977,6 +977,19 @@ export function renderDashboard(data: DashboardData, port: number): string {
         } catch(err) {}
       });
 
+      es.addEventListener('secret-alert', function(e) {
+        try {
+          var d = JSON.parse(e.data);
+          var toast = document.createElement('div');
+          toast.style.cssText = 'position:fixed;bottom:20px;right:24px;background:rgba(248,81,73,0.95);color:#fff;padding:12px 18px;border-radius:8px;font-size:13px;z-index:200;animation:fadeIn 0.3s ease;border:1px solid rgba(248,81,73,0.5);backdrop-filter:blur(12px);max-width:400px;';
+          var count = d.secrets.length;
+          toast.innerHTML = '<strong>&#9888; Secret detected!</strong><br>' + d.file + ' (' + count + ' match' + (count > 1 ? 'es' : '') + ')';
+          document.body.appendChild(toast);
+          setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s'; }, 5000);
+          setTimeout(function() { toast.remove(); }, 5500);
+        } catch(err) {}
+      });
+
       es.onerror = function() {
         if (badge) badge.style.display = 'none';
       };
@@ -1647,7 +1660,7 @@ export interface SecurityPageData {
   totalPatterns: number;
   categories: Array<{ name: string; count: number }>;
   scannedFiles: number;
-  detectedFiles: Array<{ file: string; secrets: Array<{ pattern: string; line: number }> }>;
+  detectedFiles: Array<{ file: string; secrets: Array<{ pattern: string; risk: string; line: number }> }>;
   cleanFiles: number;
 }
 
@@ -1696,8 +1709,9 @@ export function renderSecurity(data: SecurityPageData, port: number): string {
   let detectedTable = '';
   if (data.detectedFiles.length > 0) {
     const rows = data.detectedFiles.map(f => {
+      const riskBadge: Record<string, string> = { critical: 'badge-red', high: 'badge-red', medium: 'badge-yellow', low: 'badge-blue' };
       const secrets = f.secrets.map(s =>
-        `<span class="badge badge-red">${esc(s.pattern)} :${s.line}</span>`
+        `<span class="badge ${riskBadge[s.risk] || 'badge-red'}">${esc(s.risk.toUpperCase())} ${esc(s.pattern)} :${s.line}</span>`
       ).join(' ');
       return `<tr>
         <td class="mono" style="font-size:12px;">${esc(f.file)}</td>
