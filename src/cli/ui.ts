@@ -103,7 +103,16 @@ export async function uiCommand(options: UiOptions): Promise<void> {
       console.log(`    Port:    ${info.port}`);
       console.log(`    URL:     http://localhost:${info.port}`);
       console.log(`    Project: ${info.root}`);
-      console.log(`    Health:  ${portUp ? 'responding' : 'starting...'}`);
+      console.log(`    Health:  ${portUp ? '\x1b[32mresponding\x1b[0m' : '\x1b[33mnot responding\x1b[0m'}`);
+      console.log(`    Log:     ${getLogFile()}`);
+      if (!portUp) {
+        console.log('');
+        console.log('  Troubleshooting:');
+        console.log(`    1. Check log:  cat ${getLogFile()}`);
+        console.log('    2. Port in use by another app? Try: codebase-pilot ui --port 7457');
+        console.log('    3. Firewall blocking? Allow Node.js in OS firewall settings');
+        console.log('    4. Restart: codebase-pilot ui --stop && codebase-pilot ui');
+      }
     } else {
       removePid();
       console.log('  UI server is not running.');
@@ -160,33 +169,58 @@ export async function uiCommand(options: UiOptions): Promise<void> {
   if (child.pid) {
     writePid(child.pid, port, root);
 
-    // Wait for port to become available
+    // Wait for port to become available — try requested port + next 20 (server may auto-fallback)
     let ready = false;
-    for (let i = 0; i < 20; i++) {
+    let actualPort = port;
+    for (let i = 0; i < 30; i++) {
       await new Promise(r => setTimeout(r, 250));
+      // Check the requested port first, then read PID file for actual port (server may have shifted)
       if (await isPortOpen(port)) {
         ready = true;
+        actualPort = port;
         break;
+      }
+      // After a few attempts, read the PID file — daemon may have written the actual port
+      if (i >= 4) {
+        const info = readPid();
+        if (info && info.port !== port && await isPortOpen(info.port)) {
+          ready = true;
+          actualPort = info.port;
+          break;
+        }
       }
     }
 
     if (ready) {
+      // Update PID file with actual port
+      writePid(child.pid, actualPort, root);
       console.log(`  codebase-pilot UI started`);
       console.log('');
-      console.log(`  URL:     http://localhost:${port}`);
+      console.log(`  URL:     http://localhost:${actualPort}`);
       console.log(`  PID:     ${child.pid}`);
       console.log(`  Project: ${basename(root)}`);
       console.log(`  Log:     ${logFile}`);
+      if (actualPort !== port) {
+        console.log(`  Note:    Port ${port} was in use, using ${actualPort} instead`);
+      }
       console.log('');
-      console.log('  Running in background. Dashboard auto-updates via SSE.');
+      console.log('  Running in background. Dashboard auto-updates via WebSocket.');
       console.log('  Stop with: codebase-pilot ui --stop');
     } else {
       console.log(`  UI server starting on port ${port}...`);
       console.log(`  PID: ${child.pid}`);
-      console.log(`  Check: codebase-pilot ui --status`);
+      console.log(`  Log: ${logFile}`);
+      console.log('');
+      console.log('  If the dashboard does not open, check:');
+      console.log(`    cat ${logFile}`);
+      console.log('  Common issues:');
+      console.log('    - Port in use: try codebase-pilot ui --port 7457');
+      console.log('    - Firewall: allow Node.js in your OS firewall settings');
+      console.log('  Check: codebase-pilot ui --status');
     }
   } else {
     console.error('  Failed to start UI server.');
+    console.log(`  Check log: ${logFile}`);
   }
 
   console.log('');

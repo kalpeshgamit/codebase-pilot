@@ -2,9 +2,10 @@
 // Daemon entry — always running, tracks everything whether UI is open or not.
 // Autopilot (file watching + auto-pack) lives here, not in the HTTP server.
 
-import { resolve, basename, dirname } from 'node:path';
+import { resolve, basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { Worker } from 'node:worker_threads';
 import chokidar from 'chokidar';
 
@@ -21,7 +22,17 @@ const AUTOPILOT_DEBOUNCE_MS = 60 * 1000;       // 60s
 // Start HTTP + WebSocket server (UI layer — display only)
 // ---------------------------------------------------------------------------
 
-const { broadcast } = startUiServer(root, port);
+const { broadcast, actualPort } = startUiServer(root, port);
+
+// Write actual port to PID file so CLI --status shows the right URL
+actualPort.then((usedPort) => {
+  const globalDir = join(homedir(), '.codebase-pilot');
+  if (!existsSync(globalDir)) mkdirSync(globalDir, { recursive: true });
+  const pidFile = join(globalDir, 'ui.pid');
+  try {
+    writeFileSync(pidFile, JSON.stringify({ pid: process.pid, port: usedPort, root }), 'utf8');
+  } catch { /* ignore — CLI will have written its own */ }
+});
 
 // ---------------------------------------------------------------------------
 // Autopilot engine — runs forever, independent of browser connections

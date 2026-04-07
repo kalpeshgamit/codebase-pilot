@@ -149,7 +149,7 @@ function buildImpactData(root: string, file: string): ImpactPageData {
 // Server
 // ---------------------------------------------------------------------------
 
-export function startUiServer(root: string, port: number): { broadcast: (event: string, data: unknown) => void } {
+export function startUiServer(root: string, port: number): { broadcast: (event: string, data: unknown) => void; actualPort: Promise<number> } {
   // Lazily build search index on first query
   let searchIndex: ReturnType<typeof createSearchIndex> | null = null;
   function getSearchIndex() {
@@ -361,6 +361,20 @@ export function startUiServer(root: string, port: number): { broadcast: (event: 
         return;
       }
 
+      if (pathname === '/api/health') {
+        jsonResponse(res, {
+          status: 'ok',
+          project: basename(root),
+          root,
+          uptime: process.uptime(),
+          pid: process.pid,
+          node: process.version,
+          platform: process.platform,
+          wsClients: ws.size,
+        });
+        return;
+      }
+
       // ---- Static files (logo, favicon) ----
 
       if (pathname === '/static/logo.png') {
@@ -411,18 +425,56 @@ export function startUiServer(root: string, port: number): { broadcast: (event: 
     }
   });
 
-  server.listen(port, () => {
+  // Port retry logic — try requested port, then fallback to next 20 ports
+  const MAX_PORT_RETRIES = 20;
+  let resolvePort: (port: number) => void;
+  const actualPort = new Promise<number>((resolve) => { resolvePort = resolve; });
+  let listenDone = false;
+
+  // Single 'listening' handler — fires once when any port succeeds
+  server.once('listening', () => {
+    listenDone = true;
+    const addr = server.address();
+    const usedPort = typeof addr === 'object' && addr ? addr.port : port;
+    resolvePort(usedPort);
     console.log('');
     console.log('  \x1b[36mcodebase-pilot\x1b[0m UI');
     console.log('');
-    console.log(`  \x1b[1mhttp://localhost:${port}\x1b[0m`);
+    console.log(`  \x1b[1mhttp://localhost:${usedPort}\x1b[0m`);
     console.log('');
     console.log(`  Project: ${basename(root)}`);
     console.log(`  Root:    ${root}`);
+    if (usedPort !== port) {
+      console.log(`  Note:    Port ${port} was in use, using ${usedPort} instead`);
+    }
     console.log('');
     console.log('  Press Ctrl+C to stop');
     console.log('');
   });
+
+  function tryListen(attempt: number): void {
+    if (listenDone) return;
+    const tryPort = port + attempt;
+    server.once('error', (err: NodeJS.ErrnoException) => {
+      if (listenDone) return;
+      if (err.code === 'EADDRINUSE') {
+        if (attempt < MAX_PORT_RETRIES) {
+          console.error(`[codebase-pilot] Port ${tryPort} in use, trying ${tryPort + 1}...`);
+          tryListen(attempt + 1);
+        } else {
+          console.error(`[codebase-pilot] All ports ${port}-${port + MAX_PORT_RETRIES} are in use.`);
+          console.error('[codebase-pilot] Try: codebase-pilot ui --port <number>');
+          process.exit(1);
+        }
+      } else {
+        console.error(`[codebase-pilot] Server error: ${err.message}`);
+        process.exit(1);
+      }
+    });
+
+    server.listen(tryPort);
+  }
+  tryListen(0);
 
   // Graceful shutdown
   function shutdown() {
@@ -433,5 +485,5 @@ export function startUiServer(root: string, port: number): { broadcast: (event: 
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 
-  return { broadcast };
+  return { broadcast, actualPort };
 }
