@@ -1714,7 +1714,7 @@ export function renderSecurity(data: SecurityPageData, port: number): string {
         `<span class="badge ${riskBadge[s.risk] || 'badge-red'}">${esc(s.risk.toUpperCase())} ${esc(s.pattern)} :${s.line}</span>`
       ).join(' ');
       return `<tr>
-        <td class="mono" style="font-size:12px;">${esc(f.file)}</td>
+        <td class="mono" style="font-size:12px;" title="${esc(f.file)}">${esc(f.file.split('/').pop() || f.file)}</td>
         <td>${secrets}</td>
         <td class="mono">${f.secrets.length}</td>
       </tr>`;
