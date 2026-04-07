@@ -75,6 +75,9 @@ codebase-pilot scan-secrets
 
 # 5. Open web dashboard
 codebase-pilot ui    # → http://localhost:7456
+
+# 6. (Optional) Install as always-on service
+codebase-pilot service   # auto-starts on login, tracks forever
 ```
 
 ---
@@ -155,17 +158,40 @@ The `tokens` command tracks your actual savings over time:
 ## Web Dashboard
 
 ```bash
-codebase-pilot ui          # → http://localhost:7456
-codebase-pilot ui --stop   # stop daemon
-codebase-pilot ui --status # check status
+codebase-pilot ui               # → http://localhost:7456
+codebase-pilot ui --stop        # stop daemon
+codebase-pilot ui --status      # check status + diagnostics
+codebase-pilot ui --port 8080   # custom port
 ```
 
-Port **7456** = PILOT on phone keypad. Runs as background daemon with real-time SSE updates.
+Port **7456** = PILOT on phone keypad. Runs as background daemon with real-time WebSocket updates. Auto-fallback to next port if 7456 is in use.
+
+### Always-On Daemon
+
+Install as a system service — tracks token usage even when the dashboard is closed:
+
+```bash
+codebase-pilot service           # install (auto-starts on login)
+codebase-pilot service --status  # check if running
+codebase-pilot service --restart # restart daemon
+codebase-pilot service --uninstall
+```
+
+| Platform | Mechanism |
+|----------|-----------|
+| macOS | launchd (auto-start on login, KeepAlive) |
+| Linux | systemd user unit (auto-start, restart on failure) |
+| Windows | Task Scheduler (runs at logon, restart on crash) |
+
+Open the dashboard days or weeks later — all your token history is already there.
 
 ### Dashboard
-Live stat cards, savings chart, recent sessions — auto-updates via SSE.
+Live stat cards (K/M/B abbreviated), savings chart, recent sessions — auto-updates via WebSocket.
 
 <img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/dashboard.png" alt="Dashboard" width="100%" />
+
+### Prompts (All Sessions)
+Every pack session across all projects. Live table, newest first, real-time updates.
 
 ### Projects (System-Wide)
 All projects in one view — sessions, tokens saved, efficiency per project.
@@ -207,7 +233,7 @@ Pattern categories, risk levels, detected secrets — side by side.
 | **Security Scanner** | 180 patterns across 15 categories — cloud, payment, AI, crypto, generic |
 | **Blast Radius** | Import graph analysis, risk scoring (0-100), affected test detection |
 | **Full-Text Search** | SQLite FTS5 with BM25 ranking, snippet extraction, highlighted matches |
-| **Web Dashboard** | 7 pages, dark/light theme, glassmorphism UI, real-time SSE updates |
+| **Web Dashboard** | 8 pages, dark/light theme, glassmorphism UI, real-time WebSocket, auto-port fallback |
 | **MCP Server** | 10 tools + 3 prompts over stdio — works with Claude Code, Cursor, Zed |
 | **Multi-Platform** | Generates CLAUDE.md, .cursorrules, .windsurfrules, AGENTS.md |
 | **Agent System** | 7-layer sub-agents with haiku/sonnet/opus model routing |
@@ -216,6 +242,7 @@ Pattern categories, risk levels, detected secrets — side by side.
 | **Visualization** | D3.js interactive force-directed import graph (drag, zoom, search) |
 | **Benchmarks** | `eval` command — tokens, compression ratio, import edges, timing |
 | **Usage Stats** | Per-project + system-wide savings tracking (today/week/month) |
+| **Always-On Daemon** | System service (launchd/systemd/Task Scheduler), auto-pack, tracks forever |
 | **76 Languages** | 3 tiers: 17 full ecosystem, 21 package+test, 38 extension-only |
 | **58 Frameworks** | Next.js, Django, Gin, Axum, Spring Boot, Rails, Laravel, and more |
 | **39 Test Runners** | Vitest, pytest, Go test, Cargo test, JUnit, RSpec, and more |
@@ -236,7 +263,8 @@ codebase-pilot tokens [--agent <name>]                   # token breakdown + sav
 codebase-pilot impact [--file <path>]                    # blast radius analysis
 codebase-pilot search <query>                            # full-text search
 codebase-pilot visualize                                 # D3.js import graph HTML
-codebase-pilot ui [--stop | --status]                    # web dashboard (port 7456)
+codebase-pilot ui [--stop | --status | --port N]         # web dashboard (port 7456)
+codebase-pilot service [--uninstall | --status]          # install as system service
 codebase-pilot serve                                     # MCP server (stdio)
 codebase-pilot watch                                     # file watcher
 codebase-pilot stats [--global]                          # usage history
