@@ -1082,6 +1082,16 @@ export function renderGraph(data: GraphPageData, port: number): string {
     .attr('stroke-width', 1.5);
 
   // Click detection: listen directly on the SVG element in capture phase
+  // Close drawer when clicking outside (on SVG background)
+  document.addEventListener('click', function(e) {
+    var drawer = document.getElementById('node-drawer');
+    if (drawer && drawer.style.transform === 'translateX(0)') {
+      if (!drawer.contains(e.target) && !e.target.closest('circle') && !e.target.closest('text')) {
+        drawer.style.transform = 'translateX(100%)';
+      }
+    }
+  });
+
   var svgEl = document.querySelector('#graph-container svg');
   if (svgEl) {
     svgEl.addEventListener('click', function(e) {
