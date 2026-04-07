@@ -559,7 +559,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
 
   .savings-bar-used {
     height: 100%;
-    background: #f97316;
+    background: #ff6800;
   }
 
   .savings-bar-saved {
@@ -567,7 +567,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
     background: var(--success);
   }
 
-  body.light .savings-bar-used { background: #f97316; }
+  body.light .savings-bar-used { background: #ff6800; }
   body.light .savings-bar-saved { background: #16a34a; }
 
   .savings-bar-legend {
@@ -588,7 +588,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
     vertical-align: middle;
   }
 
-  .legend-used::before { background: #f97316 !important; }
+  .legend-used::before { background: #ff6800 !important; }
   .legend-saved::before { background: var(--success) !important; }
 
   /* Section */
@@ -934,9 +934,9 @@ export function renderDashboard(data: DashboardData, port: number): string {
         <div class="card-label">Total Files</div>
         <div class="card-value" style="color:var(--blue);">${fmtNum(data.totalFiles)}</div>
       </div>
-      <div class="card" style="border-top:3px solid #f97316;">
+      <div class="card" style="border-top:3px solid #ff6800;">
         <div class="card-label">Total Tokens</div>
-        <div class="card-value" style="color:#f97316;">${fmtNum(data.totalTokens)}</div>
+        <div class="card-value" style="color:#ff6800;">${fmtNum(data.totalTokens)}</div>
       </div>
       <div class="card" style="border-top:3px solid var(--purple);">
         <div class="card-label">Sessions Today</div>
@@ -1781,9 +1781,9 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
         <div class="card-label">Tokens Saved (All Time)</div>
         <div class="card-value" style="color:var(--success);">${fmtNum(data.allTime.tokensSaved)}</div>
       </div>
-      <div class="card" style="border-top:3px solid #f97316;">
+      <div class="card" style="border-top:3px solid #ff6800;">
         <div class="card-label">Tokens Used (All Time)</div>
-        <div class="card-value" style="color:#f97316;">${fmtNum(data.allTime.tokensUsed)}</div>
+        <div class="card-value" style="color:#ff6800;">${fmtNum(data.allTime.tokensUsed)}</div>
       </div>
     </div>`;
 
