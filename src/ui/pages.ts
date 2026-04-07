@@ -133,6 +133,23 @@ function layout(title: string, activePage: string, body: string, port: number, h
     z-index: 50;
   }
 
+  @keyframes exhaust {
+    0% { opacity: 0.8; transform: translateY(0) scale(1); }
+    50% { opacity: 0.4; transform: translateY(8px) scale(1.2); }
+    100% { opacity: 0; transform: translateY(18px) scale(0.6); }
+  }
+
+  @keyframes exhaustGlow {
+    0% { box-shadow: 0 0 8px rgba(63,185,80,0.6), 0 0 16px rgba(63,185,80,0.3); }
+    50% { box-shadow: 0 0 12px rgba(255,140,0,0.7), 0 0 24px rgba(255,100,0,0.4); }
+    100% { box-shadow: 0 0 6px rgba(63,185,80,0.5), 0 0 12px rgba(63,185,80,0.2); }
+  }
+
+  @keyframes jetHover {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+
   .sidebar-brand {
     padding: 16px;
     border-bottom: 1px solid var(--border);
@@ -142,11 +159,71 @@ function layout(title: string, activePage: string, body: string, port: number, h
     gap: 6px;
   }
 
+  .jet-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+
+  .jet-wrapper::before,
+  .jet-wrapper::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ff6600, #ff4400, transparent);
+    animation: exhaust 0.8s ease-out infinite;
+  }
+
+  .jet-wrapper::before {
+    left: calc(50% - 12px);
+    animation-delay: 0s;
+  }
+
+  .jet-wrapper::after {
+    left: calc(50% + 6px);
+    animation-delay: 0.15s;
+  }
+
+  .jet-exhaust {
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+  }
+
+  .jet-exhaust span {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    animation: exhaust 0.6s ease-out infinite;
+  }
+
+  .jet-exhaust span:nth-child(1) { background: #ff6600; animation-delay: 0s; }
+  .jet-exhaust span:nth-child(2) { background: #ff4400; animation-delay: 0.1s; }
+  .jet-exhaust span:nth-child(3) { background: #ff6600; animation-delay: 0.2s; }
+  .jet-exhaust span:nth-child(4) { background: #ff4400; animation-delay: 0.05s; }
+
   .sidebar-brand img {
     width: 150px;
     height: auto;
     margin-bottom: 6px;
     filter: drop-shadow(0 2px 12px rgba(0,0,0,0.4));
+    animation: jetHover 3s ease-in-out infinite;
+  }
+
+  .sidebar-brand:hover img {
+    filter: drop-shadow(0 0 16px rgba(63,185,80,0.5)) drop-shadow(0 2px 12px rgba(0,0,0,0.4));
+    animation: jetHover 1.5s ease-in-out infinite;
+  }
+
+  .sidebar-brand:hover .jet-exhaust span {
+    animation-duration: 0.3s;
+    width: 6px;
+    height: 6px;
   }
 
   .brand-text {
@@ -703,7 +780,12 @@ ${headExtra}
 <body>
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <img src="/static/logo.png" alt="codebase-pilot" onerror="this.style.display='none'" />
+      <div class="jet-wrapper">
+        <img src="/static/logo.png" alt="codebase-pilot" onerror="this.style.display='none'" />
+        <div class="jet-exhaust">
+          <span></span><span></span><span></span><span></span>
+        </div>
+      </div>
       <div class="brand-text">Codebase Pilot</div>
     </div>
     <nav>
