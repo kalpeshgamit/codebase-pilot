@@ -930,21 +930,21 @@ export interface DashboardData {
 export function renderDashboard(data: DashboardData, port: number): string {
   const statCards = `
     <div class="cards">
-      <div class="card">
+      <div class="card" style="border-top:3px solid var(--blue);">
         <div class="card-label">Total Files</div>
-        <div class="card-value">${fmtNum(data.totalFiles)}</div>
+        <div class="card-value" style="color:var(--blue);">${fmtNum(data.totalFiles)}</div>
       </div>
-      <div class="card">
+      <div class="card" style="border-top:3px solid #f97316;">
         <div class="card-label">Total Tokens</div>
-        <div class="card-value">${fmtNum(data.totalTokens)}</div>
+        <div class="card-value" style="color:#f97316;">${fmtNum(data.totalTokens)}</div>
       </div>
-      <div class="card">
+      <div class="card" style="border-top:3px solid var(--purple);">
         <div class="card-label">Sessions Today</div>
-        <div class="card-value">${fmtNum(data.today.sessions)}</div>
+        <div class="card-value" style="color:var(--purple);">${fmtNum(data.today.sessions)}</div>
       </div>
-      <div class="card">
+      <div class="card" style="border-top:3px solid var(--success);">
         <div class="card-label">Tokens Saved This Week</div>
-        <div class="card-value">${fmtNum(data.week.tokensSaved)}</div>
+        <div class="card-value" style="color:var(--success);">${fmtNum(data.week.tokensSaved)}</div>
         <div class="card-sub">${fmtNum(data.week.tokensUsed)} used</div>
       </div>
     </div>`;
@@ -1723,21 +1723,21 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
   // System-wide stat cards
   const cards = `
     <div class="cards">
-      <div class="card" style="border-top:2px solid var(--accent);">
+      <div class="card" style="border-top:3px solid var(--blue);">
         <div class="card-label">Total Projects</div>
-        <div class="card-value">${data.projects.length}</div>
+        <div class="card-value" style="color:var(--blue);">${data.projects.length}</div>
       </div>
-      <div class="card" style="border-top:2px solid var(--success);">
+      <div class="card" style="border-top:3px solid var(--purple);">
         <div class="card-label">Total Sessions</div>
-        <div class="card-value">${fmtNum(data.allTime.sessions)}</div>
+        <div class="card-value" style="color:var(--purple);">${fmtNum(data.allTime.sessions)}</div>
       </div>
-      <div class="card" style="border-top:2px solid var(--warning);">
+      <div class="card" style="border-top:3px solid var(--success);">
         <div class="card-label">Tokens Saved (All Time)</div>
-        <div class="card-value">${fmtNum(data.allTime.tokensSaved)}</div>
+        <div class="card-value" style="color:var(--success);">${fmtNum(data.allTime.tokensSaved)}</div>
       </div>
-      <div class="card" style="border-top:2px solid #8b5cf6;">
+      <div class="card" style="border-top:3px solid #f97316;">
         <div class="card-label">Tokens Used (All Time)</div>
-        <div class="card-value">${fmtNum(data.allTime.tokensUsed)}</div>
+        <div class="card-value" style="color:#f97316;">${fmtNum(data.allTime.tokensUsed)}</div>
       </div>
     </div>`;
 
@@ -1857,21 +1857,21 @@ export function renderSecurity(data: SecurityPageData, port: number): string {
   // Summary cards
   const cards = `
     <div class="cards">
-      <div class="card" style="border-top:2px solid var(--accent);">
+      <div class="card" style="border-top:3px solid var(--blue);">
         <div class="card-label">Total Patterns</div>
-        <div class="card-value">${data.totalPatterns}</div>
+        <div class="card-value" style="color:var(--blue);">${data.totalPatterns}</div>
       </div>
-      <div class="card" style="border-top:2px solid var(--success);">
+      <div class="card" style="border-top:3px solid var(--purple);">
         <div class="card-label">Files Scanned</div>
-        <div class="card-value">${data.scannedFiles}</div>
+        <div class="card-value" style="color:var(--purple);">${data.scannedFiles}</div>
       </div>
-      <div class="card" style="border-top:2px solid var(--danger);">
+      <div class="card" style="border-top:3px solid var(--danger);">
         <div class="card-label">Files with Secrets</div>
-        <div class="card-value">${data.detectedFiles.length}</div>
+        <div class="card-value" style="color:var(--danger);">${data.detectedFiles.length}</div>
       </div>
-      <div class="card" style="border-top:2px solid var(--success);">
+      <div class="card" style="border-top:3px solid var(--success);">
         <div class="card-label">Clean Files</div>
-        <div class="card-value">${data.cleanFiles}</div>
+        <div class="card-value" style="color:var(--success);">${data.cleanFiles}</div>
       </div>
     </div>`;
 
