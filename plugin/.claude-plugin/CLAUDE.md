@@ -9,7 +9,7 @@ The codebase-pilot context engine optimizes token usage for large codebases.
 - `/token-budget` — Check token counts and plan context budget
 
 ## Available MCP Tools
-When the MCP server is active, you have these tools:
+Available tools (via MCP server):
 - `pack_codebase` — Pack and compress codebase (tracks tokens automatically)
 - `scan_project` — Detect languages, frameworks, databases
 - `count_tokens` — Token breakdown per file

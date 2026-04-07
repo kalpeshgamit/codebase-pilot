@@ -458,34 +458,34 @@ async function handleToolCall(root: string, name: string, args: Record<string, u
 function handlePromptGet(name: string, args: Record<string, string>): { role: string; content: { type: string; text: string } }[] {
   switch (name) {
     case 'review': {
-      const focus = args.focus ? ` Focus on: ${args.focus}.` : '';
+      const focus = args.focus ? ` Focus area: ${args.focus}.` : '';
       return [{
         role: 'user',
         content: {
           type: 'text',
-          text: `Review the codebase for issues, improvements, and best practices.${focus} Use the scan_project tool to understand the project structure, then pack_codebase to review the code. Provide specific, actionable suggestions with file paths and line references.`,
+          text: `Codebase review request.${focus} Tools available: scan_project (project structure), pack_codebase (code content). Goal: specific, actionable suggestions with file paths and line references.`,
         },
       }];
     }
 
     case 'onboard': {
-      const role = args.role ? ` The developer will be working as a ${args.role} engineer.` : '';
+      const role = args.role ? ` Role: ${args.role} engineer.` : '';
       return [{
         role: 'user',
         content: {
           type: 'text',
-          text: `Explain this project to a new developer who is joining the team.${role} Use scan_project to understand the structure, list_agents to see the agent setup, and list_files to identify key files. Cover: project purpose, tech stack, directory layout, how to build/test, and key patterns to follow.`,
+          text: `New developer onboarding request.${role} Tools available: scan_project (structure), list_agents (agent setup), list_files (key files). Cover: project purpose, tech stack, directory layout, build/test commands, key patterns.`,
         },
       }];
     }
 
     case 'optimize': {
-      const agent = args.agent ? ` Focus on the "${args.agent}" agent context.` : '';
+      const agent = args.agent ? ` Agent context: "${args.agent}".` : '';
       return [{
         role: 'user',
         content: {
           type: 'text',
-          text: `Analyze token usage and suggest optimizations to reduce context size.${agent} Use count_tokens to see per-file breakdown, get_savings to check current savings, and list_files to identify large files. Suggest which files to exclude, split, or compress.`,
+          text: `Token optimization request.${agent} Tools available: count_tokens (per-file breakdown), get_savings (current savings), list_files (large files). Goal: reduce context size by identifying files to exclude, split, or compress.`,
         },
       }];
     }
