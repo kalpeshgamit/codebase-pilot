@@ -1119,6 +1119,20 @@ export interface DashboardData {
 }
 
 export function renderDashboard(data: DashboardData, port: number): string {
+  // Build sparkline SVGs from daily trend data
+  const trend = data.dailyTrend || [];
+  function miniSparkline(values: number[], color: string): string {
+    if (values.length < 2 || values.every(v => v === 0)) return '';
+    const max = Math.max(...values, 1);
+    const pts = values.map((v, i) => `${(i / (values.length - 1)) * 70 + 5},${22 - (v / max) * 18}`).join(' ');
+    return `<svg width="80" height="26" viewBox="0 0 80 26" style="position:absolute;bottom:6px;right:6px;opacity:0.25;">
+      <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+  }
+  const savedSparkline = miniSparkline(trend.map(d => d.saved), 'var(--success)');
+  const overallSparkline = miniSparkline(trend.map(d => d.saved + d.used), 'var(--accent)');
+  const sessionsSparkline = miniSparkline(trend.map(d => d.sessions), 'var(--purple)');
+
   const statCards = `
     <div class="cards">
       <div class="card" style="border-top:3px solid var(--blue);cursor:default;"
@@ -1131,22 +1145,25 @@ export function renderDashboard(data: DashboardData, port: number): string {
         <div class="card-label">Total Tokens</div>
         <div class="card-value" style="color:#ff6800;">${fmtShort(data.totalTokens)}</div>
       </div>
-      <div class="card" style="border-top:3px solid var(--purple);cursor:default;"
+      <div class="card" style="border-top:3px solid var(--purple);cursor:default;position:relative;overflow:hidden;"
         data-tip='${JSON.stringify({title:"Sessions Today",rows:[["Today",fmtNum(data.today.sessions)],["This week",fmtNum(data.week.sessions)],["This month",fmtNum(data.month.sessions)]],note:"Each \`pack\` run counts as one session."})}'>
         <div class="card-label">Sessions Today</div>
         <div class="card-value" style="color:var(--purple);">${fmtShort(data.today.sessions)}</div>
+        ${sessionsSparkline}
       </div>
-      <div class="card" style="border-top:3px solid var(--success);cursor:default;"
+      <div class="card" style="border-top:3px solid var(--success);cursor:default;position:relative;overflow:hidden;"
         data-tip='${JSON.stringify({title:"Tokens Saved This Week",rows:[["Saved",fmtNum(data.week.tokensSaved)],["Used",fmtNum(data.week.tokensUsed)],["Total",fmtNum(data.week.tokensSaved+data.week.tokensUsed)],["Save rate",((data.week.tokensSaved+data.week.tokensUsed)>0?Math.round((data.week.tokensSaved/(data.week.tokensSaved+data.week.tokensUsed))*100):0)+"%"]],note:"Tokens saved = raw tokens minus packed tokens across all sessions this week."})}'>
         <div class="card-label">Tokens Saved This Week</div>
         <div class="card-value" style="color:var(--success);">${fmtShort(data.week.tokensSaved)}</div>
         <div class="card-sub">${fmtShort(data.week.tokensUsed)} used</div>
+        ${savedSparkline}
       </div>
-      <div class="card" style="border-top:3px solid var(--accent);cursor:default;"
+      <div class="card" style="border-top:3px solid var(--accent);cursor:default;position:relative;overflow:hidden;"
         data-tip='${JSON.stringify({title:"Overall Tokens This Month",rows:[["Saved",fmtNum(data.month.tokensSaved)],["Used",fmtNum(data.month.tokensUsed)],["Total",fmtNum(data.month.tokensSaved+data.month.tokensUsed)],["Sessions",fmtNum(data.month.sessions)]],note:"Combined token activity (used + saved) across all pack sessions this month."})}'>
         <div class="card-label">Overall Tokens This Month</div>
         <div class="card-value" style="color:var(--accent);">${fmtShort(data.month.tokensSaved + data.month.tokensUsed)}</div>
         <div class="card-sub">${fmtShort(data.month.tokensSaved)} saved</div>
+        ${overallSparkline}
       </div>
     </div>`;
 
@@ -1421,8 +1438,7 @@ export function renderDashboard(data: DashboardData, port: number): string {
       <polyline points="${sparkPoints}" fill="none" stroke="var(--success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>` : '';
 
-  // 7-day token trend chart
-  const trend = data.dailyTrend || [];
+  // 7-day token trend chart (reuse trend from sparklines above)
   const trendMax = Math.max(...trend.map(d => d.saved + d.used), 1);
   const hasTrendData = trend.some(d => d.saved > 0 || d.used > 0);
   const trendChart = hasTrendData ? `
@@ -2989,6 +3005,31 @@ export function renderSecurity(data: SecurityPageData, port: number): string {
       </div>
     </div>`;
 
+  // Risk distribution chart
+  const riskCounts = { critical: 0, high: 0, medium: 0, low: 0 };
+  for (const f of data.detectedFiles) {
+    for (const s of f.secrets) {
+      if (s.risk in riskCounts) riskCounts[s.risk as keyof typeof riskCounts]++;
+    }
+  }
+  const totalSecrets = Object.values(riskCounts).reduce((s, v) => s + v, 0);
+  const riskChart = totalSecrets > 0 ? `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;">
+      <div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin-bottom:12px;letter-spacing:0.5px;">Risk Distribution (${totalSecrets} findings)</div>
+      <div style="display:flex;height:24px;border-radius:6px;overflow:hidden;gap:1px;">
+        ${riskCounts.critical > 0 ? `<div style="flex:${riskCounts.critical};background:#f85149;" title="Critical: ${riskCounts.critical}"></div>` : ''}
+        ${riskCounts.high > 0 ? `<div style="flex:${riskCounts.high};background:#ff6800;" title="High: ${riskCounts.high}"></div>` : ''}
+        ${riskCounts.medium > 0 ? `<div style="flex:${riskCounts.medium};background:#d29922;" title="Medium: ${riskCounts.medium}"></div>` : ''}
+        ${riskCounts.low > 0 ? `<div style="flex:${riskCounts.low};background:var(--blue);" title="Low: ${riskCounts.low}"></div>` : ''}
+      </div>
+      <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;flex-wrap:wrap;">
+        ${riskCounts.critical > 0 ? `<span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#f85149;border-radius:2px;"></span>Critical ${riskCounts.critical}</span>` : ''}
+        ${riskCounts.high > 0 ? `<span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#ff6800;border-radius:2px;"></span>High ${riskCounts.high}</span>` : ''}
+        ${riskCounts.medium > 0 ? `<span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#d29922;border-radius:2px;"></span>Medium ${riskCounts.medium}</span>` : ''}
+        ${riskCounts.low > 0 ? `<span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:var(--blue);border-radius:2px;"></span>Low ${riskCounts.low}</span>` : ''}
+      </div>
+    </div>` : '';
+
   // Categories table
   const catRows = data.categories.map(c => {
     const barPct = data.totalPatterns > 0 ? Math.round((c.count / data.totalPatterns) * 100) : 0;
@@ -3094,9 +3135,23 @@ export function renderSecurity(data: SecurityPageData, port: number): string {
     });
     <\/script>`;
 
+  // Security health score
+  const secScore = data.scannedFiles > 0 ? Math.round((data.cleanFiles / data.scannedFiles) * 100) : 100;
+  const secColor = secScore >= 95 ? 'var(--success)' : secScore >= 80 ? '#ff6800' : '#f85149';
+  const healthBadge = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:20px;">
+      <div style="font-size:36px;font-weight:800;color:${secColor};font-family:${T.mono};">${secScore}%</div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:${secColor};">${secScore >= 95 ? 'Excellent' : secScore >= 80 ? 'Good' : 'Needs Attention'}</div>
+        <div style="font-size:11px;color:var(--text-muted);">${data.cleanFiles} of ${data.scannedFiles} files are clean</div>
+      </div>
+    </div>`;
+
   const body = `
     <h1 class="page-title">Security Scanner <span style="font-size:14px;color:var(--text-muted);font-weight:400;">— ${esc(data.projectName)}</span></h1>
     ${cards}
+    ${healthBadge}
+    ${riskChart}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
       ${catTable}
       ${detectedTable}
