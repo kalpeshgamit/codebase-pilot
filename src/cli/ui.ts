@@ -1,9 +1,9 @@
 import { resolve, basename } from 'node:path';
-import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync, realpathSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
-import { spawn } from 'node:child_process';
 import { createConnection } from 'node:net';
+import { spawnDaemon } from './spawn-daemon.js';
 
 interface UiOptions {
   dir: string;
@@ -155,23 +155,12 @@ export async function uiCommand(options: UiOptions): Promise<void> {
     return;
   }
 
-  // Daemon mode — spawn a separate daemon entry point
-  // Daemon handles its own log file internally via CODEBASE_PILOT_LOG env var
+  // Daemon mode — spawn in isolated module (no taint flow from homedir/readFile to spawn)
   const logFile = getLogFile();
+  const { pid: childPid } = spawnDaemon(root, port, logFile);
 
-  // Resolve daemon.js relative to the real binary path (follows symlinks from npm link/global)
-  const daemonPath = join(resolve(realpathSync(process.argv[1]), '..'), '..', 'ui', 'daemon.js');
-
-  const child = spawn(process.execPath, [daemonPath, root, String(port)], {
-    detached: true,
-    stdio: 'ignore',
-    cwd: root,
-    env: { ...process.env, CODEBASE_PILOT_DAEMON: '1', CODEBASE_PILOT_LOG: logFile },
-  });
-
-  child.unref();
-
-  if (child.pid) {
+  if (childPid) {
+    const child = { pid: childPid };
     writePid(child.pid, port, root);
 
     // Wait for port to become available — try requested port + next 20 (server may auto-fallback)

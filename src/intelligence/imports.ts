@@ -88,10 +88,10 @@ function extractImports(
   const fileDir = dirname(filePath);
 
   for (const pattern of patterns) {
-    const regex = new RegExp(pattern.source, pattern.flags);
+    const re = new RegExp(pattern.source, pattern.flags);
     let match: RegExpExecArray | null;
 
-    while ((match = regex.exec(content)) !== null) {
+    while ((match = re.exec(content)) !== null) {
       const raw = match[1];
       if (!raw) continue;
 
