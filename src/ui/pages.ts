@@ -1062,14 +1062,10 @@ export function renderGraph(data: GraphPageData, port: number): string {
     .attr('stroke-width', 1)
     .attr('stroke-opacity', 0.6);
 
-  var node = g.append('g')
-    .selectAll('circle')
+  var nodeG = g.append('g')
+    .selectAll('g')
     .data(data.nodes)
-    .join('circle')
-    .attr('r', function(d) { return Math.max(4, Math.sqrt(d.tokens / 50) + 3); })
-    .attr('fill', function(d) { return groupColors[d.group] || 'var(--accent)'; })
-    .attr('stroke', '#0d1117')
-    .attr('stroke-width', 1.5)
+    .join('g')
     .style('cursor', 'pointer')
     .call(d3.drag()
       .on('start', function(e, d) { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
@@ -1077,9 +1073,24 @@ export function renderGraph(data: GraphPageData, port: number): string {
       .on('end', function(e, d) { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; })
     );
 
+  var node = nodeG.append('circle')
+    .attr('r', function(d) { return Math.max(4, Math.sqrt(d.tokens / 50) + 3); })
+    .attr('fill', function(d) { return groupColors[d.group] || 'var(--accent)'; })
+    .attr('stroke', '#0d1117')
+    .attr('stroke-width', 1.5);
+
+  var labels = nodeG.append('text')
+    .text(function(d) { return d.id.split('/').pop().replace(/\.\w+$/, ''); })
+    .attr('dx', function(d) { return Math.max(4, Math.sqrt(d.tokens / 50) + 3) + 4; })
+    .attr('dy', '0.35em')
+    .attr('fill', 'var(--text-muted)')
+    .attr('font-size', '9px')
+    .attr('font-family', 'ui-monospace, monospace')
+    .attr('pointer-events', 'none');
+
   var tooltipEl = document.getElementById('graph-tooltip');
 
-  node.on('mouseover', function(e, d) {
+  nodeG.on('mouseover', function(e, d) {
     tooltipEl.style.display = 'block';
     tooltipEl.textContent = '';
     var b = document.createElement('strong');
@@ -1089,13 +1100,15 @@ export function renderGraph(data: GraphPageData, port: number): string {
     tooltipEl.appendChild(document.createTextNode(d.tokens + ' tokens'));
     tooltipEl.appendChild(document.createElement('br'));
     tooltipEl.appendChild(document.createTextNode('group: ' + d.group));
-    d3.select(e.target).attr('stroke', 'var(--accent)').attr('stroke-width', 2.5);
+    d3.select(this).select('circle').attr('stroke', 'var(--accent)').attr('stroke-width', 2.5);
+    d3.select(this).select('text').attr('fill', 'var(--text)').attr('font-weight', '600');
   }).on('mousemove', function(e) {
     tooltipEl.style.left = (e.pageX + 12) + 'px';
     tooltipEl.style.top = (e.pageY - 12) + 'px';
   }).on('mouseout', function(e) {
     tooltipEl.style.display = 'none';
-    d3.select(e.target).attr('stroke', '#0d1117').attr('stroke-width', 1.5);
+    d3.select(this).select('circle').attr('stroke', '#0d1117').attr('stroke-width', 1.5);
+    d3.select(this).select('text').attr('fill', 'var(--text-muted)').attr('font-weight', 'normal');
   }).on('click', function(e, d) {
     window.location.href = '/impact?file=' + encodeURIComponent(d.id);
   });
@@ -1104,12 +1117,12 @@ export function renderGraph(data: GraphPageData, port: number): string {
     link
       .attr('x1', function(d) { return d.source.x; }).attr('y1', function(d) { return d.source.y; })
       .attr('x2', function(d) { return d.target.x; }).attr('y2', function(d) { return d.target.y; });
-    node.attr('cx', function(d) { return d.x; }).attr('cy', function(d) { return d.y; });
+    nodeG.attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; });
   });
 
   searchBox.addEventListener('input', function() {
     var q = searchBox.value.toLowerCase();
-    node.attr('opacity', function(d) { return !q || d.id.toLowerCase().indexOf(q) !== -1 ? 1 : 0.1; });
+    nodeG.attr('opacity', function(d) { return !q || d.id.toLowerCase().indexOf(q) !== -1 ? 1 : 0.1; });
     link.attr('opacity', function(d) {
       if (!q) return 0.6;
       var s = (typeof d.source === 'object' ? d.source.id : d.source).toLowerCase();
@@ -1657,6 +1670,7 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
 // ---------------------------------------------------------------------------
 
 export interface SecurityPageData {
+  projectName: string;
   totalPatterns: number;
   categories: Array<{ name: string; count: number }>;
   scannedFiles: number;
@@ -1738,7 +1752,7 @@ export function renderSecurity(data: SecurityPageData, port: number): string {
   }
 
   const body = `
-    <h1 class="page-title">Security Scanner</h1>
+    <h1 class="page-title">Security Scanner <span style="font-size:14px;color:var(--text-muted);font-weight:400;">— ${esc(data.projectName)}</span></h1>
     ${cards}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
       ${catTable}

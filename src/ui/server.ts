@@ -345,6 +345,7 @@ export function startUiServer(root: string, port: number): void {
           }
         }
         const data: SecurityPageData = {
+          projectName: basename(root),
           totalPatterns: SECRET_PATTERNS.length,
           categories: [...categories.entries()]
             .map(([name, count]) => ({ name, count }))
