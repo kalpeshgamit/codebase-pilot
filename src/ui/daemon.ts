@@ -127,6 +127,9 @@ watcher.on('all', async (event, filePath) => {
   autoPackTimer = setTimeout(() => {
     const count = changedFileCount;
     changedFileCount = 0;
+    // Respect cooldown — don't pack again if we just packed recently
+    const msSincePack = Date.now() - getLastPackTime();
+    if (msSincePack < AUTOPILOT_COOLDOWN_MS) return;
     runAutoPack(`${count} file${count !== 1 ? 's' : ''} changed`);
   }, AUTOPILOT_DEBOUNCE_MS);
 });
