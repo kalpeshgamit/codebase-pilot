@@ -1039,7 +1039,8 @@ export function renderGraph(data: GraphPageData, port: number): string {
 
   var g = svg.append('g');
 
-  svg.call(d3.zoom().on('zoom', function(e) { g.attr('transform', e.transform); }));
+  svg.call(d3.zoom().on('zoom', function(e) { g.attr('transform', e.transform); }))
+    .on('dblclick.zoom', null);
 
   var groupColors = {};
   var palette = ['var(--accent)', 'var(--success)', 'var(--warning)', 'var(--danger)', '#bc8cff', '#f778ba', '#79c0ff', '#7ee787'];
@@ -1062,30 +1063,26 @@ export function renderGraph(data: GraphPageData, port: number): string {
     .attr('stroke-width', 1)
     .attr('stroke-opacity', 0.6);
 
-  var dragMoved = false;
   var nodeG = g.append('g')
     .selectAll('g')
     .data(data.nodes)
     .join('g')
     .style('cursor', 'pointer')
-    .on('click', function(e, d) {
-      if (!dragMoved) {
-        e.stopPropagation();
-        openDrawer(d);
-      }
-    })
     .call(d3.drag()
-      .clickDistance(4)
-      .on('start', function(e, d) { dragMoved = false; if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-      .on('drag', function(e, d) { dragMoved = true; d.fx = e.x; d.fy = e.y; })
-      .on('end', function(e, d) { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; setTimeout(function() { dragMoved = false; }, 50); })
+      .on('start', function(e, d) { d._dragged = false; if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on('drag', function(e, d) { d._dragged = true; d.fx = e.x; d.fy = e.y; })
+      .on('end', function(e, d) { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; })
     );
 
   var node = nodeG.append('circle')
     .attr('r', function(d) { return Math.max(4, Math.sqrt(d.tokens / 50) + 3); })
     .attr('fill', function(d) { return groupColors[d.group] || 'var(--accent)'; })
     .attr('stroke', '#0d1117')
-    .attr('stroke-width', 1.5);
+    .attr('stroke-width', 1.5)
+    .on('mouseup', function(e, d) {
+      if (!d._dragged) { openDrawer(d); }
+      d._dragged = false;
+    });
 
   var labels = nodeG.append('text')
     .text(function(d) { return d.id.split('/').pop().replace(/\.\w+$/, ''); })
