@@ -376,11 +376,18 @@ export function startUiServer(root: string, port: number): void {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
           'Connection': 'keep-alive',
+          'X-Accel-Buffering': 'no',   // disable nginx buffering
           'Access-Control-Allow-Origin': '*',
         });
         res.write(`event: connected\ndata: ${JSON.stringify({ time: new Date().toISOString() })}\n\n`);
         sseClients.add(res);
-        req.on('close', () => sseClients.delete(res));
+
+        // Heartbeat every 25s — keeps connection alive through proxies/Safari
+        const heartbeat = setInterval(() => {
+          try { res.write(': ping\n\n'); } catch { clearInterval(heartbeat); sseClients.delete(res); }
+        }, 25000);
+
+        req.on('close', () => { clearInterval(heartbeat); sseClients.delete(res); });
         return;
       }
 
