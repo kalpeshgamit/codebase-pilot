@@ -1063,14 +1063,15 @@ export function renderGraph(data: GraphPageData, port: number): string {
     .attr('stroke-width', 1)
     .attr('stroke-opacity', 0.6);
 
+  var _dragActive = false;
   var nodeG = g.append('g')
     .selectAll('g')
     .data(data.nodes)
     .join('g')
     .style('cursor', 'pointer')
     .call(d3.drag()
-      .on('start', function(e, d) { d._dragged = false; if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-      .on('drag', function(e, d) { d._dragged = true; d.fx = e.x; d.fy = e.y; })
+      .on('start', function(e, d) { _dragActive = false; if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on('drag', function(e, d) { _dragActive = true; d.fx = e.x; d.fy = e.y; })
       .on('end', function(e, d) { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; })
     );
 
@@ -1080,17 +1081,14 @@ export function renderGraph(data: GraphPageData, port: number): string {
     .attr('stroke', '#0d1117')
     .attr('stroke-width', 1.5);
 
-  // Attach click via native DOM — bypasses all D3 event capture
-  nodeG.each(function(d) {
-    var el = this;
-    el.addEventListener('pointerup', function(e) {
-      if (!d._dragged) {
-        e.stopPropagation();
-        openDrawer(d);
-      }
-      d._dragged = false;
-    });
-  });
+  // Click detection: listen on the container, find which node was clicked
+  document.getElementById('graph-container').addEventListener('click', function(e) {
+    if (_dragActive) { _dragActive = false; return; }
+    var circle = e.target;
+    if (circle.tagName !== 'circle') return;
+    var nodeData = d3.select(circle.parentNode).datum();
+    if (nodeData) openDrawer(nodeData);
+  }, true);
 
   var labels = nodeG.append('text')
     .text(function(d) { return d.id.split('/').pop().replace(/\.\w+$/, ''); })
