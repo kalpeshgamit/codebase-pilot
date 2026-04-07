@@ -2272,7 +2272,7 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
     const durationHtml = (r as any).duration
       ? `<span style="font-size:10px;color:var(--text-dim)">${((r as any).duration / 1000).toFixed(1)}s</span>`
       : '';
-    const runJson = esc(JSON.stringify(r));
+    const runJson = esc(JSON.stringify(r)).replace(/'/g, '&#39;').replace(/\n/g, '\\n');
     return `<tr id="pr-row-${i}" data-run='${runJson}' onclick="openPromptDrawer(this)" style="cursor:pointer;animation:fadeIn 0.3s ease both;animation-delay:${Math.min(i * 0.02, 0.5)}s">
       <td class="mono" style="font-size:11px;color:var(--text-muted)">${esc(timeStr)}</td>
       <td><strong>${esc(r.project)}</strong></td>
@@ -2609,7 +2609,7 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
       ? `<span class="badge" style="background:rgba(136,98,232,0.15);color:var(--purple);font-size:10px;">${esc(p.branch)}</span>`
       : '';
     const truncated = p.prompt.length > 120 ? esc(p.prompt.slice(0, 120)) + '...' : esc(p.prompt);
-    const promptJson = esc(JSON.stringify(p));
+    const promptJson = esc(JSON.stringify(p)).replace(/'/g, '&#39;').replace(/\n/g, '\\n');
     return `<tr data-prompt='${promptJson}' onclick="openUserPromptDrawer(this)" style="cursor:pointer;animation:fadeIn 0.3s ease both;animation-delay:${Math.min(i * 0.02, 0.5)}s">
       <td class="mono" style="font-size:11px;color:var(--text-muted)">${esc(timeStr)}</td>
       <td><strong>${esc(p.project)}</strong></td>
