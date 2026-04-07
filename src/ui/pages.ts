@@ -1062,15 +1062,24 @@ export function renderGraph(data: GraphPageData, port: number): string {
     .attr('stroke-width', 1)
     .attr('stroke-opacity', 0.6);
 
+  var dragStartPos = null;
   var nodeG = g.append('g')
     .selectAll('g')
     .data(data.nodes)
     .join('g')
     .style('cursor', 'pointer')
     .call(d3.drag()
-      .on('start', function(e, d) { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on('start', function(e, d) { dragStartPos = {x: e.x, y: e.y}; if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
       .on('drag', function(e, d) { d.fx = e.x; d.fy = e.y; })
-      .on('end', function(e, d) { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; })
+      .on('end', function(e, d) {
+        if (!e.active) sim.alphaTarget(0);
+        d.fx = null; d.fy = null;
+        // Detect click: drag distance < 5px
+        if (dragStartPos && Math.abs(e.x - dragStartPos.x) < 5 && Math.abs(e.y - dragStartPos.y) < 5) {
+          openDrawer(d);
+        }
+        dragStartPos = null;
+      })
     );
 
   var node = nodeG.append('circle')
@@ -1109,8 +1118,9 @@ export function renderGraph(data: GraphPageData, port: number): string {
     tooltipEl.style.display = 'none';
     d3.select(this).select('circle').attr('stroke', '#0d1117').attr('stroke-width', 1.5);
     d3.select(this).select('text').attr('fill', 'var(--text-muted)').attr('font-weight', 'normal');
-  }).on('click', function(e, d) {
-    // Open drawer with file info — no page navigation
+  });
+
+  function openDrawer(d) {
     var drawer = document.getElementById('node-drawer');
     var drawerBody = document.getElementById('drawer-body');
     drawer.classList.add('open');
@@ -1120,7 +1130,7 @@ export function renderGraph(data: GraphPageData, port: number): string {
       .then(function(r) { return r.json(); })
       .then(function(impact) {
         var html = '<div style="font-family:ui-monospace,monospace;font-size:13px;color:var(--accent);margin-bottom:12px;">' + d.id + '</div>';
-        html += '<div style="display:flex;gap:12px;margin-bottom:16px;">';
+        html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">';
         html += '<span class="badge badge-blue">' + d.tokens + ' tokens</span>';
         html += '<span class="badge badge-green">' + d.group + '</span>';
         if (impact.riskLevel) html += '<span class="badge ' + (impact.riskLevel === 'high' || impact.riskLevel === 'critical' ? 'badge-red' : impact.riskLevel === 'medium' ? 'badge-yellow' : 'badge-green') + '">' + impact.riskLevel.toUpperCase() + ' ' + impact.riskScore + '/100</span>';
@@ -1140,13 +1150,13 @@ export function renderGraph(data: GraphPageData, port: number): string {
           html += '<div style="height:12px;"></div>';
         }
         html += '<div style="font-size:11px;color:var(--text-muted);">Total affected: ' + (impact.transitiveDependents ? impact.transitiveDependents.length : 0) + ' files</div>';
-        html += '<div style="margin-top:16px;"><a href="/impact?file=' + encodeURIComponent(d.id) + '" style="font-size:12px;">Open full impact page →</a></div>';
+        html += '<div style="margin-top:16px;"><a href="/impact?file=' + encodeURIComponent(d.id) + '" style="font-size:12px;">Open full impact page &rarr;</a></div>';
         drawerBody.innerHTML = html;
       })
       .catch(function() {
         drawerBody.innerHTML = '<div style="color:var(--danger);">Failed to load impact data</div>';
       });
-  });
+  }
 
   sim.on('tick', function() {
     link
