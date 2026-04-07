@@ -1,6 +1,6 @@
 ---
 name: impact-analysis
-description: Analyze the blast radius of a file change — find all dependents, transitive imports, affected tests, and risk score. Use before modifying shared files like types, utilities, or core modules.
+description: Analyzes the blast radius of a file change — finds all dependents, transitive imports, affected tests, and risk score. Best before modifying shared files like types, utilities, or core modules.
 ---
 
 # Impact Analysis (Blast Radius)
@@ -36,7 +36,7 @@ Affected tests (5):
 Total affected: 27 files
 ```
 
-## When to Use
+## Usage Scenarios
 - Before modifying a shared type definition or utility
 - Before refactoring a core module
 - To understand the scope of a bug fix

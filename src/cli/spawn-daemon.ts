@@ -20,7 +20,14 @@ export function spawnDaemon(root: string, port: number, logFile: string): SpawnR
     detached: true,
     stdio: 'ignore',
     cwd: root,
-    env: { ...process.env, CODEBASE_PILOT_DAEMON: '1', CODEBASE_PILOT_LOG: logFile },
+    env: {
+      PATH: process.env.PATH || '',
+      HOME: process.env.HOME || '',
+      USERPROFILE: process.env.USERPROFILE || '',
+      NODE_ENV: process.env.NODE_ENV || '',
+      CODEBASE_PILOT_DAEMON: '1',
+      CODEBASE_PILOT_LOG: logFile,
+    },
   });
 
   child.unref();

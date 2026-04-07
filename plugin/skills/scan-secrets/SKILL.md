@@ -1,6 +1,6 @@
 ---
 name: scan-secrets
-description: Scan the codebase for leaked secrets, API keys, passwords, and credentials. Use before committing code or when reviewing security posture. 180 patterns across 15 categories.
+description: Scans the codebase for leaked secrets, API keys, passwords, and credentials. Best before committing code or reviewing security posture. 180 patterns across 15 categories.
 ---
 
 # Scan Secrets
@@ -25,7 +25,7 @@ codebase-pilot scan-secrets
 | Crypto | Ethereum, Solana, Bitcoin private keys |
 | Generic | password=, secret=, Bearer tokens |
 
-## When to Use
+## Usage Scenarios
 - Before every commit — catch secrets before they hit git history
 - During code review — verify no credentials in the PR
 - Onboarding a new project — security audit

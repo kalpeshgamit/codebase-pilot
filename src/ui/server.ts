@@ -521,7 +521,7 @@ export function startUiServer(root: string, port: number): { broadcast: (event: 
       }
     });
 
-    server.listen(tryPort);
+    server.listen(tryPort, '127.0.0.1');
   }
   tryListen(0);
 

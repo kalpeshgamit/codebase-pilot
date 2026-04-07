@@ -1,6 +1,6 @@
 ---
 name: token-budget
-description: Check token counts per file and plan your context budget. Use when you need to understand which files consume the most tokens and how to optimize context window usage.
+description: Checks token counts per file and plans context budget. Shows which files consume the most tokens and how to optimize context window usage.
 ---
 
 # Token Budget
@@ -30,7 +30,7 @@ codebase-pilot stats
 codebase-pilot stats --global
 ```
 
-## When to Use
+## Usage Scenarios
 - Before packing — know your token budget
 - Choosing `--agent` scope — see which agent contexts are leanest
 - Deciding whether to use `--compress` — see the potential savings

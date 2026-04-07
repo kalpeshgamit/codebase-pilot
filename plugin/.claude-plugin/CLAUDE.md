@@ -1,6 +1,6 @@
 # codebase-pilot plugin
 
-You have access to the codebase-pilot context engine. Use it to optimize token usage when working with large codebases.
+The codebase-pilot context engine optimizes token usage for large codebases.
 
 ## Available Skills
 - `/pack-context` — Pack codebase into AI-friendly format with compression

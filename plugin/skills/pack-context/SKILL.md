@@ -1,6 +1,6 @@
 ---
 name: pack-context
-description: Pack and compress the codebase into an AI-friendly context file. Use when starting work on a new feature, reviewing code, or when you need the full codebase context with minimal tokens.
+description: Packs and compresses the codebase into an AI-friendly context file. Best for new features, code reviews, or full codebase context with minimal tokens.
 ---
 
 # Pack Context
@@ -34,7 +34,7 @@ codebase-pilot pack --compress --dry-run
 codebase-pilot pack --compress --agent <agent-name>
 ```
 
-## When to Use
+## Usage Scenarios
 - Starting a new coding task — pack first to understand the codebase
 - After making changes — use `--affected` to see what changed
 - Investigating a specific file — use `--prune` for minimum context
