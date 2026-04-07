@@ -73,19 +73,19 @@ function layout(title: string, activePage: string, body: string, port: number, h
   }
 
   body.light {
-    --bg: #ffffff;
-    --surface: #f6f8fa;
-    --surface-hover: #eaeef2;
-    --border: #d0d7de;
-    --text: #1f2328;
-    --text-muted: #656d76;
-    --text-dim: #8b949e;
-    --accent: #1a7f37;
-    --success: #1a7f37;
-    --warning: #9a6700;
-    --danger: #cf222e;
-    --purple: #8250df;
-    --blue: #0969da;
+    --bg: #f8fafb;
+    --surface: #ffffff;
+    --surface-hover: #f0f4f8;
+    --border: #d8dee4;
+    --text: #1a1a2e;
+    --text-muted: #4a5568;
+    --text-dim: #718096;
+    --accent: #16a34a;
+    --success: #16a34a;
+    --warning: #ca8a04;
+    --danger: #dc2626;
+    --purple: #7c3aed;
+    --blue: #2563eb;
   }
 
   html { scroll-behavior: smooth; }
@@ -240,7 +240,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
   }
 
   body.light .brand-text {
-    background: linear-gradient(135deg, #1a7f37, #0969da);
+    background: linear-gradient(135deg, #16a34a, #059669);
     -webkit-background-clip: text;
     background-clip: text;
   }
@@ -342,17 +342,27 @@ function layout(title: string, activePage: string, body: string, port: number, h
   }
 
   /* Light mode specific overrides (CSS vars handle most, these handle rgba/special cases) */
-  body.light .sidebar-brand img { filter: drop-shadow(0 2px 6px rgba(0,0,0,0.08)); }
-  body.light .card { background: var(--surface); border-color: var(--border); backdrop-filter: none; }
-  body.light .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
-  body.light .table-wrap { background: var(--surface); backdrop-filter: none; }
-  body.light .badge-blue { background: rgba(26,127,55,0.1); }
-  body.light .badge-green { background: rgba(26,127,55,0.1); }
-  body.light .badge-yellow { background: rgba(154,103,0,0.1); }
-  body.light .badge-red { background: rgba(207,34,46,0.1); }
-  body.light .search-box { background: var(--surface); color: var(--text); }
-  body.light .search-result { background: var(--surface); border-color: var(--border); }
-  body.light a { color: var(--accent); }
+  body.light .sidebar { background: #ffffff; box-shadow: 2px 0 8px rgba(0,0,0,0.04); }
+  body.light .sidebar-brand img { filter: drop-shadow(0 2px 8px rgba(0,0,0,0.12)); }
+  body.light .sidebar nav a:hover { background: #e8f5e9; }
+  body.light .sidebar nav a.active { background: #e8f5e9; color: #16a34a; border-color: #16a34a; }
+  body.light .card { background: #ffffff; border-color: #e2e8f0; backdrop-filter: none; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  body.light .card:hover { box-shadow: 0 4px 16px rgba(22,163,74,0.1); border-color: #16a34a; }
+  body.light .card-value { color: #1a1a2e; }
+  body.light .table-wrap { background: #ffffff; backdrop-filter: none; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  body.light thead th { background: #f8fafb; }
+  body.light .badge-blue { background: #e8f5e9; color: #16a34a; }
+  body.light .badge-green { background: #e8f5e9; color: #16a34a; border-color: #a7f3d0; }
+  body.light .badge-yellow { background: #fef9c3; color: #a16207; }
+  body.light .badge-red { background: #fee2e2; color: #dc2626; }
+  body.light .search-box { background: #ffffff; color: var(--text); border-color: #d8dee4; }
+  body.light .search-box:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
+  body.light .search-result { background: #ffffff; border-color: #e2e8f0; }
+  body.light a { color: #16a34a; }
+  body.light .savings-bar-track { background: #e2e8f0; }
+  body.light .bar-bg { background: #e2e8f0; }
+  body.light .page-title { color: #1a1a2e; }
+  body.light .section-title { color: #1a1a2e; }
 
   /* Main content */
   .main {
