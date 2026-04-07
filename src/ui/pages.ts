@@ -1893,17 +1893,24 @@ export function renderSecurity(data: SecurityPageData, port: number): string {
       </table>
     </div>`;
 
-  // Detected secrets
+  // Detected secrets — store data for drawer
+  const detectedJson = JSON.stringify(data.detectedFiles.map(f => ({
+    file: f.file,
+    name: f.file.split('/').pop() || f.file,
+    secrets: f.secrets,
+  })));
+
   let detectedTable = '';
   if (data.detectedFiles.length > 0) {
-    const rows = data.detectedFiles.map(f => {
-      const riskBadge: Record<string, string> = { critical: 'badge-red', high: 'badge-red', medium: 'badge-yellow', low: 'badge-blue' };
-      const secrets = f.secrets.map(s =>
-        `<span class="badge ${riskBadge[s.risk] || 'badge-red'}">${esc(s.risk.toUpperCase())} ${esc(s.pattern)} :${s.line}</span>`
-      ).join(' ');
-      return `<tr>
+    const riskBadge: Record<string, string> = { critical: 'badge-red', high: 'badge-red', medium: 'badge-yellow', low: 'badge-blue' };
+    const rows = data.detectedFiles.map((f, idx) => {
+      const topRisk = f.secrets.reduce((max, s) => {
+        const order: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+        return (order[s.risk] ?? 3) < (order[max] ?? 3) ? s.risk : max;
+      }, 'low');
+      return `<tr style="cursor:pointer;" onclick="openSecDrawer(${idx})">
         <td class="mono" style="font-size:12px;" title="${esc(f.file)}">${esc(f.file.split('/').pop() || f.file)}</td>
-        <td>${secrets}</td>
+        <td><span class="badge ${riskBadge[topRisk] || 'badge-red'}">${esc(topRisk.toUpperCase())}</span></td>
         <td class="mono">${f.secrets.length}</td>
       </tr>`;
     }).join('');
@@ -1912,7 +1919,7 @@ export function renderSecurity(data: SecurityPageData, port: number): string {
       <div class="table-wrap">
         <h3>Detected Secrets (${data.detectedFiles.length} files)</h3>
         <table>
-          <thead><tr><th>File</th><th>Patterns Found</th><th>Count</th></tr></thead>
+          <thead><tr><th>File</th><th>Risk</th><th>Count</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>`;
@@ -1925,13 +1932,61 @@ export function renderSecurity(data: SecurityPageData, port: number): string {
       </div>`;
   }
 
+  const drawerHtml = `
+    <div id="sec-drawer" style="position:fixed;top:0;right:0;width:400px;height:100vh;background:var(--bg);border-left:1px solid var(--border);transform:translateX(100%);transition:transform 0.25s ease;overflow-y:auto;z-index:999;box-shadow:-8px 0 30px rgba(0,0,0,0.3);">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:1;">
+        <strong style="font-size:14px;">Secret Details</strong>
+        <button onclick="document.getElementById('sec-drawer').style.transform='translateX(100%)'" style="background:var(--surface);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-size:16px;line-height:1;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;">&times;</button>
+      </div>
+      <div id="sec-drawer-body" style="padding:20px;"></div>
+    </div>
+    <script>
+    var _secData = ${detectedJson};
+    function openSecDrawer(idx) {
+      var f = _secData[idx];
+      if (!f) return;
+      var drawer = document.getElementById('sec-drawer');
+      var body = document.getElementById('sec-drawer-body');
+      drawer.style.transform = 'translateX(0)';
+
+      var riskColors = { critical: 'var(--danger)', high: 'var(--danger)', medium: 'var(--warning)', low: 'var(--blue)' };
+      var riskBg = { critical: 'badge-red', high: 'badge-red', medium: 'badge-yellow', low: 'badge-blue' };
+
+      var html = '<div style="font-family:ui-monospace,monospace;font-size:13px;color:var(--accent);margin-bottom:4px;">' + f.name + '</div>';
+      html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:16px;">' + f.file + '</div>';
+      html += '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">Patterns found (' + f.secrets.length + ')</div>';
+
+      f.secrets.forEach(function(s) {
+        html += '<div style="padding:10px 12px;margin-bottom:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
+        html += '<strong style="font-size:13px;color:var(--text);">' + s.pattern + '</strong>';
+        html += '<span class="badge ' + (riskBg[s.risk] || 'badge-red') + '" style="font-size:10px;">' + s.risk.toUpperCase() + '</span>';
+        html += '</div>';
+        html += '<div style="font-size:11px;color:var(--text-muted);">Line ' + s.line + '</div>';
+        html += '</div>';
+      });
+
+      body.innerHTML = html;
+    }
+
+    document.addEventListener('click', function(e) {
+      var drawer = document.getElementById('sec-drawer');
+      if (drawer && drawer.style.transform === 'translateX(0)') {
+        if (!drawer.contains(e.target) && !e.target.closest('tr[onclick]')) {
+          drawer.style.transform = 'translateX(100%)';
+        }
+      }
+    });
+    <\/script>`;
+
   const body = `
     <h1 class="page-title">Security Scanner <span style="font-size:14px;color:var(--text-muted);font-weight:400;">— ${esc(data.projectName)}</span></h1>
     ${cards}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
       ${catTable}
       ${detectedTable}
-    </div>`;
+    </div>
+    ${drawerHtml}`;
 
   return layout('Security', '/security', body, port);
 }
