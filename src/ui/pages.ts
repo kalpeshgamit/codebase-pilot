@@ -1833,9 +1833,21 @@ export function renderSearch(query: string, results: Array<{ path: string; snipp
 })();
 <\/script>`;
 
+  const resultsBadge = query && results.length > 0
+    ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--text-muted);margin-left:12px;"><strong style="color:var(--accent);">${results.length}</strong> results</span>`
+    : '';
+
+  const searchTips = !query ? `
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+      ${['function', 'import', 'TODO', 'export default', 'interface'].map(tip =>
+        `<button onclick="document.getElementById('search-input').value='${tip}';document.getElementById('search-input').dispatchEvent(new Event('input'));" style="background:var(--surface);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;padding:4px 12px;border-radius:6px;font-size:11px;">${tip}</button>`
+      ).join('')}
+    </div>` : '';
+
   const body = `
-    <h1 class="page-title">Search</h1>
+    <h1 class="page-title">Search ${resultsBadge}</h1>
     <input type="text" id="search-input" class="search-box" placeholder="Search files, functions, symbols..." value="${esc(query)}" autofocus>
+    ${searchTips}
     <div id="search-results">
       ${resultsHtml}
     </div>
@@ -1918,8 +1930,37 @@ export function renderAgents(data: AgentsPageData, port: number): string {
       </div>`;
   }).join('');
 
+  // Agent summary stats
+  const modelCounts: Record<string, number> = {};
+  for (const a of data.agents) modelCounts[a.model] = (modelCounts[a.model] || 0) + 1;
+  const modelCostMap: Record<string, { label: string; color: string; cost: string }> = {
+    opus: { label: 'Opus', color: '#f85149', cost: '$$$$' },
+    sonnet: { label: 'Sonnet', color: '#ff6800', cost: '$$$' },
+    haiku: { label: 'Haiku', color: 'var(--success)', cost: '$' },
+  };
+
+  const agentSummary = `
+    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:24px;font-weight:700;color:var(--accent);">${data.agents.length}</span>
+        <span style="font-size:12px;color:var(--text-muted);">agents configured</span>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:24px;font-weight:700;color:var(--purple);">${maxLayer + 1}</span>
+        <span style="font-size:12px;color:var(--text-muted);">layers</span>
+      </div>
+      ${Object.entries(modelCounts).map(([model, count]) => {
+        const info = modelCostMap[model] || { label: model, color: 'var(--text)', cost: '?' };
+        return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:18px;font-weight:700;color:${info.color};">${count}</span>
+          <span style="font-size:12px;color:var(--text-muted);">${info.label} <span style="color:${info.color};font-size:10px;">${info.cost}</span></span>
+        </div>`;
+      }).join('')}
+    </div>`;
+
   const body = `
-    <h1 class="page-title">Agents</h1>
+    <h1 class="page-title">Agents <span style="font-size:14px;color:var(--text-muted);font-weight:400;">— ${esc(data.projectName)}</span></h1>
+    ${agentSummary}
     ${layerDiagram}
     ${cards}`;
 
@@ -2223,18 +2264,45 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
       const savePct = p.tokensSaved + p.tokensUsed > 0 ? Math.round((p.tokensSaved / (p.tokensSaved + p.tokensUsed)) * 100) : 0;
       const isActive = p.projectPath === data.currentProject;
       const activeTag = isActive ? ' <span class="badge badge-green">active</span>' : '';
+      const effColor = savePct >= 60 ? 'var(--success)' : savePct >= 30 ? '#ff6800' : 'var(--text-dim)';
       return `<tr>
         <td><strong>${esc(p.project)}</strong>${activeTag}</td>
         <td class="mono" style="font-size:11px;color:var(--text-muted)">${esc(p.projectPath)}</td>
         <td class="mono">${p.sessions}</td>
         <td class="mono" style="color:var(--success)">${fmtShort(p.tokensSaved)}</td>
         <td class="mono">${fmtShort(p.tokensUsed)}</td>
-        <td class="mono" style="color:var(--accent)">${savePct}%</td>
-        <td class="mono">${lastDate}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;min-width:40px;">
+              <div style="width:${savePct}%;height:100%;background:${effColor};border-radius:3px;"></div>
+            </div>
+            <span class="mono" style="font-size:11px;color:${effColor};min-width:30px;">${savePct}%</span>
+          </div>
+        </td>
+        <td class="mono" style="font-size:11px;">${lastDate}</td>
       </tr>`;
     }).join('');
 
+    // Project comparison chart
+    const maxProjectSaved = Math.max(...data.projects.map(p => p.tokensSaved), 1);
+    const projectChart = data.projects.length > 1 ? `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;">
+        <div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin-bottom:12px;letter-spacing:0.5px;">Tokens Saved by Project</div>
+        ${data.projects.slice(0, 8).map(p => {
+          const barPct = (p.tokensSaved / maxProjectSaved) * 100;
+          const isActive = p.projectPath === data.currentProject;
+          return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="min-width:100px;font-size:11px;font-weight:${isActive ? '700' : '400'};color:${isActive ? 'var(--accent)' : 'var(--text)'};">${esc(p.project)}</div>
+            <div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden;">
+              <div style="width:${barPct.toFixed(1)}%;height:100%;background:var(--success);border-radius:4px;"></div>
+            </div>
+            <div class="mono" style="min-width:60px;font-size:10px;color:var(--text-muted);text-align:right;">${fmtShort(p.tokensSaved)}</div>
+          </div>`;
+        }).join('')}
+      </div>` : '';
+
     projectRows = `
+      ${projectChart}
       <div class="table-wrap">
         <h3>All Projects</h3>
         <table>
