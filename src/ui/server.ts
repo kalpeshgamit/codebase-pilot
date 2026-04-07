@@ -2,17 +2,18 @@
 // Zero external deps — uses node:http only.
 
 import { createServer, type ServerResponse } from 'node:http';
-import { resolve, basename, join } from 'node:path';
+import { resolve, basename, join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { URL } from 'node:url';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
+import { Worker } from 'node:worker_threads';
 import chokidar from 'chokidar';
 
 import { detect } from '../scanner/detector.js';
 import { collectFiles } from '../packer/collector.js';
-import { packProject } from '../packer/index.js';
 import { buildImportGraph, getReverseDependencies, computeBlastRadius } from '../intelligence/imports.js';
-import { readPackLogs, readGlobalLogs, getStats, getProjectSummaries, getRecentRuns, logPackRun } from '../packer/usage-logger.js';
+import { readPackLogs, readGlobalLogs, getStats, getProjectSummaries, getRecentRuns } from '../packer/usage-logger.js';
 import { formatTokenCount } from '../packer/token-counter.js';
 import { createSearchIndex } from '../intelligence/search.js';
 import { scanForSecrets } from '../security/scanner.js';
@@ -79,72 +80,47 @@ function getLastPackTime(root: string): number {
   return last ? new Date(last.date).getTime() : 0;
 }
 
-async function runAutoPack(root: string, trigger: string, broadcastFn: (event: string, data: unknown) => void): Promise<void> {
-  try {
-    broadcastFn('autopilot', { status: 'packing', trigger, time: new Date().toISOString() });
+let autoPackRunning = false;
 
-    // Auto-init: create .codebase-pilot dir if missing
-    const configDir = resolve(root, '.codebase-pilot');
-    if (!existsSync(configDir)) mkdirSync(configDir, { recursive: true });
+function runAutoPack(root: string, trigger: string, broadcastFn: (event: string, data: unknown) => void): void {
+  if (autoPackRunning) return; // skip if already running
+  autoPackRunning = true;
 
-    const result = packProject({ dir: root, format: 'xml', compress: true, noSecurity: false });
+  broadcastFn('autopilot', { status: 'packing', trigger, step: 'collecting', pct: 0, time: new Date().toISOString() });
 
-    // Log the auto-pack run
-    logPackRun(root, {
-      date: new Date().toISOString(),
-      project: basename(root),
-      projectPath: root,
-      tokensRaw: result.rawTokens,
-      tokensPacked: result.totalTokens,
-      files: result.fileCount,
-      compressed: true,
-      command: `auto-pack (${trigger})`,
-    });
+  // Resolve worker script path relative to this file (works after tsup build)
+  const workerPath = resolve(dirname(fileURLToPath(import.meta.url)), 'pack-worker.js');
 
-    // Write output file silently
-    const outputPath = resolve(root, '.codebase-pilot', 'context.xml');
-    writeFileSync(outputPath, result.output, 'utf8');
+  const worker = new Worker(workerPath, { workerData: { root, trigger } });
 
-    // Run security scan
-    const files = collectFiles(root, {});
-    let secretCount = 0;
-    const secretAlerts: Array<{ file: string; count: number }> = [];
-    for (const f of files.slice(0, 200)) {
+  worker.on('message', async (msg: { type: string; [k: string]: unknown }) => {
+    if (msg.type === 'progress') {
+      broadcastFn('autopilot', { status: 'packing', trigger, step: msg.step, label: msg.label, pct: msg.pct, time: new Date().toISOString() });
+    } else if (msg.type === 'done') {
+      autoPackRunning = false;
+      broadcastFn('autopilot', { status: 'done', ...msg, trigger });
       try {
-        const content = readFileSync(resolve(root, f.relativePath), 'utf8');
-        const secrets = scanForSecrets(content, f.relativePath);
-        if (secrets.length > 0) {
-          secretCount += secrets.length;
-          secretAlerts.push({ file: f.relativePath, count: secrets.length });
-        }
-      } catch { /* skip unreadable */ }
+        const dashData = await buildDashboardData(root);
+        broadcastFn('stats-update', {
+          totalFiles: dashData.totalFiles,
+          totalTokens: dashData.totalTokens,
+          today: dashData.today,
+          week: dashData.week,
+          recentRuns: dashData.recentRuns.slice(0, 5),
+        });
+      } catch { /* ignore */ }
+    } else if (msg.type === 'error') {
+      autoPackRunning = false;
+      broadcastFn('autopilot', { status: 'error', trigger, error: msg.error, time: new Date().toISOString() });
     }
+  });
 
-    const dashData = await buildDashboardData(root);
-    const saved = result.rawTokens - result.totalTokens;
-    const savePct = result.rawTokens > 0 ? Math.round((saved / result.rawTokens) * 100) : 0;
-    broadcastFn('autopilot', {
-      status: 'done',
-      trigger,
-      files: result.fileCount,
-      tokens: result.totalTokens,
-      rawTokens: result.rawTokens,
-      saved,
-      savePct,
-      secretCount,
-      secretAlerts: secretAlerts.slice(0, 5),
-      time: new Date().toISOString(),
-    });
-    broadcastFn('stats-update', {
-      totalFiles: dashData.totalFiles,
-      totalTokens: dashData.totalTokens,
-      today: dashData.today,
-      week: dashData.week,
-      recentRuns: dashData.recentRuns.slice(0, 5),
-    });
-  } catch (err) {
+  worker.on('error', (err) => {
+    autoPackRunning = false;
     broadcastFn('autopilot', { status: 'error', trigger, error: String(err), time: new Date().toISOString() });
-  }
+  });
+
+  worker.on('exit', () => { autoPackRunning = false; });
 }
 
 // ---------------------------------------------------------------------------

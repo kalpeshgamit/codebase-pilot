@@ -2224,49 +2224,60 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
         } catch(err) {}
       });
 
+      // Progress spinner row — shown while autopilot is packing
+      var progressRow = null;
+      function showProgressRow(label, pct) {
+        var tbody = document.getElementById('prompts-tbody');
+        if (!tbody) return;
+        if (!progressRow) {
+          progressRow = document.createElement('tr');
+          progressRow.id = 'autopilot-progress-row';
+          progressRow.style.cssText = 'background:rgba(255,104,0,0.06);border-left:3px solid #ff6800;';
+          tbody.insertBefore(progressRow, tbody.firstChild);
+        }
+        var bar = '<div style="height:3px;background:rgba(255,104,0,0.15);border-radius:2px;overflow:hidden;margin-top:4px;"><div style="height:100%;width:' + pct + '%;background:#ff6800;border-radius:2px;transition:width 0.4s ease;"></div></div>';
+        progressRow.innerHTML = '<td colspan="9" style="padding:10px 14px;">'
+          + '<div style="display:flex;align-items:center;gap:10px;">'
+          + '<span style="width:10px;height:10px;border:2px solid #ff6800;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin 0.8s linear infinite;flex-shrink:0;"></span>'
+          + '<span style="color:#ff6800;font-weight:600;">Autopilot</span>'
+          + '<span style="color:var(--text-muted);">' + label + '</span>'
+          + '<span style="margin-left:auto;color:#ff6800;font-size:11px;font-weight:600;">' + pct + '%</span>'
+          + '</div>' + bar + '</td>';
+      }
+      function removeProgressRow() {
+        if (progressRow && progressRow.parentNode) { progressRow.parentNode.removeChild(progressRow); progressRow = null; }
+      }
+
+      es.addEventListener('autopilot', function(e) {
+        try {
+          var d = JSON.parse(e.data);
+          if (d.status === 'packing') {
+            showProgressRow(d.label || 'Packing…', d.pct || 5);
+          } else {
+            removeProgressRow();
+          }
+        } catch(err) {}
+      });
+
+      // SSE is a persistent connection — no polling needed
+      // On repeated disconnects, reload to pick up any missed rows
+      var errCount = 0;
       es.onerror = function() {
         var b = document.getElementById('live-badge');
         if (b) b.style.display = 'none';
+        errCount++;
+        if (errCount >= 3) { errCount = 0; window.location.reload(); }
       };
-
-      // Fallback poll every 30s to catch any missed SSE events
-      var knownCount = document.querySelectorAll('#prompts-tbody tr').length;
-      setInterval(function() {
-        fetch('/api/prompts-count').then(function(r){ return r.json(); }).then(function(d) {
-          if (d.count > knownCount) {
-            // New sessions added — reload table body silently
-            fetch('/api/prompts-rows?offset=' + knownCount).then(function(r){ return r.json(); }).then(function(data) {
-              var tbody = document.getElementById('prompts-tbody');
-              if (!tbody) return;
-              data.rows.forEach(function(r) {
-                var saved = r.tokensRaw - r.tokensPacked;
-                var pct = r.tokensRaw > 0 ? Math.round((saved / r.tokensRaw) * 100) : 0;
-                var pctColor = pct >= 60 ? 'var(--success)' : pct >= 30 ? '#ff6800' : 'var(--text-muted)';
-                var compress = r.compressed ? '<span class="badge badge-green">compressed</span>' : '';
-                var agent = r.agent ? '<span class="badge badge-blue">' + r.agent + '</span>' : '';
-                var tr = document.createElement('tr');
-                var ts2 = new Date(r.date).toLocaleString('en-GB', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-                var sd2 = saved > 0 ? saved.toLocaleString('en-US') : '<span style="color:var(--text-muted)" title="Run with --compress">—</span>';
-                var pd2 = pct > 0 ? '<span style="color:' + pctColor + ';font-weight:600">' + pct + '%</span>' : '<span style="color:var(--text-muted)" title="Run with --compress">—</span>';
-                tr.style.cssText = 'animation:rowSlide 0.4s ease both;background:rgba(63,185,80,0.05);';
-                tr.innerHTML = '<td class="mono" style="font-size:11px;color:var(--text-muted)">' + ts2 + '</td>'
-                  + '<td><strong>' + r.project + '</strong></td>'
-                  + '<td class="mono" style="font-size:10px;color:var(--text-muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + r.projectPath + '">' + r.projectPath + '</td>'
-                  + '<td>' + r.command + ' ' + compress + agent + '</td>'
-                  + '<td class="mono">' + r.files + '</td>'
-                  + '<td class="mono" style="color:#ff6800">' + Number(r.tokensRaw).toLocaleString('en-US') + '</td>'
-                  + '<td class="mono" style="color:var(--accent)">' + Number(r.tokensPacked).toLocaleString('en-US') + '</td>'
-                  + '<td class="mono">' + sd2 + '</td>'
-                  + '<td class="mono">' + pd2 + '</td>';
-                tbody.insertBefore(tr, tbody.firstChild);
-              });
-              knownCount = d.count;
-            }).catch(function(){});
-          }
-        }).catch(function(){});
-      }, 30000);
+      es.addEventListener('connected', function() {
+        var b = document.getElementById('live-badge');
+        if (b) b.style.display = 'inline-flex';
+        errCount = 0;
+      });
     })();
-    </script>`;
+    </script>
+    <style>
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>`;
 
   const body = `
     <h1 class="page-title">Prompts</h1>
