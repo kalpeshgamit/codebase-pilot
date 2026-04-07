@@ -2178,6 +2178,40 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
         var b = document.getElementById('live-badge');
         if (b) b.style.display = 'none';
       };
+
+      // Fallback poll every 30s to catch any missed SSE events
+      var knownCount = document.querySelectorAll('#prompts-tbody tr').length;
+      setInterval(function() {
+        fetch('/api/prompts-count').then(function(r){ return r.json(); }).then(function(d) {
+          if (d.count > knownCount) {
+            // New sessions added — reload table body silently
+            fetch('/api/prompts-rows?offset=' + knownCount).then(function(r){ return r.json(); }).then(function(data) {
+              var tbody = document.getElementById('prompts-tbody');
+              if (!tbody) return;
+              data.rows.forEach(function(r) {
+                var saved = r.tokensRaw - r.tokensPacked;
+                var pct = r.tokensRaw > 0 ? Math.round((saved / r.tokensRaw) * 100) : 0;
+                var pctColor = pct >= 60 ? 'var(--success)' : pct >= 30 ? '#ff6800' : 'var(--text-muted)';
+                var compress = r.compressed ? '<span class="badge badge-green">compressed</span>' : '';
+                var agent = r.agent ? '<span class="badge badge-blue">' + r.agent + '</span>' : '';
+                var tr = document.createElement('tr');
+                tr.style.cssText = 'animation:rowSlide 0.4s ease both;background:rgba(63,185,80,0.05);';
+                tr.innerHTML = '<td class="mono" style="font-size:11px;color:var(--text-muted)">' + new Date(r.date).toLocaleString() + '</td>'
+                  + '<td><strong>' + r.project + '</strong></td>'
+                  + '<td class="mono" style="font-size:10px;color:var(--text-muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + r.projectPath + '">' + r.projectPath + '</td>'
+                  + '<td>' + r.command + ' ' + compress + agent + '</td>'
+                  + '<td class="mono">' + r.files + '</td>'
+                  + '<td class="mono" style="color:#ff6800">' + Number(r.tokensRaw).toLocaleString() + '</td>'
+                  + '<td class="mono" style="color:var(--accent)">' + Number(r.tokensPacked).toLocaleString() + '</td>'
+                  + '<td class="mono" style="color:var(--success)">' + saved.toLocaleString() + '</td>'
+                  + '<td class="mono" style="color:' + pctColor + ';font-weight:600">' + pct + '%</td>';
+                tbody.insertBefore(tr, tbody.firstChild);
+              });
+              knownCount = d.count;
+            }).catch(function(){});
+          }
+        }).catch(function(){});
+      }, 30000);
     })();
     </script>`;
 

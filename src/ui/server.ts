@@ -251,7 +251,7 @@ export function startUiServer(root: string, port: number): void {
 
   // Watch global history log — fires when ANY project runs pack (cross-project real-time)
   const globalLogPath = join(homedir(), '.codebase-pilot', 'history.jsonl');
-  let lastGlobalLogSize = 0;
+  let lastGlobalLogSize = readGlobalLogs().length;
   const globalWatcher = chokidar.watch(globalLogPath, { ignoreInitial: true, persistent: true, usePolling: false });
   globalWatcher.on('change', () => {
     try {
@@ -417,6 +417,22 @@ export function startUiServer(root: string, port: number): void {
       }
 
       // ---- JSON APIs ----
+
+      if (pathname === '/api/prompts-count') {
+        const globalLogs = readGlobalLogs();
+        jsonResponse(res, { count: globalLogs.length });
+        return;
+      }
+
+      if (pathname === '/api/prompts-rows') {
+        const globalLogs = readGlobalLogs();
+        const offset = parseInt(url.searchParams.get('offset') || '0', 10);
+        // Sort DESC, return only new rows beyond offset
+        const sorted = [...globalLogs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const newRows = sorted.slice(0, Math.max(0, globalLogs.length - offset));
+        jsonResponse(res, { rows: newRows });
+        return;
+      }
 
       if (pathname === '/api/projects') {
         const globalLogs = readGlobalLogs();
