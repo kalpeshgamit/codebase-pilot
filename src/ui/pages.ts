@@ -559,13 +559,16 @@ function layout(title: string, activePage: string, body: string, port: number, h
 
   .savings-bar-used {
     height: 100%;
-    background: var(--accent);
+    background: #f97316;
   }
 
   .savings-bar-saved {
     height: 100%;
     background: var(--success);
   }
+
+  body.light .savings-bar-used { background: #f97316; }
+  body.light .savings-bar-saved { background: #16a34a; }
 
   .savings-bar-legend {
     display: flex;
@@ -585,7 +588,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
     vertical-align: middle;
   }
 
-  .legend-used::before { background: var(--accent) !important; }
+  .legend-used::before { background: #f97316 !important; }
   .legend-saved::before { background: var(--success) !important; }
 
   /* Section */
