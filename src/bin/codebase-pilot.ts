@@ -17,6 +17,7 @@ import { visualizeCommand } from '../cli/visualize.js';
 import { statsCommand } from '../cli/stats.js';
 import { uiCommand } from '../cli/ui.js';
 import { scanSecretsCommand } from '../cli/scan-secrets.js';
+import { serviceCommand } from '../cli/service.js';
 
 const program = new Command();
 
@@ -143,5 +144,15 @@ program
   .description('Scan codebase for leaked secrets and credentials')
   .option('-d, --dir <path>', 'Project directory', '.')
   .action(scanSecretsCommand);
+
+program
+  .command('service')
+  .description('Install/manage daemon as a system service (auto-start on login)')
+  .option('-d, --dir <path>', 'Project directory to track', '.')
+  .option('-p, --port <number>', 'Dashboard port', '7456')
+  .option('--uninstall', 'Remove the system service', false)
+  .option('--status', 'Show service status', false)
+  .option('--restart', 'Restart the service', false)
+  .action(serviceCommand);
 
 program.parse();
