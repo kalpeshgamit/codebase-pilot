@@ -20,6 +20,14 @@
 ## Installation
 
 <table>
+<tr><td><strong>Claude Code Plugin</strong></td><td>
+
+```
+/plugin marketplace add kalpeshgamit/codebase-pilot
+/plugin install codebase-pilot
+```
+
+</td></tr>
 <tr><td><strong>npm (recommended)</strong></td><td>
 
 ```bash
@@ -191,7 +199,7 @@ Live stat cards (K/M/B abbreviated), savings chart, recent sessions — auto-upd
 <img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/dashboard.png" alt="Dashboard" width="100%" />
 
 ### Prompts (All Sessions)
-Every pack session across all projects. Live table, newest first, real-time updates.
+User prompts from Claude Code + pack sessions with git context (branch, commit, dirty files). Click any row for detail drawer with token breakdown + savings bar.
 
 ### Projects (System-Wide)
 All projects in one view — sessions, tokens saved, efficiency per project.
@@ -230,6 +238,9 @@ Pattern categories, risk levels, detected secrets — side by side.
 | Feature | Details |
 |---------|---------|
 | **Pack & Compress** | XML/Markdown output, regex-based compression (8 languages), agent-scoped packing |
+| **Incremental Pack** | `--affected` packs only changed files (SHA-256), `--prune` uses import graph for minimal context |
+| **Prompt Tracking** | Captures actual Claude Code prompts via hooks, git context (branch, commit, dirty), duration |
+| **Plugin Marketplace** | Install via `/plugin marketplace add` in Claude Code — 4 skills, hooks, MCP auto-config |
 | **Security Scanner** | 180 patterns across 15 categories — cloud, payment, AI, crypto, generic |
 | **Blast Radius** | Import graph analysis, risk scoring (0-100), affected test detection |
 | **Full-Text Search** | SQLite FTS5 with BM25 ranking, snippet extraction, highlighted matches |
@@ -255,9 +266,12 @@ Pattern categories, risk levels, detected secrets — side by side.
 ## Commands
 
 ```
-codebase-pilot init [--platform cursor,windsurf,codex]  # scan + generate configs
+codebase-pilot init [--platform cursor,windsurf,codex]  # scan + generate configs + MCP + hooks
 codebase-pilot scan                                      # re-detect + update
 codebase-pilot pack [--compress] [--agent <name>]        # pack for AI context
+codebase-pilot pack --compress --affected                # incremental — only changed files
+codebase-pilot pack --compress --prune <file>            # minimum context via import graph
+codebase-pilot pack --compress --dry-run                 # preview without writing output
 codebase-pilot scan-secrets [--path <dir>]               # security scan — 180 patterns
 codebase-pilot tokens [--agent <name>]                   # token breakdown + savings
 codebase-pilot impact [--file <path>]                    # blast radius analysis
@@ -388,6 +402,86 @@ export async function createUser(data: UserInput): Promise<User> { /* ... */ }
 ```
 
 Supports: TypeScript, JavaScript, Python, Go, Rust, Java, Ruby, PHP.
+
+---
+
+## Incremental Packing
+
+Pack only what changed — save tokens on every iteration:
+
+```bash
+# First run indexes everything, subsequent runs are incremental
+codebase-pilot pack --compress --affected
+
+  Changes detected:
+    + 2 added
+    ~ 3 modified
+  Packing 5 affected files...
+  Tokens: ~1,200 (compressed from ~4,800, 75% reduction)
+
+# Minimum context — only files reachable via import graph
+codebase-pilot pack --compress --prune src/types.ts
+
+  Pruning to files reachable from: src/types.ts
+  Files: 31 packed (from 95 total)
+  Tokens: ~7,453 (80% reduction)
+
+# Preview without writing output
+codebase-pilot pack --compress --dry-run
+
+  [DRY RUN] Preview — no files written
+  Files: 95 | Raw: ~125K | Packed: ~35K (72% reduction)
+  Top files by tokens:
+    26,039 tokens  src/ui/pages.ts
+     5,443 tokens  src/security/patterns.ts
+     ...
+```
+
+---
+
+## Claude Code Plugin
+
+Install as a Claude Code plugin for built-in skills and auto-tracking:
+
+```
+/plugin marketplace add kalpeshgamit/codebase-pilot
+/plugin install codebase-pilot
+```
+
+**4 Skills:**
+- `/pack-context` — Pack & compress with --affected, --prune, --dry-run
+- `/impact-analysis` — Blast radius for any file change
+- `/scan-secrets` — Security scan (180 patterns)
+- `/token-budget` — Token counts and savings planning
+
+**Auto-tracking:** Every prompt you type in Claude Code is captured and displayed on the web dashboard (Prompts page) with git context (branch, commit, dirty files).
+
+**MCP Server:** Auto-configured — 10 tools available to Claude Code.
+
+---
+
+## Prompt Tracking
+
+Track every AI interaction with full git context:
+
+```bash
+# init auto-configures hooks + MCP
+codebase-pilot init
+codebase-pilot ui
+# Open http://localhost:7456/prompts
+```
+
+The Prompts page shows:
+- **User Prompts** — actual text typed in Claude Code (via hooks)
+- **Pack Sessions** — token usage with branch, commit, duration, savings
+- **Click any row** — detail drawer with git context + savings breakdown
+
+| Data | Source |
+|------|--------|
+| Prompt text | Claude Code `UserPromptSubmit` hook |
+| Token usage | Every `pack` / MCP `pack_codebase` call |
+| Git context | Branch, commit message, hash, dirty count |
+| Duration | Pack execution time |
 
 ---
 
