@@ -1176,15 +1176,13 @@ export function renderGraph(data: GraphPageData, port: number): string {
       <span id="graph-stats" class="mono" style="color:var(--text-muted);font-size:12px;"></span>
     </div>
     <input type="text" id="graph-search" class="search-box" placeholder="Filter nodes..." style="margin-bottom:12px;">
-    <div style="position:relative;">
-      <div id="graph-container" style="width:100%;height:calc(100vh - 140px);background:var(--surface);border:1px solid var(--border);border-radius:8px;position:relative;overflow:hidden;"></div>
-      <div id="node-drawer" style="position:absolute;top:0;right:0;width:340px;height:100%;background:var(--bg);border-left:1px solid var(--border);border-radius:0 8px 8px 0;transform:translateX(100%);transition:transform 0.25s ease;overflow-y:auto;z-index:50;box-shadow:-4px 0 20px rgba(0,0,0,0.2);">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);">
-          <strong style="font-size:13px;">File Details</strong>
-          <button onclick="document.getElementById('node-drawer').classList.remove('open')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;line-height:1;">&times;</button>
-        </div>
-        <div id="drawer-body" style="padding:16px;"></div>
+    <div id="graph-container" style="width:100%;height:calc(100vh - 140px);background:var(--surface);border:1px solid var(--border);border-radius:8px;position:relative;overflow:hidden;"></div>
+    <div id="node-drawer" style="position:fixed;top:0;right:0;width:360px;height:100vh;background:var(--bg);border-left:1px solid var(--border);transform:translateX(100%);transition:transform 0.25s ease;overflow-y:auto;z-index:999;box-shadow:-8px 0 30px rgba(0,0,0,0.3);">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:1;">
+        <strong style="font-size:14px;">File Details</strong>
+        <button onclick="document.getElementById('node-drawer').classList.remove('open')" style="background:var(--surface);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-size:16px;line-height:1;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;">&times;</button>
       </div>
+      <div id="drawer-body" style="padding:20px;"></div>
     </div>
     <style>
       #node-drawer.open { transform: translateX(0); }
