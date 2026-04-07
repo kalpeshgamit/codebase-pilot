@@ -956,10 +956,22 @@ function toggleTheme() {
     });
   })();
 
-  // Auto-scale card values based on digit length
+  // Abbreviate large numbers: 9.9M, 15.1M, 130K etc.
+  function fmtShortJS(n) {
+    var safe = Number(n) || 0;
+    if (safe >= 1e9) return (safe / 1e9).toFixed(safe >= 1e10 ? 1 : 2).replace(/\\.?0+$/, '') + 'B';
+    if (safe >= 1e6) return (safe / 1e6).toFixed(safe >= 1e8 ? 1 : 2).replace(/\\.?0+$/, '') + 'M';
+    if (safe >= 1e4) return (safe / 1e3).toFixed(1).replace(/\\.?0+$/, '') + 'K';
+    return safe.toLocaleString('en-US');
+  }
+
+  // Auto-scale card values based on character length (abbreviated values are short, no scaling needed)
   function scaleCardValue(el) {
     el.classList.remove('lg', 'xl');
-    var len = (el.textContent || '').replace(/[^0-9]/g, '').length;
+    // Only scale if value is a plain long number (not abbreviated)
+    var txt = (el.textContent || '');
+    if (txt.endsWith('B') || txt.endsWith('M') || txt.endsWith('K')) return;
+    var len = txt.replace(/[^0-9]/g, '').length;
     if (len >= 10) el.classList.add('xl');
     else if (len >= 7) el.classList.add('lg');
   }
@@ -967,10 +979,11 @@ function toggleTheme() {
 
   // Animate numbers: count up from 0 to target value
   document.querySelectorAll('.card-value').forEach(function(el) {
-    var raw = el.textContent.replace(/,/g, '');
-    var target = parseFloat(raw);
+    // Read the numeric value from title (full number) or text
+    var titleVal = el.querySelector('span[title]');
+    var rawText = titleVal ? titleVal.getAttribute('title').replace(/,/g, '') : (el.textContent || '').replace(/,/g, '');
+    var target = parseFloat(rawText);
     if (isNaN(target) || target === 0) return;
-    var isInt = Number.isInteger(target);
     var duration = 1200;
     var start = performance.now();
     el.textContent = '0';
@@ -979,10 +992,19 @@ function toggleTheme() {
       var progress = Math.min((now - start) / duration, 1);
       // Ease out cubic
       var ease = 1 - Math.pow(1 - progress, 3);
-      var current = target * ease;
-      el.textContent = isInt ? Math.round(current).toLocaleString('en-US') : current.toFixed(1);
+      var current = Math.round(target * ease);
+      el.textContent = fmtShortJS(current);
       if (progress < 1) requestAnimationFrame(step);
-      else { el.textContent = isInt ? Math.round(target).toLocaleString('en-US') : target.toLocaleString('en-US'); scaleCardValue(el); }
+      else {
+        var abbr = fmtShortJS(target);
+        var full = Math.round(target).toLocaleString('en-US');
+        if (abbr !== full) {
+          el.innerHTML = '<span title="' + full + '">' + abbr + '</span>';
+        } else {
+          el.textContent = abbr;
+        }
+        scaleCardValue(el);
+      }
     }
     requestAnimationFrame(step);
   });
@@ -1008,6 +1030,24 @@ function esc(s: string): string {
 function fmtNum(n: number): string {
   const safe = Number(n) || 0;
   return safe.toLocaleString('en-US');
+}
+
+// Abbreviated display for card values: 1.2B / 9.9M / 130K / 98
+// Returns an HTML string with title= showing the full number on hover.
+function fmtShort(n: number): string {
+  const safe = Number(n) || 0;
+  const full = safe.toLocaleString('en-US');
+  let abbr: string;
+  if (safe >= 1_000_000_000) {
+    abbr = (safe / 1_000_000_000).toFixed(safe >= 10_000_000_000 ? 1 : 2).replace(/\.?0+$/, '') + 'B';
+  } else if (safe >= 1_000_000) {
+    abbr = (safe / 1_000_000).toFixed(safe >= 100_000_000 ? 1 : 2).replace(/\.?0+$/, '') + 'M';
+  } else if (safe >= 10_000) {
+    abbr = (safe / 1_000).toFixed(1).replace(/\.?0+$/, '') + 'K';
+  } else {
+    return full; // small numbers: show as-is, no title needed
+  }
+  return `<span title="${full}">${abbr}</span>`;
 }
 
 function riskColor(level: string): string {
@@ -1055,29 +1095,29 @@ export function renderDashboard(data: DashboardData, port: number): string {
       <div class="card" style="border-top:3px solid var(--blue);cursor:default;"
         data-tip='${JSON.stringify({title:"Total Files",rows:[["Scanned files",fmtNum(data.totalFiles)],["Project","Current project only"]],note:"Files indexed in the last scan. Run \`codebase-pilot scan\` to refresh."})}'>
         <div class="card-label">Total Files</div>
-        <div class="card-value" style="color:var(--blue);">${fmtNum(data.totalFiles)}</div>
+        <div class="card-value" style="color:var(--blue);">${fmtShort(data.totalFiles)}</div>
       </div>
       <div class="card" style="border-top:3px solid #ff6800;cursor:default;"
         data-tip='${JSON.stringify({title:"Total Tokens",rows:[["Raw tokens",fmtNum(data.totalTokens)],["After compress","~"+fmtNum(Math.round(data.totalTokens*0.3))+" (est.)"],["Savings est.","~70%"]],note:"Raw token count of all scanned files. Use --compress to reduce by ~70%."})}'>
         <div class="card-label">Total Tokens</div>
-        <div class="card-value" style="color:#ff6800;">${fmtNum(data.totalTokens)}</div>
+        <div class="card-value" style="color:#ff6800;">${fmtShort(data.totalTokens)}</div>
       </div>
       <div class="card" style="border-top:3px solid var(--purple);cursor:default;"
         data-tip='${JSON.stringify({title:"Sessions Today",rows:[["Today",fmtNum(data.today.sessions)],["This week",fmtNum(data.week.sessions)],["This month",fmtNum(data.month.sessions)]],note:"Each \`pack\` run counts as one session."})}'>
         <div class="card-label">Sessions Today</div>
-        <div class="card-value" style="color:var(--purple);">${fmtNum(data.today.sessions)}</div>
+        <div class="card-value" style="color:var(--purple);">${fmtShort(data.today.sessions)}</div>
       </div>
       <div class="card" style="border-top:3px solid var(--success);cursor:default;"
         data-tip='${JSON.stringify({title:"Tokens Saved This Week",rows:[["Saved",fmtNum(data.week.tokensSaved)],["Used",fmtNum(data.week.tokensUsed)],["Total",fmtNum(data.week.tokensSaved+data.week.tokensUsed)],["Save rate",((data.week.tokensSaved+data.week.tokensUsed)>0?Math.round((data.week.tokensSaved/(data.week.tokensSaved+data.week.tokensUsed))*100):0)+"%"]],note:"Tokens saved = raw tokens minus packed tokens across all sessions this week."})}'>
         <div class="card-label">Tokens Saved This Week</div>
-        <div class="card-value" style="color:var(--success);">${fmtNum(data.week.tokensSaved)}</div>
-        <div class="card-sub">${fmtNum(data.week.tokensUsed)} used</div>
+        <div class="card-value" style="color:var(--success);">${fmtShort(data.week.tokensSaved)}</div>
+        <div class="card-sub">${fmtShort(data.week.tokensUsed)} used</div>
       </div>
       <div class="card" style="border-top:3px solid var(--accent);cursor:default;"
         data-tip='${JSON.stringify({title:"Overall Tokens This Month",rows:[["Saved",fmtNum(data.month.tokensSaved)],["Used",fmtNum(data.month.tokensUsed)],["Total",fmtNum(data.month.tokensSaved+data.month.tokensUsed)],["Sessions",fmtNum(data.month.sessions)]],note:"Combined token activity (used + saved) across all pack sessions this month."})}'>
         <div class="card-label">Overall Tokens This Month</div>
-        <div class="card-value" style="color:var(--accent);">${fmtNum(data.month.tokensSaved + data.month.tokensUsed)}</div>
-        <div class="card-sub">${fmtNum(data.month.tokensSaved)} saved</div>
+        <div class="card-value" style="color:var(--accent);">${fmtShort(data.month.tokensSaved + data.month.tokensUsed)}</div>
+        <div class="card-sub">${fmtShort(data.month.tokensSaved)} saved</div>
       </div>
     </div>`;
 
@@ -1183,10 +1223,16 @@ export function renderDashboard(data: DashboardData, port: number): string {
         try {
           var d = JSON.parse(e.data);
           var cards = document.querySelectorAll('.card-value');
-          if (cards[0] && d.totalFiles) cards[0].textContent = Number(d.totalFiles).toLocaleString('en-US');
-          if (cards[1] && d.totalTokens) cards[1].textContent = Number(d.totalTokens).toLocaleString('en-US');
-          if (cards[2] && d.today) cards[2].textContent = Number(d.today.sessions).toLocaleString('en-US');
-          if (cards[3] && d.week) cards[3].textContent = Number(d.week.tokensSaved).toLocaleString('en-US');
+          function setCard(el, val) {
+            if (!el) return;
+            var abbr = fmtShortJS(val);
+            var full = Math.round(val).toLocaleString('en-US');
+            el.innerHTML = abbr !== full ? '<span title="' + full + '">' + abbr + '</span>' : abbr;
+          }
+          if (cards[0] && d.totalFiles) setCard(cards[0], d.totalFiles);
+          if (cards[1] && d.totalTokens) setCard(cards[1], d.totalTokens);
+          if (cards[2] && d.today) setCard(cards[2], d.today.sessions);
+          if (cards[3] && d.week) setCard(cards[3], d.week.tokensSaved);
 
           // Flash updated cards
           cards.forEach(function(c) {
@@ -1936,22 +1982,22 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
       <div class="card" style="border-top:3px solid var(--purple);cursor:default;"
         data-tip='${JSON.stringify({title:"Total Sessions",rows:[["All time",fmtNum(data.allTime.sessions)],["This month",fmtNum(data.month.sessions)],["This week",fmtNum(data.week.sessions)],["Today",fmtNum(data.today.sessions)]],note:"Each pack run = 1 session. Tracked across all projects system-wide."})}'>
         <div class="card-label">Total Sessions</div>
-        <div class="card-value" style="color:var(--purple);">${fmtNum(data.allTime.sessions)}</div>
+        <div class="card-value" style="color:var(--purple);">${fmtShort(data.allTime.sessions)}</div>
       </div>
       <div class="card" style="border-top:3px solid var(--success);cursor:default;"
         data-tip='${JSON.stringify({title:"Tokens Saved (All Time)",rows:[["Saved",fmtNum(data.allTime.tokensSaved)],["Save rate",allTimeSavePct+"%"],["This month",fmtNum(data.month.tokensSaved)],["This week",fmtNum(data.week.tokensSaved)]],note:"Tokens saved = raw tokens minus packed/compressed tokens. Higher is better."})}'>
         <div class="card-label">Tokens Saved (All Time)</div>
-        <div class="card-value" style="color:var(--success);">${fmtNum(data.allTime.tokensSaved)}</div>
+        <div class="card-value" style="color:var(--success);">${fmtShort(data.allTime.tokensSaved)}</div>
       </div>
       <div class="card" style="border-top:3px solid #ff6800;cursor:default;"
         data-tip='${JSON.stringify({title:"Tokens Used (All Time)",rows:[["Used",fmtNum(data.allTime.tokensUsed)],["This month",fmtNum(data.month.tokensUsed)],["This week",fmtNum(data.week.tokensUsed)],["Today",fmtNum(data.today.tokensUsed)]],note:"Tokens actually sent to AI context after packing and compression."})}'>
         <div class="card-label">Tokens Used (All Time)</div>
-        <div class="card-value" style="color:#ff6800;">${fmtNum(data.allTime.tokensUsed)}</div>
+        <div class="card-value" style="color:#ff6800;">${fmtShort(data.allTime.tokensUsed)}</div>
       </div>
       <div class="card" style="border-top:3px solid var(--accent);cursor:default;"
         data-tip='${JSON.stringify({title:"Overall Tokens (All Time)",rows:[["Total",fmtNum(allTimeTotal)],["Saved",fmtNum(data.allTime.tokensSaved)],["Used",fmtNum(data.allTime.tokensUsed)],["Efficiency",allTimeSavePct+"%"]],note:"Grand total of all token activity. Saved + Used = Overall."})}'>
         <div class="card-label">Overall Tokens (All Time)</div>
-        <div class="card-value" style="color:var(--accent);">${fmtNum(data.allTime.tokensSaved + data.allTime.tokensUsed)}</div>
+        <div class="card-value" style="color:var(--accent);">${fmtShort(data.allTime.tokensSaved + data.allTime.tokensUsed)}</div>
       </div>
     </div>`;
 
@@ -2051,7 +2097,8 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
 
       function animateVal(el, newVal) {
         var target = newVal;
-        var current = parseInt((el.textContent || '0').replace(/,/g, '')) || 0;
+        var titleEl = el.querySelector('span[title]');
+        var current = parseInt((titleEl ? titleEl.getAttribute('title') : el.textContent || '0').replace(/,/g, '')) || 0;
         if (current === target) return;
         var duration = 800, start = performance.now();
         el.style.transition = 'color 0.3s';
@@ -2059,9 +2106,14 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
         (function step(now) {
           var p = Math.min((now - start) / duration, 1);
           var ease = 1 - Math.pow(1 - p, 3);
-          el.textContent = Math.round(current + (target - current) * ease).toLocaleString('en-US');
+          el.textContent = fmtShortJS(Math.round(current + (target - current) * ease));
           if (p < 1) requestAnimationFrame(step);
-          else { el.textContent = target.toLocaleString('en-US'); setTimeout(function(){ el.style.color=''; }, 1200); }
+          else {
+            var abbr = fmtShortJS(target);
+            var full = Math.round(target).toLocaleString('en-US');
+            el.innerHTML = abbr !== full ? '<span title="' + full + '">' + abbr + '</span>' : abbr;
+            setTimeout(function(){ el.style.color=''; }, 1200);
+          }
         })(start);
       }
 
@@ -2138,23 +2190,23 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
       <div class="card" style="border-top:3px solid var(--purple);cursor:default;"
         data-tip='${JSON.stringify({title:"Total Sessions",rows:[["All projects",fmtNum(data.totalSessions)]],note:"Every pack run across all projects on this machine."})}'>
         <div class="card-label">Total Sessions</div>
-        <div class="card-value" id="pr-sessions" style="color:var(--purple);">${fmtNum(data.totalSessions)}</div>
+        <div class="card-value" id="pr-sessions" style="color:var(--purple);">${fmtShort(data.totalSessions)}</div>
       </div>
       <div class="card" style="border-top:3px solid #ff6800;cursor:default;"
         data-tip='${JSON.stringify({title:"Total Tokens Used",rows:[["Sent to AI",fmtNum(data.totalUsed)],["After pack/compress",""]],note:"Sum of tokensPacked across all sessions."})}'>
         <div class="card-label">Total Tokens Used</div>
-        <div class="card-value" id="pr-used" style="color:#ff6800;">${fmtNum(data.totalUsed)}</div>
+        <div class="card-value" id="pr-used" style="color:#ff6800;">${fmtShort(data.totalUsed)}</div>
       </div>
       <div class="card" style="border-top:3px solid var(--success);cursor:default;"
         data-tip='${JSON.stringify({title:"Total Tokens Saved",rows:[["Saved",fmtNum(data.totalSaved)],["Save rate",avgSavePct+"%"]],note:"Raw tokens minus packed tokens. Higher = better efficiency."})}'>
         <div class="card-label">Total Tokens Saved</div>
-        <div class="card-value" id="pr-saved" style="color:var(--success);">${fmtNum(data.totalSaved)}</div>
+        <div class="card-value" id="pr-saved" style="color:var(--success);">${fmtShort(data.totalSaved)}</div>
         <div class="card-sub">${avgSavePct}% avg efficiency</div>
       </div>
       <div class="card" style="border-top:3px solid var(--accent);cursor:default;"
         data-tip='${JSON.stringify({title:"Overall Tokens",rows:[["Total",fmtNum(data.totalSaved+data.totalUsed)],["Used",fmtNum(data.totalUsed)],["Saved",fmtNum(data.totalSaved)]],note:"Combined total of all token activity."})}'>
         <div class="card-label">Overall Tokens</div>
-        <div class="card-value" id="pr-overall" style="color:var(--accent);">${fmtNum(data.totalSaved + data.totalUsed)}</div>
+        <div class="card-value" id="pr-overall" style="color:var(--accent);">${fmtShort(data.totalSaved + data.totalUsed)}</div>
       </div>
     </div>`;
 
@@ -2242,14 +2294,21 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
           function animVal(id, val) {
             var el = document.getElementById(id);
             if (!el) return;
-            var cur = parseInt((el.textContent || '0').replace(/,/g,'')) || 0;
+            var titleEl = el.querySelector('span[title]');
+            var cur = parseInt((titleEl ? titleEl.getAttribute('title') : el.textContent || '0').replace(/,/g,'')) || 0;
             var dur = 600, st = performance.now();
             el.style.color = 'var(--success)';
             (function step(now) {
               var p = Math.min((now-st)/dur,1), ease=1-Math.pow(1-p,3);
-              el.textContent = Math.round(cur+(val-cur)*ease).toLocaleString('en-US');
+              var v = Math.round(cur+(val-cur)*ease);
+              el.textContent = fmtShortJS(v);
               if(p<1) requestAnimationFrame(step);
-              else { el.textContent=val.toLocaleString('en-US'); setTimeout(function(){ el.style.color=''; },1000); }
+              else {
+                var abbr = fmtShortJS(val);
+                var full = Math.round(val).toLocaleString('en-US');
+                el.innerHTML = abbr !== full ? '<span title="' + full + '">' + abbr + '</span>' : abbr;
+                setTimeout(function(){ el.style.color=''; },1000);
+              }
             })(st);
           }
           if (d.totals) {
