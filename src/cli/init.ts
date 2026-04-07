@@ -91,6 +91,31 @@ export async function initCommand(options: InitOptions): Promise<void> {
     console.log('    \x1b[32m✓ No secrets detected\x1b[0m');
   }
 
+  // Set up git pre-commit hook for automatic secret scanning
+  try {
+    const hookDir = resolve(root, '.git', 'hooks');
+    const preCommitPath = resolve(hookDir, 'pre-commit');
+    if (existsSync(resolve(root, '.git')) && !existsSync(preCommitPath)) {
+      const hookScript = `#!/bin/sh
+# codebase-pilot pre-commit hook — scan for secrets before commit
+if command -v codebase-pilot >/dev/null 2>&1; then
+  codebase-pilot scan-secrets -d "$(git rev-parse --show-toplevel)" 2>/dev/null
+  if [ $? -ne 0 ]; then
+    echo ""
+    echo "  codebase-pilot: secrets detected — commit blocked"
+    echo "  Run: codebase-pilot scan-secrets"
+    echo ""
+    exit 1
+  fi
+fi
+`;
+      writeFileSync(preCommitPath, hookScript, { mode: 0o755 });
+      console.log('');
+      console.log('  Git hook:');
+      console.log('    \x1b[32m✓ pre-commit hook installed\x1b[0m — auto-scans secrets before every commit');
+    }
+  } catch { /* ignore — git hook is optional */ }
+
   // Set up MCP server config for Claude Code (enables automatic token tracking)
   try {
     const mcpConfigPath = resolve(root, '.claude', 'mcp.json');

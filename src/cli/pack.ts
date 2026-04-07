@@ -1,7 +1,7 @@
 import { resolve, basename } from 'node:path';
 import { writeFileSync } from 'node:fs';
 import { packProject } from '../packer/index.js';
-import { formatTokenCount } from '../packer/token-counter.js';
+import { formatTokenCount, estimateCost } from '../packer/token-counter.js';
 import { logPackRun, getGitContext } from '../packer/usage-logger.js';
 import { detectChanges } from '../intelligence/incremental.js';
 
@@ -104,9 +104,10 @@ export async function packCommand(options: PackCommandOptions): Promise<void> {
       console.log('  [DRY RUN] Preview — no files written');
       console.log('');
       console.log(`  Files:    ${result.fileCount}`);
-      console.log(`  Raw:      ~${formatTokenCount(result.rawTokens)} tokens`);
+      console.log(`  Raw:      ~${formatTokenCount(result.rawTokens)} tokens (~${estimateCost(result.rawTokens)}/prompt)`);
       if (result.compressionRatio !== undefined) {
-        console.log(`  Packed:   ~${formatTokenCount(result.totalTokens)} tokens (${result.compressionRatio}% reduction)`);
+        const savedDry = result.rawTokens - result.totalTokens;
+        console.log(`  Packed:   ~${formatTokenCount(result.totalTokens)} tokens (~${estimateCost(result.totalTokens)}/prompt, saves ~${estimateCost(savedDry)})`);
       }
       console.log(`  Format:   ${format.toUpperCase()}`);
       console.log(`  Output:   ${outputPath} (not written)`);
@@ -159,9 +160,12 @@ export async function packCommand(options: PackCommandOptions): Promise<void> {
     console.log(`  Files:    ${result.fileCount} packed`);
     if (result.compressionRatio !== undefined) {
       const originalTokens = Math.round(result.totalTokens / (1 - result.compressionRatio / 100));
+      const savedTokens = originalTokens - result.totalTokens;
       console.log(`  Tokens:   ~${formatTokenCount(result.totalTokens)} (compressed from ~${formatTokenCount(originalTokens)}, ${result.compressionRatio}% reduction)`);
+      console.log(`  Cost:     ~${estimateCost(result.totalTokens)} per prompt (saved ~${estimateCost(savedTokens)})`);
     } else {
       console.log(`  Tokens:   ~${formatTokenCount(result.totalTokens)} (estimated)`);
+      console.log(`  Cost:     ~${estimateCost(result.totalTokens)} per prompt`);
     }
     console.log(`  Format:   ${format.toUpperCase()}`);
     console.log(`  Output:   ${outputPath}`);

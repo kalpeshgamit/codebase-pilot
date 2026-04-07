@@ -1077,6 +1077,13 @@ function fmtShort(n: number): string {
   return `<span title="${full}">${abbr}</span>`;
 }
 
+// Estimate cost in USD (Claude Sonnet input: $3/1M tokens)
+function fmtCost(tokens: number): string {
+  const cost = (tokens / 1_000_000) * 3;
+  if (cost < 0.01) return '<$0.01';
+  return '$' + cost.toFixed(2);
+}
+
 function riskColor(level: string): string {
   if (level === 'critical') return T.danger;
   if (level === 'high') return T.danger;
@@ -1155,14 +1162,14 @@ export function renderDashboard(data: DashboardData, port: number): string {
         data-tip='${JSON.stringify({title:"Tokens Saved This Week",rows:[["Saved",fmtNum(data.week.tokensSaved)],["Used",fmtNum(data.week.tokensUsed)],["Total",fmtNum(data.week.tokensSaved+data.week.tokensUsed)],["Save rate",((data.week.tokensSaved+data.week.tokensUsed)>0?Math.round((data.week.tokensSaved/(data.week.tokensSaved+data.week.tokensUsed))*100):0)+"%"]],note:"Tokens saved = raw tokens minus packed tokens across all sessions this week."})}'>
         <div class="card-label">Tokens Saved This Week</div>
         <div class="card-value" style="color:var(--success);">${fmtShort(data.week.tokensSaved)}</div>
-        <div class="card-sub">${fmtShort(data.week.tokensUsed)} used</div>
+        <div class="card-sub">${fmtShort(data.week.tokensUsed)} used · <span style="color:var(--success)">${fmtCost(data.week.tokensSaved)} saved</span></div>
         ${savedSparkline}
       </div>
       <div class="card" style="border-top:3px solid var(--accent);cursor:default;position:relative;overflow:hidden;"
-        data-tip='${JSON.stringify({title:"Overall Tokens This Month",rows:[["Saved",fmtNum(data.month.tokensSaved)],["Used",fmtNum(data.month.tokensUsed)],["Total",fmtNum(data.month.tokensSaved+data.month.tokensUsed)],["Sessions",fmtNum(data.month.sessions)]],note:"Combined token activity (used + saved) across all pack sessions this month."})}'>
+        data-tip='${JSON.stringify({title:"Overall Tokens This Month",rows:[["Saved",fmtNum(data.month.tokensSaved)+" ("+fmtCost(data.month.tokensSaved)+")"],["Used",fmtNum(data.month.tokensUsed)+" ("+fmtCost(data.month.tokensUsed)+")"],["Total",fmtNum(data.month.tokensSaved+data.month.tokensUsed)],["Sessions",fmtNum(data.month.sessions)]],note:"Cost estimate based on Claude Sonnet input pricing ($3/1M tokens)."})}'>
         <div class="card-label">Overall Tokens This Month</div>
         <div class="card-value" style="color:var(--accent);">${fmtShort(data.month.tokensSaved + data.month.tokensUsed)}</div>
-        <div class="card-sub">${fmtShort(data.month.tokensSaved)} saved</div>
+        <div class="card-sub">${fmtCost(data.month.tokensSaved)} saved · ${fmtCost(data.month.tokensUsed)} used</div>
         ${overallSparkline}
       </div>
     </div>`;
@@ -1449,6 +1456,38 @@ export function renderDashboard(data: DashboardData, port: number): string {
       <polyline points="${sparkPoints}" fill="none" stroke="var(--success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>` : '';
 
+  // Project Health Score (0-100)
+  let healthScore = 50; // base
+  const weekTotal = data.week.tokensSaved + data.week.tokensUsed;
+  if (weekTotal > 0) {
+    const weekEfficiency = data.week.tokensSaved / weekTotal;
+    healthScore += Math.round(weekEfficiency * 30); // up to +30 for high compression
+  }
+  if (data.topFile && data.topFile.tokens <= 5000) healthScore += 10; // no large files
+  if (data.week.sessions > 0) healthScore += 5; // active usage
+  if (data.recentRuns.some(r => r.compressed)) healthScore += 5; // using compression
+  healthScore = Math.min(healthScore, 100);
+  const healthColor = healthScore >= 80 ? 'var(--success)' : healthScore >= 60 ? '#ff6800' : '#f85149';
+  const healthLabel = healthScore >= 80 ? 'Excellent' : healthScore >= 60 ? 'Good' : 'Needs Work';
+
+  const healthHtml = !isFirstTime ? `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:20px;">
+      <div style="position:relative;width:60px;height:60px;">
+        <svg width="60" height="60" viewBox="0 0 60 60">
+          <circle cx="30" cy="30" r="26" fill="none" stroke="var(--border)" stroke-width="4"/>
+          <circle cx="30" cy="30" r="26" fill="none" stroke="${healthColor}" stroke-width="4"
+            stroke-dasharray="${Math.round(163 * healthScore / 100)} 163"
+            stroke-linecap="round" transform="rotate(-90 30 30)"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:${healthColor};">${healthScore}</div>
+      </div>
+      <div>
+        <div style="font-size:14px;font-weight:700;color:${healthColor};">${healthLabel}</div>
+        <div style="font-size:11px;color:var(--text-muted);">Project Health Score</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:2px;">Compression + file sizes + usage frequency</div>
+      </div>
+    </div>` : '';
+
   // 7-day token trend chart (reuse trend from sparklines above)
   const trendMax = Math.max(...trend.map(d => d.saved + d.used), 1);
   const hasTrendData = trend.some(d => d.saved > 0 || d.used > 0);
@@ -1486,6 +1525,7 @@ export function renderDashboard(data: DashboardData, port: number): string {
     <h1 class="page-title">${esc(data.projectName)}</h1>
     ${welcomeHtml}
     ${statCards}
+    ${healthHtml}
     ${suggestionsHtml}
     ${trendChart}
     ${savingsChart}
