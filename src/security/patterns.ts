@@ -230,6 +230,62 @@ export const SECRET_PATTERNS: SecretPattern[] = [
   { name: 'Generic Private Key', category: 'crypto-key', regex: /-----BEGIN PRIVATE KEY-----/ },
 
   // ═══════════════════════════════════════════
+  // AI SERVICES (additional)
+  // ═══════════════════════════════════════════
+  { name: 'OpenRouter API Key', category: 'ai', regex: /sk-or-v1-[A-Za-z0-9]{48,}/ },
+  { name: 'AI21 Labs Key', category: 'ai', regex: /ai21.*[=:]\s*['"]?[A-Za-z0-9]{32,}['"]/i },
+  { name: 'Sambanova API Key', category: 'ai', regex: /sambanova.*[=:]\s*['"]?[A-Za-z0-9]{32,}['"]/i },
+  { name: 'Voyage AI Key', category: 'ai', regex: /voyage.*[=:]\s*['"]?pa-[A-Za-z0-9\-_]{32,}['"]/i },
+  { name: 'DeepSeek API Key', category: 'ai', regex: /deepseek.*[=:]\s*['"]?sk-[A-Za-z0-9]{32,}['"]/i },
+  { name: 'Mistral API Key', category: 'ai', regex: /mistral.*[=:]\s*['"]?[A-Za-z0-9]{32,}['"]/i },
+
+  // ═══════════════════════════════════════════
+  // AUTH SERVICES (additional)
+  // ═══════════════════════════════════════════
+  { name: 'Clerk Publishable Key', category: 'auth', regex: /pk_(?:live|test)_[A-Za-z0-9]{40,}/ },
+  { name: 'Clerk Secret Key', category: 'auth', regex: /sk_(?:live|test)_[A-Za-z0-9]{40,}/ },
+  { name: 'Supabase Service Role JWT', category: 'auth', regex: /eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[A-Za-z0-9\-_]{50,}\.[A-Za-z0-9\-_]{20,}/ },
+  { name: 'WorkOS API Key', category: 'auth', regex: /sk_(?:live|test)_[A-Za-z0-9]{30,}/ },
+  { name: 'Stytch Secret', category: 'auth', regex: /secret-(?:live|test)-[A-Za-z0-9\-]{36,}/ },
+  { name: 'Kinde Secret', category: 'auth', regex: /kinde.*secret\s*[=:]\s*['"]?[A-Za-z0-9]{32,}['"]/i },
+  { name: 'Firebase Web API Key', category: 'auth', regex: /AIzaSy[A-Za-z0-9\-_]{33}/ },
+
+  // ═══════════════════════════════════════════
+  // COMMUNICATION (additional)
+  // ═══════════════════════════════════════════
+  { name: 'Telegram Bot Token', category: 'messaging', regex: /\d{8,10}:[A-Za-z0-9_\-]{35}/ },
+  { name: 'Discord Bot Token', category: 'messaging', regex: /[MN][A-Za-z0-9\-_]{23,}\.[A-Za-z0-9\-_]{6}\.[A-Za-z0-9\-_]{27,}/ },
+  { name: 'Novu API Key', category: 'messaging', regex: /novu.*[=:]\s*['"]?[A-Za-z0-9]{32,}['"]/i },
+
+  // ═══════════════════════════════════════════
+  // CLOUD/HOSTING (additional)
+  // ═══════════════════════════════════════════
+  { name: 'Deno Deploy Token', category: 'cloud', regex: /ddp_[A-Za-z0-9]{40,}/ },
+  { name: 'Railway Token', category: 'cloud', regex: /railway.*[=:]\s*['"]?[A-Za-z0-9\-_]{32,}['"]/i },
+  { name: 'Render API Key', category: 'cloud', regex: /rnd_[A-Za-z0-9]{32,}/ },
+  { name: 'Fly.io Token', category: 'cloud', regex: /fo1_[A-Za-z0-9]{40,}/ },
+
+  // ═══════════════════════════════════════════
+  // PAYMENT (additional)
+  // ═══════════════════════════════════════════
+  { name: 'Lemon Squeezy API Key', category: 'payment', regex: /lemonsqueezy.*[=:]\s*['"]?[A-Za-z0-9]{32,}['"]/i },
+  { name: 'Paddle API Key', category: 'payment', regex: /paddle.*[=:]\s*['"]?[A-Za-z0-9]{32,}['"]/i },
+  { name: 'Gumroad Token', category: 'payment', regex: /gumroad.*[=:]\s*['"]?[A-Za-z0-9\-_]{32,}['"]/i },
+
+  // ═══════════════════════════════════════════
+  // DEVINFRA (additional)
+  // ═══════════════════════════════════════════
+  { name: 'Crates.io Token', category: 'devinfra', regex: /cio[A-Za-z0-9]{32,}/ },
+  { name: 'Qstash Token', category: 'devinfra', regex: /qstash.*[=:]\s*['"]?[A-Za-z0-9]{32,}['"]/i },
+  { name: 'Upstash Redis Token', category: 'devinfra', regex: /upstash.*token\s*[=:]\s*['"]?[A-Za-z0-9]{32,}['"]/i },
+
+  // ═══════════════════════════════════════════
+  // STORAGE/MEDIA
+  // ═══════════════════════════════════════════
+  { name: 'Cloudinary URL', category: 'cloud', regex: /cloudinary:\/\/\d+:[A-Za-z0-9\-_]+@[A-Za-z0-9]+/ },
+  { name: 'Uploadthing Token', category: 'devinfra', regex: /uploadthing.*[=:]\s*['"]?sk_live_[A-Za-z0-9]{32,}['"]/i },
+
+  // ═══════════════════════════════════════════
   // GENERIC PATTERNS (catch-all)
   // ═══════════════════════════════════════════
   { name: 'Generic Secret', category: 'generic', regex: /(?:password|secret|token|api_key|apikey|api_secret|access_token|auth_token|credentials|private_key|client_secret)\s*[=:]\s*['"][^'"]{8,}['"]/i },
