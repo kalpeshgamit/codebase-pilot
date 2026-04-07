@@ -452,7 +452,14 @@ function layout(title: string, activePage: string, body: string, port: number, h
     letter-spacing: -0.02em;
     color: var(--text);
     font-family: ${T.mono};
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
   }
+
+  .card-value.lg { font-size: 1.6rem; }
+  .card-value.xl { font-size: 1.25rem; letter-spacing: -0.01em; }
 
   .card-sub {
     font-size: 12px;
@@ -905,6 +912,15 @@ function toggleTheme() {
     });
   })();
 
+  // Auto-scale card values based on digit length
+  function scaleCardValue(el) {
+    el.classList.remove('lg', 'xl');
+    var len = (el.textContent || '').replace(/[^0-9]/g, '').length;
+    if (len >= 10) el.classList.add('xl');
+    else if (len >= 7) el.classList.add('lg');
+  }
+  document.querySelectorAll('.card-value').forEach(function(el) { scaleCardValue(el); });
+
   // Animate numbers: count up from 0 to target value
   document.querySelectorAll('.card-value').forEach(function(el) {
     var raw = el.textContent.replace(/,/g, '');
@@ -920,9 +936,9 @@ function toggleTheme() {
       // Ease out cubic
       var ease = 1 - Math.pow(1 - progress, 3);
       var current = target * ease;
-      el.textContent = isInt ? Math.round(current).toLocaleString() : current.toFixed(1);
+      el.textContent = isInt ? Math.round(current).toLocaleString('en-US') : current.toFixed(1);
       if (progress < 1) requestAnimationFrame(step);
-      else el.textContent = isInt ? Math.round(target).toLocaleString() : target.toLocaleString();
+      else { el.textContent = isInt ? Math.round(target).toLocaleString('en-US') : target.toLocaleString('en-US'); scaleCardValue(el); }
     }
     requestAnimationFrame(step);
   });
@@ -1122,10 +1138,10 @@ export function renderDashboard(data: DashboardData, port: number): string {
         try {
           var d = JSON.parse(e.data);
           var cards = document.querySelectorAll('.card-value');
-          if (cards[0] && d.totalFiles) cards[0].textContent = Number(d.totalFiles).toLocaleString();
-          if (cards[1] && d.totalTokens) cards[1].textContent = Number(d.totalTokens).toLocaleString();
-          if (cards[2] && d.today) cards[2].textContent = Number(d.today.sessions).toLocaleString();
-          if (cards[3] && d.week) cards[3].textContent = Number(d.week.tokensSaved).toLocaleString();
+          if (cards[0] && d.totalFiles) cards[0].textContent = Number(d.totalFiles).toLocaleString('en-US');
+          if (cards[1] && d.totalTokens) cards[1].textContent = Number(d.totalTokens).toLocaleString('en-US');
+          if (cards[2] && d.today) cards[2].textContent = Number(d.today.sessions).toLocaleString('en-US');
+          if (cards[3] && d.week) cards[3].textContent = Number(d.week.tokensSaved).toLocaleString('en-US');
 
           // Flash updated cards
           cards.forEach(function(c) {
@@ -1663,7 +1679,7 @@ export function renderFiles(data: FilesPageData, port: number): string {
   var counter = document.getElementById('files-loaded');
 
   function escH(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-  function fmtN(n) { return n.toLocaleString(); }
+  function fmtN(n) { return Number(n).toLocaleString('en-US'); }
 
   function addRows(count) {
     var end = Math.min(loaded + count, allFiles.length);
@@ -1973,9 +1989,9 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
         (function step(now) {
           var p = Math.min((now - start) / duration, 1);
           var ease = 1 - Math.pow(1 - p, 3);
-          el.textContent = Math.round(current + (target - current) * ease).toLocaleString();
+          el.textContent = Math.round(current + (target - current) * ease).toLocaleString('en-US');
           if (p < 1) requestAnimationFrame(step);
-          else { el.textContent = target.toLocaleString(); setTimeout(function(){ el.style.color=''; }, 1200); }
+          else { el.textContent = target.toLocaleString('en-US'); setTimeout(function(){ el.style.color=''; }, 1200); }
         })(start);
       }
 
@@ -2136,9 +2152,9 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
             + '<td class="mono" style="font-size:10px;color:var(--text-muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + r.projectPath + '">' + r.projectPath + '</td>'
             + '<td>' + r.command + ' ' + compress + agent + '</td>'
             + '<td class="mono">' + r.files + '</td>'
-            + '<td class="mono" style="color:#ff6800">' + Number(r.tokensRaw).toLocaleString() + '</td>'
-            + '<td class="mono" style="color:var(--accent)">' + Number(r.tokensPacked).toLocaleString() + '</td>'
-            + '<td class="mono" style="color:var(--success)">' + saved.toLocaleString() + '</td>'
+            + '<td class="mono" style="color:#ff6800">' + Number(r.tokensRaw).toLocaleString('en-US') + '</td>'
+            + '<td class="mono" style="color:var(--accent)">' + Number(r.tokensPacked).toLocaleString('en-US') + '</td>'
+            + '<td class="mono" style="color:var(--success)">' + saved.toLocaleString('en-US') + '</td>'
             + '<td class="mono" style="color:' + pctColor + ';font-weight:600">' + pct + '%</td>';
           var tbody = document.getElementById('prompts-tbody');
           if (tbody) tbody.insertBefore(tr, tbody.firstChild);
@@ -2152,9 +2168,9 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
             el.style.color = 'var(--success)';
             (function step(now) {
               var p = Math.min((now-st)/dur,1), ease=1-Math.pow(1-p,3);
-              el.textContent = Math.round(cur+(val-cur)*ease).toLocaleString();
+              el.textContent = Math.round(cur+(val-cur)*ease).toLocaleString('en-US');
               if(p<1) requestAnimationFrame(step);
-              else { el.textContent=val.toLocaleString(); setTimeout(function(){ el.style.color=''; },1000); }
+              else { el.textContent=val.toLocaleString('en-US'); setTimeout(function(){ el.style.color=''; },1000); }
             })(st);
           }
           if (d.totals) {
@@ -2167,7 +2183,7 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
           // Toast
           var toast = document.createElement('div');
           toast.style.cssText = 'position:fixed;bottom:20px;right:24px;background:rgba(63,185,80,0.15);color:var(--success);padding:10px 16px;border-radius:8px;font-size:12px;z-index:100;border:1px solid rgba(63,185,80,0.3);backdrop-filter:blur(12px);animation:fadeIn 0.3s ease;';
-          toast.textContent = '⚡ ' + r.project + ' — ' + pct + '% saved (' + saved.toLocaleString() + ' tokens)';
+          toast.textContent = '⚡ ' + r.project + ' — ' + pct + '% saved (' + saved.toLocaleString('en-US') + ' tokens)';
           document.body.appendChild(toast);
           setTimeout(function(){ toast.style.opacity='0'; toast.style.transition='opacity 0.4s'; }, 3500);
           setTimeout(function(){ toast.remove(); }, 4000);
@@ -2201,9 +2217,9 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
                   + '<td class="mono" style="font-size:10px;color:var(--text-muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + r.projectPath + '">' + r.projectPath + '</td>'
                   + '<td>' + r.command + ' ' + compress + agent + '</td>'
                   + '<td class="mono">' + r.files + '</td>'
-                  + '<td class="mono" style="color:#ff6800">' + Number(r.tokensRaw).toLocaleString() + '</td>'
-                  + '<td class="mono" style="color:var(--accent)">' + Number(r.tokensPacked).toLocaleString() + '</td>'
-                  + '<td class="mono" style="color:var(--success)">' + saved.toLocaleString() + '</td>'
+                  + '<td class="mono" style="color:#ff6800">' + Number(r.tokensRaw).toLocaleString('en-US') + '</td>'
+                  + '<td class="mono" style="color:var(--accent)">' + Number(r.tokensPacked).toLocaleString('en-US') + '</td>'
+                  + '<td class="mono" style="color:var(--success)">' + saved.toLocaleString('en-US') + '</td>'
                   + '<td class="mono" style="color:' + pctColor + ';font-weight:600">' + pct + '%</td>';
                 tbody.insertBefore(tr, tbody.firstChild);
               });
