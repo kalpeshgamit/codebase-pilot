@@ -1110,7 +1110,42 @@ export function renderGraph(data: GraphPageData, port: number): string {
     d3.select(this).select('circle').attr('stroke', '#0d1117').attr('stroke-width', 1.5);
     d3.select(this).select('text').attr('fill', 'var(--text-muted)').attr('font-weight', 'normal');
   }).on('click', function(e, d) {
-    window.location.href = '/impact?file=' + encodeURIComponent(d.id);
+    // Open drawer with file info — no page navigation
+    var drawer = document.getElementById('node-drawer');
+    var drawerBody = document.getElementById('drawer-body');
+    drawer.classList.add('open');
+    drawerBody.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</div>';
+
+    fetch('/api/impact?file=' + encodeURIComponent(d.id))
+      .then(function(r) { return r.json(); })
+      .then(function(impact) {
+        var html = '<div style="font-family:ui-monospace,monospace;font-size:13px;color:var(--accent);margin-bottom:12px;">' + d.id + '</div>';
+        html += '<div style="display:flex;gap:12px;margin-bottom:16px;">';
+        html += '<span class="badge badge-blue">' + d.tokens + ' tokens</span>';
+        html += '<span class="badge badge-green">' + d.group + '</span>';
+        if (impact.riskLevel) html += '<span class="badge ' + (impact.riskLevel === 'high' || impact.riskLevel === 'critical' ? 'badge-red' : impact.riskLevel === 'medium' ? 'badge-yellow' : 'badge-green') + '">' + impact.riskLevel.toUpperCase() + ' ' + impact.riskScore + '/100</span>';
+        html += '</div>';
+        if (impact.directDependents && impact.directDependents.length > 0) {
+          html += '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Direct dependents (' + impact.directDependents.length + ')</div>';
+          impact.directDependents.forEach(function(dep) {
+            html += '<div style="padding:4px 0;font-size:12px;font-family:ui-monospace,monospace;color:var(--text);">' + dep + '</div>';
+          });
+          html += '<div style="height:12px;"></div>';
+        }
+        if (impact.affectedTests && impact.affectedTests.length > 0) {
+          html += '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Affected tests (' + impact.affectedTests.length + ')</div>';
+          impact.affectedTests.forEach(function(t) {
+            html += '<div style="padding:4px 0;font-size:12px;font-family:ui-monospace,monospace;color:var(--success);">' + t + '</div>';
+          });
+          html += '<div style="height:12px;"></div>';
+        }
+        html += '<div style="font-size:11px;color:var(--text-muted);">Total affected: ' + (impact.transitiveDependents ? impact.transitiveDependents.length : 0) + ' files</div>';
+        html += '<div style="margin-top:16px;"><a href="/impact?file=' + encodeURIComponent(d.id) + '" style="font-size:12px;">Open full impact page →</a></div>';
+        drawerBody.innerHTML = html;
+      })
+      .catch(function() {
+        drawerBody.innerHTML = '<div style="color:var(--danger);">Failed to load impact data</div>';
+      });
   });
 
   sim.on('tick', function() {
@@ -1141,7 +1176,19 @@ export function renderGraph(data: GraphPageData, port: number): string {
       <span id="graph-stats" class="mono" style="color:var(--text-muted);font-size:12px;"></span>
     </div>
     <input type="text" id="graph-search" class="search-box" placeholder="Filter nodes..." style="margin-bottom:12px;">
-    <div id="graph-container" style="width:100%;height:calc(100vh - 140px);background:var(--surface);border:1px solid var(--border);border-radius:8px;position:relative;overflow:hidden;"></div>
+    <div style="position:relative;">
+      <div id="graph-container" style="width:100%;height:calc(100vh - 140px);background:var(--surface);border:1px solid var(--border);border-radius:8px;position:relative;overflow:hidden;"></div>
+      <div id="node-drawer" style="position:absolute;top:0;right:0;width:340px;height:100%;background:var(--bg);border-left:1px solid var(--border);border-radius:0 8px 8px 0;transform:translateX(100%);transition:transform 0.25s ease;overflow-y:auto;z-index:50;box-shadow:-4px 0 20px rgba(0,0,0,0.2);">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);">
+          <strong style="font-size:13px;">File Details</strong>
+          <button onclick="document.getElementById('node-drawer').classList.remove('open')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;line-height:1;">&times;</button>
+        </div>
+        <div id="drawer-body" style="padding:16px;"></div>
+      </div>
+    </div>
+    <style>
+      #node-drawer.open { transform: translateX(0); }
+    </style>
     <div id="graph-tooltip" style="display:none;position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;pointer-events:none;z-index:100;color:var(--text);max-width:400px;"></div>
     ${graphScript}`;
 

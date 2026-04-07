@@ -368,6 +368,18 @@ export function startUiServer(root: string, port: number): void {
         return;
       }
 
+      if (pathname === '/api/impact') {
+        const file = url.searchParams.get('file') || '';
+        if (!file) {
+          jsonResponse(res, { error: 'file param required' });
+          return;
+        }
+        const graph = buildImportGraph(root);
+        const blast = computeBlastRadius(root, file, graph);
+        jsonResponse(res, blast);
+        return;
+      }
+
       if (pathname === '/api/search') {
         const q = url.searchParams.get('q') || '';
         if (!q) {
