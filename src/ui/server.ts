@@ -402,6 +402,46 @@ export function startUiServer(root: string, port: number): { broadcast: (event: 
         return;
       }
 
+      if (pathname === '/api/export') {
+        const globalLogs = readGlobalLogs();
+        const prompts = readPromptLogs();
+        const today = getStats(globalLogs, 1);
+        const week = getStats(globalLogs, 7);
+        const month = getStats(globalLogs, 30);
+        const allTime = getStats(globalLogs, 99999);
+        const projects = getProjectSummaries(globalLogs);
+        jsonResponse(res, {
+          exportDate: new Date().toISOString(),
+          version: '0.8.1',
+          project: basename(root),
+          projectPath: root,
+          stats: { today, week, month, allTime },
+          projects,
+          recentSessions: globalLogs.slice(-50).reverse(),
+          promptLogs: prompts.slice(-100).reverse(),
+        });
+        return;
+      }
+
+      if (pathname === '/api/badge') {
+        const logs = readPackLogs(root);
+        const week = getStats(logs, 7);
+        const total = week.tokensSaved + week.tokensUsed;
+        const pct = total > 0 ? Math.round((week.tokensSaved / total) * 100) : 0;
+        const color = pct >= 60 ? '3fb950' : pct >= 30 ? 'ff6800' : '8b949e';
+        const label = pct > 0 ? `${pct}%25 saved` : 'no data';
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="180" height="20">
+          <rect width="180" height="20" rx="3" fill="#24292f"/>
+          <rect x="100" width="80" height="20" rx="3" fill="#${color}"/>
+          <rect width="100" height="20" fill="#24292f"/>
+          <text x="50" y="14" fill="#fff" font-family="sans-serif" font-size="11" text-anchor="middle">codebase-pilot</text>
+          <text x="140" y="14" fill="#fff" font-family="sans-serif" font-size="11" text-anchor="middle">${label}</text>
+        </svg>`;
+        res.writeHead(200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'no-cache, max-age=300' });
+        res.end(svg);
+        return;
+      }
+
       if (pathname === '/api/prompt-logs') {
         const prompts = readPromptLogs();
         jsonResponse(res, { prompts: prompts.slice(-200).reverse() });

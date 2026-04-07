@@ -21,6 +21,7 @@ import { statsCommand } from '../cli/stats.js';
 import { uiCommand } from '../cli/ui.js';
 import { scanSecretsCommand } from '../cli/scan-secrets.js';
 import { serviceCommand } from '../cli/service.js';
+import { compareCommand } from '../cli/compare.js';
 
 // Read version from package.json so it stays in sync automatically
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -165,5 +166,12 @@ program
   .option('--status', 'Show service status', false)
   .option('--restart', 'Restart the service', false)
   .action(serviceCommand);
+
+program
+  .command('compare')
+  .description('Compare token impact of changes since last pack')
+  .option('-d, --dir <path>', 'Project directory', '.')
+  .option('-b, --base <branch>', 'Base branch to compare against', 'main')
+  .action(compareCommand);
 
 program.parse();
