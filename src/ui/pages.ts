@@ -1182,7 +1182,8 @@ export function renderDashboard(data: DashboardData, port: number): string {
   // Recent sessions
   let recentTable = '';
   if (data.recentRuns.length > 0) {
-    const rows = data.recentRuns.slice(0, 10).map(r => {
+    const DASH_INITIAL = 10;
+    const rows = data.recentRuns.slice(0, DASH_INITIAL).map(r => {
       const d = new Date(r.date);
       const saved = r.tokensRaw - r.tokensPacked;
       const pct = r.tokensRaw > 0 ? Math.round((saved / r.tokensRaw) * 100) : 0;
@@ -1198,6 +1199,35 @@ export function renderDashboard(data: DashboardData, port: number): string {
       </tr>`;
     }).join('');
 
+    const dashAllRuns = JSON.stringify(data.recentRuns);
+    const dashShowMore = data.recentRuns.length > DASH_INITIAL
+      ? `<div style="text-align:center;padding:12px;">
+          <button id="dash-load-more" onclick="dashLoadMore()" style="background:var(--surface);border:1px solid var(--border);color:var(--blue);cursor:pointer;padding:8px 24px;border-radius:8px;font-size:12px;font-weight:600;">
+            Show more <span id="dash-remaining">(${data.recentRuns.length - DASH_INITIAL} more)</span>
+          </button>
+        </div>
+        <script>
+        (function(){
+          var all=${dashAllRuns}, loaded=${DASH_INITIAL}, batch=10;
+          function e(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+          window.dashLoadMore=function(){
+            var tb=document.getElementById('dash-recent-tbody');
+            var end=Math.min(loaded+batch,all.length);
+            for(var i=loaded;i<end;i++){
+              var r=all[i],d=new Date(r.date),sv=r.tokensRaw-r.tokensPacked,p=r.tokensRaw>0?Math.round((sv/r.tokensRaw)*100):0;
+              var c=r.compressed?' <span class="badge badge-green">compressed</span>':'';
+              var a=r.agent?' <span class="badge badge-blue">'+e(r.agent)+'</span>':'';
+              var tr=document.createElement('tr');
+              tr.innerHTML='<td class="mono">'+e(d.toLocaleString())+'</td><td>'+e(r.command||'pack')+c+a+'</td><td class="mono">'+r.files+'</td><td class="mono">'+r.tokensRaw.toLocaleString('en-US')+'</td><td class="mono">'+r.tokensPacked.toLocaleString('en-US')+'</td><td class="mono" style="color:var(--success)">'+sv.toLocaleString('en-US')+' ('+p+'%)</td>';
+              tb.appendChild(tr);
+            }
+            loaded=end;var rem=all.length-loaded;
+            if(rem<=0){var b=document.getElementById('dash-load-more');if(b)b.parentNode.removeChild(b);}
+            else{var s=document.getElementById('dash-remaining');if(s)s.textContent='('+rem+' more)';}
+          };
+        })();
+        </script>` : '';
+
     recentTable = `
       <div class="table-wrap">
         <h3>Recent Sessions</h3>
@@ -1205,8 +1235,9 @@ export function renderDashboard(data: DashboardData, port: number): string {
           <thead><tr>
             <th>Time</th><th>Command</th><th>Files</th><th>Raw</th><th>Packed</th><th>Saved</th>
           </tr></thead>
-          <tbody>${rows}</tbody>
+          <tbody id="dash-recent-tbody">${rows}</tbody>
         </table>
+        ${dashShowMore}
       </div>`;
   }
 
@@ -2086,7 +2117,8 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
   // Recent sessions across all projects
   let recentTable = '';
   if (data.recentRuns.length > 0) {
-    const rows = data.recentRuns.slice(0, 15).map(r => {
+    const PROJ_INITIAL = 10;
+    const rows = data.recentRuns.slice(0, PROJ_INITIAL).map(r => {
       const d = new Date(r.date);
       const saved = r.tokensRaw - r.tokensPacked;
       const pct = r.tokensRaw > 0 ? Math.round((saved / r.tokensRaw) * 100) : 0;
@@ -2103,6 +2135,35 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
       </tr>`;
     }).join('');
 
+    const projAllRuns = JSON.stringify(data.recentRuns);
+    const projShowMore = data.recentRuns.length > PROJ_INITIAL
+      ? `<div style="text-align:center;padding:12px;">
+          <button id="proj-load-more" onclick="projLoadMore()" style="background:var(--surface);border:1px solid var(--border);color:var(--blue);cursor:pointer;padding:8px 24px;border-radius:8px;font-size:12px;font-weight:600;">
+            Show more <span id="proj-remaining">(${data.recentRuns.length - PROJ_INITIAL} more)</span>
+          </button>
+        </div>
+        <script>
+        (function(){
+          var all=${projAllRuns}, loaded=${PROJ_INITIAL}, batch=10;
+          function e(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+          window.projLoadMore=function(){
+            var tb=document.getElementById('proj-recent-tbody');
+            var end=Math.min(loaded+batch,all.length);
+            for(var i=loaded;i<end;i++){
+              var r=all[i],d=new Date(r.date),sv=r.tokensRaw-r.tokensPacked,p=r.tokensRaw>0?Math.round((sv/r.tokensRaw)*100):0;
+              var c=r.compressed?' <span class="badge badge-green">compressed</span>':'';
+              var a=r.agent?' <span class="badge badge-blue">'+e(r.agent)+'</span>':'';
+              var tr=document.createElement('tr');
+              tr.innerHTML='<td class="mono">'+e(d.toLocaleString())+'</td><td><strong>'+e(r.project||'unknown')+'</strong></td><td>'+e(r.command||'pack')+c+a+'</td><td class="mono">'+r.files+'</td><td class="mono">'+r.tokensRaw.toLocaleString('en-US')+'</td><td class="mono">'+r.tokensPacked.toLocaleString('en-US')+'</td><td class="mono" style="color:var(--success)">'+sv.toLocaleString('en-US')+' ('+p+'%)</td>';
+              tb.appendChild(tr);
+            }
+            loaded=end;var rem=all.length-loaded;
+            if(rem<=0){var b=document.getElementById('proj-load-more');if(b)b.parentNode.removeChild(b);}
+            else{var s=document.getElementById('proj-remaining');if(s)s.textContent='('+rem+' more)';}
+          };
+        })();
+        </script>` : '';
+
     recentTable = `
       <div class="table-wrap">
         <h3>Recent Sessions (All Projects)</h3>
@@ -2110,8 +2171,9 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
           <thead><tr>
             <th>Time</th><th>Project</th><th>Command</th><th>Files</th><th>Raw</th><th>Packed</th><th>Saved</th>
           </tr></thead>
-          <tbody>${rows}</tbody>
+          <tbody id="proj-recent-tbody">${rows}</tbody>
         </table>
+        ${projShowMore}
       </div>`;
   }
 
