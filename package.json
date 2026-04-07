@@ -1,6 +1,6 @@
 {
   "name": "codebase-pilot-cli",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "Claude Code context engine — pack, compress, and optimize any codebase for AI. Save 60-90% tokens.",
   "type": "module",
   "main": "dist/index.js",
@@ -8,7 +8,7 @@
     "codebase-pilot": "dist/bin/codebase-pilot.js"
   },
   "scripts": {
-    "build": "tsup src/index.ts src/bin/codebase-pilot.ts src/ui/daemon.ts src/ui/pack-worker.ts src/ui/ws.ts --format esm --dts --clean",
+    "build": "tsup src/index.ts src/bin/codebase-pilot.ts src/ui/daemon.ts src/ui/pack-worker.ts src/ui/ws.ts --format esm --dts --clean && cp docs/logo-05-dark.png dist/logo.png 2>/dev/null || true",
     "dev": "tsx src/bin/codebase-pilot.ts",
     "test": "vitest run",
     "test:watch": "vitest",

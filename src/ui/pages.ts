@@ -4,22 +4,31 @@
 // to prevent XSS. The search live-update uses textContent-safe patterns.
 
 import { basename, dirname, resolve } from 'node:path';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-// Read version from package.json
+// Read version from package.json (works from both src/ui/ and dist/)
 const __pages_dir = dirname(fileURLToPath(import.meta.url));
 let PKG_VERSION = '0.3.5';
-try {
-  // Try both paths: dist/ (built chunks) needs ../, src/ui/ (dev) needs ../../
-  for (const rel of ['..', '..\\..', '../..']) {
-    try {
-      const p = resolve(__pages_dir, rel, 'package.json');
-      const raw = readFileSync(p, 'utf8');
-      if (raw.includes('"codebase-pilot')) { PKG_VERSION = JSON.parse(raw).version; break; }
-    } catch { /* try next */ }
-  }
-} catch { /* use fallback */ }
+for (const rel of ['..', '../..']) {
+  try {
+    const p = resolve(__pages_dir, rel, 'package.json');
+    if (!existsSync(p)) continue;
+    const raw = readFileSync(p, 'utf8');
+    if (raw.includes('"codebase-pilot')) { PKG_VERSION = JSON.parse(raw).version; break; }
+  } catch { /* try next */ }
+}
+
+// Inline logo as data URI — works regardless of install method (npm global, local, dev)
+let LOGO_DATA_URI = '';
+for (const rel of ['..', '../..']) {
+  try {
+    const logoPath = resolve(__pages_dir, rel, 'dist', 'logo.png');
+    const docsPath = resolve(__pages_dir, rel, 'docs', 'logo-05-dark.png');
+    const p = existsSync(logoPath) ? logoPath : existsSync(docsPath) ? docsPath : '';
+    if (p) { LOGO_DATA_URI = `data:image/png;base64,${readFileSync(p).toString('base64')}`; break; }
+  } catch { /* try next */ }
+}
 
 // ---------------------------------------------------------------------------
 // Theme tokens
@@ -878,7 +887,7 @@ window.CpSocket = (function() {
   <aside class="sidebar">
     <div class="sidebar-brand">
       <div class="jet-wrapper">
-        <img src="/static/logo.png" alt="codebase-pilot" onerror="this.style.display='none'" />
+        <img src="${LOGO_DATA_URI || '/static/logo.png'}" alt="codebase-pilot" onerror="this.style.display='none'" />
       </div>
       <div class="brand-text" style="margin-top:-6px;">Codebase Pilot</div>
     </div>
