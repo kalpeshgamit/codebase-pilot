@@ -1075,14 +1075,22 @@ export function renderGraph(data: GraphPageData, port: number): string {
     );
 
   var node = nodeG.append('circle')
-    .attr('r', function(d) { return Math.max(4, Math.sqrt(d.tokens / 50) + 3); })
+    .attr('r', function(d) { return Math.max(6, Math.sqrt(d.tokens / 50) + 4); })
     .attr('fill', function(d) { return groupColors[d.group] || 'var(--accent)'; })
     .attr('stroke', '#0d1117')
-    .attr('stroke-width', 1.5)
-    .on('mouseup', function(e, d) {
-      if (!d._dragged) { openDrawer(d); }
+    .attr('stroke-width', 1.5);
+
+  // Attach click via native DOM — bypasses all D3 event capture
+  nodeG.each(function(d) {
+    var el = this;
+    el.addEventListener('pointerup', function(e) {
+      if (!d._dragged) {
+        e.stopPropagation();
+        openDrawer(d);
+      }
       d._dragged = false;
     });
+  });
 
   var labels = nodeG.append('text')
     .text(function(d) { return d.id.split('/').pop().replace(/\.\w+$/, ''); })
