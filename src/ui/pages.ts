@@ -168,44 +168,46 @@ function layout(title: string, activePage: string, body: string, port: number, h
   .jet-wrapper::after {
     content: '';
     position: absolute;
-    bottom: -4px;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: radial-gradient(circle, #ff6600, #ff4400, transparent);
-    animation: exhaust 0.8s ease-out infinite;
+    bottom: 2px;
+    width: 3px;
+    height: 14px;
+    border-radius: 0 0 3px 3px;
+    background: linear-gradient(to bottom, #ff6600, #ff4400, transparent);
+    animation: exhaust 0.6s ease-out infinite;
+    z-index: -1;
   }
 
   .jet-wrapper::before {
-    left: calc(50% - 12px);
+    left: calc(50% - 10px);
     animation-delay: 0s;
   }
 
   .jet-wrapper::after {
-    left: calc(50% + 6px);
-    animation-delay: 0.15s;
+    left: calc(50% + 7px);
+    animation-delay: 0.1s;
   }
 
   .jet-exhaust {
     position: absolute;
-    bottom: -8px;
+    bottom: -2px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 8px;
+    gap: 6px;
+    z-index: -1;
   }
 
   .jet-exhaust span {
-    width: 4px;
-    height: 4px;
+    width: 3px;
+    height: 3px;
     border-radius: 50%;
-    animation: exhaust 0.6s ease-out infinite;
+    animation: exhaust 0.5s ease-out infinite;
   }
 
   .jet-exhaust span:nth-child(1) { background: #ff6600; animation-delay: 0s; }
-  .jet-exhaust span:nth-child(2) { background: #ff4400; animation-delay: 0.1s; }
-  .jet-exhaust span:nth-child(3) { background: #ff6600; animation-delay: 0.2s; }
-  .jet-exhaust span:nth-child(4) { background: #ff4400; animation-delay: 0.05s; }
+  .jet-exhaust span:nth-child(2) { background: #ff4400; animation-delay: 0.08s; }
+  .jet-exhaust span:nth-child(3) { background: #ff6600; animation-delay: 0.16s; }
+  .jet-exhaust span:nth-child(4) { background: #ff4400; animation-delay: 0.04s; }
 
   .sidebar-brand img {
     width: 150px;
@@ -786,7 +788,7 @@ ${headExtra}
           <span></span><span></span><span></span><span></span>
         </div>
       </div>
-      <div class="brand-text">Codebase Pilot</div>
+      <div class="brand-text" style="margin-top:-6px;">Codebase Pilot</div>
     </div>
     <nav>
       ${navItems}
