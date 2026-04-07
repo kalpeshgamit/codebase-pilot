@@ -813,6 +813,50 @@ function layout(title: string, activePage: string, body: string, port: number, h
 </style>
 <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 ${headExtra}
+<script>
+// CoPilot WebSocket client — wraps native WS to provide EventEmitter-style API
+// Drop-in for the old EventSource('/api/events') usage
+window.CpSocket = (function() {
+  var handlers = {};
+  var ws;
+  var reconnectDelay = 1000;
+  function connect() {
+    var proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(proto + '://' + location.host);
+    ws.onopen = function() {
+      reconnectDelay = 1000;
+    };
+    ws.onmessage = function(e) {
+      try {
+        var msg = JSON.parse(e.data);
+        var fns = handlers[msg.event] || [];
+        for (var i = 0; i < fns.length; i++) fns[i]({ data: JSON.stringify(msg.data) });
+        // also fire wildcard listeners
+        var all = handlers['*'] || [];
+        for (var j = 0; j < all.length; j++) all[j](msg);
+      } catch(err) {}
+    };
+    ws.onerror = function() {};
+    ws.onclose = function() {
+      // Auto-reconnect with backoff
+      setTimeout(connect, Math.min(reconnectDelay, 30000));
+      reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+      var fns = handlers['_close'] || [];
+      for (var i = 0; i < fns.length; i++) fns[i]();
+    };
+  }
+  connect();
+  return {
+    addEventListener: function(event, fn) {
+      if (!handlers[event]) handlers[event] = [];
+      handlers[event].push(fn);
+    },
+    on: function(event, fn) { this.addEventListener(event, fn); },
+    get onerror() { return null; },
+    set onerror(fn) { handlers['_close'] = handlers['_close'] || []; handlers['_close'].push(fn); }
+  };
+})();
+</script>
 </head>
 <body>
   <aside class="sidebar">
@@ -1128,7 +1172,7 @@ export function renderDashboard(data: DashboardData, port: number): string {
     <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}</style>
     <script>
     (function() {
-      var es = new EventSource('/api/events');
+      var es = window.CpSocket;
       var badge = document.getElementById('live-badge');
 
       es.addEventListener('connected', function() {
@@ -2003,7 +2047,7 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
   const projectsSseScript = `
     <script>
     (function() {
-      var es = new EventSource('/api/events');
+      var es = window.CpSocket;
 
       function animateVal(el, newVal) {
         var target = newVal;
@@ -2161,7 +2205,7 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
     <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} @keyframes rowSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}</style>
     <script>
     (function() {
-      var es = new EventSource('/api/events');
+      var es = window.CpSocket;
 
       es.addEventListener('connected', function() {
         var b = document.getElementById('live-badge');

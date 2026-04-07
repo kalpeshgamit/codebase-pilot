@@ -2,18 +2,15 @@
 // Zero external deps — uses node:http only.
 
 import { createServer, type ServerResponse } from 'node:http';
-import { resolve, basename, join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve, basename } from 'node:path';
 import { URL } from 'node:url';
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { Worker } from 'node:worker_threads';
-import chokidar from 'chokidar';
+import { existsSync, readFileSync } from 'node:fs';
+import { WsServer } from './ws.js';
 
 import { detect } from '../scanner/detector.js';
 import { collectFiles } from '../packer/collector.js';
 import { buildImportGraph, getReverseDependencies, computeBlastRadius } from '../intelligence/imports.js';
-import { readPackLogs, readGlobalLogs, getStats, getProjectSummaries, getRecentRuns } from '../packer/usage-logger.js';
+import { readGlobalLogs, getStats, getProjectSummaries, getRecentRuns, readPackLogs } from '../packer/usage-logger.js';
 import { formatTokenCount } from '../packer/token-counter.js';
 import { createSearchIndex } from '../intelligence/search.js';
 import { scanForSecrets } from '../security/scanner.js';
@@ -64,63 +61,6 @@ function htmlResponse(res: import('node:http').ServerResponse, html: string): vo
     'Cache-Control': 'no-cache',
   });
   res.end(html);
-}
-
-// ---------------------------------------------------------------------------
-// Autopilot engine — auto-pack + auto-scan, no manual commands needed
-// ---------------------------------------------------------------------------
-
-const AUTOPILOT_COOLDOWN_MS = 10 * 60 * 1000; // 10 min between auto-packs
-const AUTOPILOT_DEBOUNCE_MS = 60 * 1000;       // 60s debounce after file changes
-
-function getLastPackTime(root: string): number {
-  const logs = readPackLogs(root);
-  if (!logs.length) return 0;
-  const last = logs[logs.length - 1];
-  return last ? new Date(last.date).getTime() : 0;
-}
-
-let autoPackRunning = false;
-
-function runAutoPack(root: string, trigger: string, broadcastFn: (event: string, data: unknown) => void): void {
-  if (autoPackRunning) return; // skip if already running
-  autoPackRunning = true;
-
-  broadcastFn('autopilot', { status: 'packing', trigger, step: 'collecting', pct: 0, time: new Date().toISOString() });
-
-  // Resolve worker script path relative to this file (works after tsup build)
-  const workerPath = resolve(dirname(fileURLToPath(import.meta.url)), 'pack-worker.js');
-
-  const worker = new Worker(workerPath, { workerData: { root, trigger } });
-
-  worker.on('message', async (msg: { type: string; [k: string]: unknown }) => {
-    if (msg.type === 'progress') {
-      broadcastFn('autopilot', { status: 'packing', trigger, step: msg.step, label: msg.label, pct: msg.pct, time: new Date().toISOString() });
-    } else if (msg.type === 'done') {
-      autoPackRunning = false;
-      broadcastFn('autopilot', { status: 'done', ...msg, trigger });
-      try {
-        const dashData = await buildDashboardData(root);
-        broadcastFn('stats-update', {
-          totalFiles: dashData.totalFiles,
-          totalTokens: dashData.totalTokens,
-          today: dashData.today,
-          week: dashData.week,
-          recentRuns: dashData.recentRuns.slice(0, 5),
-        });
-      } catch { /* ignore */ }
-    } else if (msg.type === 'error') {
-      autoPackRunning = false;
-      broadcastFn('autopilot', { status: 'error', trigger, error: msg.error, time: new Date().toISOString() });
-    }
-  });
-
-  worker.on('error', (err) => {
-    autoPackRunning = false;
-    broadcastFn('autopilot', { status: 'error', trigger, error: String(err), time: new Date().toISOString() });
-  });
-
-  worker.on('exit', () => { autoPackRunning = false; });
 }
 
 // ---------------------------------------------------------------------------
@@ -209,187 +149,29 @@ function buildImpactData(root: string, file: string): ImpactPageData {
 // Server
 // ---------------------------------------------------------------------------
 
-export function startUiServer(root: string, port: number): void {
+export function startUiServer(root: string, port: number): { broadcast: (event: string, data: unknown) => void } {
   // Lazily build search index on first query
   let searchIndex: ReturnType<typeof createSearchIndex> | null = null;
-
   function getSearchIndex() {
-    if (!searchIndex) {
-      searchIndex = createSearchIndex(root);
-      searchIndex.rebuild();
-    }
+    if (!searchIndex) { searchIndex = createSearchIndex(root); searchIndex.rebuild(); }
     return searchIndex;
   }
 
   // ---------------------------------------------------------------------------
-  // SSE — Server-Sent Events for real-time push (zero polling, zero deps)
+  // WebSocket server — true bidirectional socket, zero deps
   // ---------------------------------------------------------------------------
-
-  const sseClients = new Set<ServerResponse>();
+  const ws = new WsServer();
 
   function broadcast(event: string, data: unknown): void {
-    const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-    for (const client of sseClients) {
-      try { client.write(payload); } catch { sseClients.delete(client); }
-    }
+    ws.broadcast(event, data);
   }
-
-  // File watcher — pushes events to all connected SSE clients
-  const watcher = chokidar.watch(root, {
-    ignored: [
-      '**/node_modules/**', '**/dist/**', '**/.git/**',
-      '**/.codebase-pilot/**', '**/coverage/**', '**/*.log',
-      '**/codebase-pilot-output.*', '**/codebase-pilot-graph.*',
-      '**/venv/**', '**/.venv/**', '**/vendor/**', '**/__pycache__/**',
-      '**/.gradle/**', '**/target/**', '**/build/**',
-    ],
-    ignoreInitial: true,
-    persistent: true,
-    depth: 5,
-    usePolling: false,
-  });
-
-  watcher.on('error', (err) => {
-    // EMFILE: too many open files — gracefully ignore, watcher still works for watched files
-    if ((err as NodeJS.ErrnoException).code !== 'EMFILE') {
-      process.stderr.write(`[watcher] ${err}\n`);
-    }
-  });
-
-  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-  watcher.on('all', (event, filePath) => {
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(async () => {
-      const relative = filePath.replace(root + '/', '');
-      // Push file change event
-      broadcast('file-change', { event, file: relative, time: new Date().toISOString() });
-      // Real-time secret detection on changed files
-      try {
-        const { readFileSync: readF } = await import('node:fs');
-        if (existsSync(filePath)) {
-          const content = readF(filePath, 'utf8');
-          const secrets = scanForSecrets(content, relative);
-          if (secrets.length > 0) {
-            broadcast('secret-alert', {
-              file: relative,
-              secrets: secrets.map(s => ({ pattern: s.pattern, risk: s.risk, line: s.line })),
-              time: new Date().toISOString(),
-            });
-          }
-        }
-      } catch { /* binary files or read errors */ }
-      // Push updated stats
-      try {
-        const data = await buildDashboardData(root);
-        broadcast('stats-update', {
-          totalFiles: data.totalFiles,
-          totalTokens: data.totalTokens,
-          today: data.today,
-          week: data.week,
-        });
-      } catch { /* ignore */ }
-    }, 1000);
-  });
-
-  // ── Autopilot: auto-pack on start if no recent pack ──────────────────────
-  const lastPack = getLastPackTime(root);
-  const msSincePack = Date.now() - lastPack;
-  if (msSincePack > AUTOPILOT_COOLDOWN_MS) {
-    // Run after a short delay so the server is fully up first
-    setTimeout(() => runAutoPack(root, 'startup', broadcast), 2000);
-  }
-
-  // ── Autopilot: auto re-pack on significant file changes ──────────────────
-  let autoPackTimer: ReturnType<typeof setTimeout> | null = null;
-  let changedFileCount = 0;
-
-  watcher.on('all', (event, filePath) => {
-    // Only trigger on source file changes (not config/lock files)
-    if (!['add', 'change', 'unlink'].includes(event)) return;
-    if (filePath.endsWith('.json') && filePath.includes('package')) return;
-    changedFileCount++;
-    if (autoPackTimer) clearTimeout(autoPackTimer);
-    autoPackTimer = setTimeout(() => {
-      const count = changedFileCount;
-      changedFileCount = 0;
-      runAutoPack(root, `${count} file${count !== 1 ? 's' : ''} changed`, broadcast);
-    }, AUTOPILOT_DEBOUNCE_MS);
-  });
-
-  // Watch current project usage-log for dashboard updates
-  const usageLogPath = resolve(root, '.codebase-pilot', 'usage-log.jsonl');
-  const usageWatcher = chokidar.watch(usageLogPath, { ignoreInitial: true, persistent: true });
-  usageWatcher.on('change', async () => {
-    try {
-      const data = await buildDashboardData(root);
-      broadcast('stats-update', {
-        totalFiles: data.totalFiles,
-        totalTokens: data.totalTokens,
-        today: data.today,
-        week: data.week,
-        recentRuns: data.recentRuns.slice(0, 5),
-      });
-    } catch { /* ignore */ }
-  });
-
-  // Watch global history log — fires when ANY project runs pack (cross-project real-time)
-  const globalLogPath = join(homedir(), '.codebase-pilot', 'history.jsonl');
-  let lastGlobalLogSize = readGlobalLogs().filter(r => (r.tokensRaw ?? 0) > 0 || (r.tokensPacked ?? 0) > 0).length;
-  const globalWatcher = chokidar.watch(globalLogPath, { ignoreInitial: true, persistent: true, usePolling: false });
-  globalWatcher.on('change', () => {
-    try {
-      const globalLogs = readGlobalLogs();
-      // Sanitize: skip entries with missing/zero token data
-      const validLogs = globalLogs.filter(r => (r.tokensRaw ?? 0) > 0 || (r.tokensPacked ?? 0) > 0);
-      const today = getStats(validLogs, 1);
-      const week = getStats(validLogs, 7);
-      const month = getStats(validLogs, 30);
-      const allTime = getStats(validLogs, 99999);
-      const projects = getProjectSummaries(validLogs);
-      broadcast('projects-update', { today, week, month, allTime, projects });
-
-      // Broadcast the newest VALID run to the Prompts page
-      if (validLogs.length > lastGlobalLogSize && validLogs.length > 0) {
-        const newRun = validLogs[validLogs.length - 1];
-        const totalSaved = validLogs.reduce((s, r) => s + ((r.tokensRaw ?? 0) - (r.tokensPacked ?? 0)), 0);
-        const totalUsed = validLogs.reduce((s, r) => s + (r.tokensPacked ?? 0), 0);
-        broadcast('prompt-added', {
-          run: newRun,
-          totals: { sessions: validLogs.length, saved: totalSaved || 0, used: totalUsed || 0 },
-        });
-      }
-      lastGlobalLogSize = validLogs.length;
-    } catch { /* ignore */ }
-  });
-  globalWatcher.on('error', () => { /* ignore */ });
 
   const server = createServer(async (req, res) => {
     const url = new URL(req.url || '/', `http://localhost:${port}`);
     const pathname = url.pathname;
 
     try {
-      // ---- SSE endpoint ----
-
-      if (pathname === '/api/events') {
-        res.writeHead(200, {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-          'X-Accel-Buffering': 'no',   // disable nginx buffering
-          'Access-Control-Allow-Origin': '*',
-        });
-        res.write(`event: connected\ndata: ${JSON.stringify({ time: new Date().toISOString() })}\n\n`);
-        sseClients.add(res);
-
-        // Heartbeat every 25s — keeps connection alive through proxies/Safari
-        const heartbeat = setInterval(() => {
-          try { res.write(': ping\n\n'); } catch { clearInterval(heartbeat); sseClients.delete(res); }
-        }, 25000);
-
-        req.on('close', () => { clearInterval(heartbeat); sseClients.delete(res); });
-        return;
-      }
+      // WebSocket connections handled via server 'upgrade' event below
 
       // ---- HTML pages ----
 
@@ -620,6 +402,15 @@ export function startUiServer(root: string, port: number): void {
     }
   });
 
+  // WebSocket upgrade handler
+  server.on('upgrade', (req, socket, head) => {
+    if (req.headers.upgrade?.toLowerCase() === 'websocket') {
+      ws.handleUpgrade(req, socket as import('node:net').Socket);
+    } else {
+      socket.destroy();
+    }
+  });
+
   server.listen(port, () => {
     console.log('');
     console.log('  \x1b[36mcodebase-pilot\x1b[0m UI');
@@ -635,15 +426,12 @@ export function startUiServer(root: string, port: number): void {
 
   // Graceful shutdown
   function shutdown() {
-    for (const client of sseClients) { try { client.end(); } catch {} }
-    sseClients.clear();
-    watcher.close();
-    usageWatcher.close();
     if (searchIndex) searchIndex.close();
     server.close();
     process.exit(0);
   }
-
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
+
+  return { broadcast };
 }
