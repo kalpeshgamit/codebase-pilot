@@ -179,9 +179,20 @@ export function startUiServer(root: string, port: number): void {
       '**/node_modules/**', '**/dist/**', '**/.git/**',
       '**/.codebase-pilot/**', '**/coverage/**', '**/*.log',
       '**/codebase-pilot-output.*', '**/codebase-pilot-graph.*',
+      '**/venv/**', '**/.venv/**', '**/vendor/**', '**/__pycache__/**',
+      '**/.gradle/**', '**/target/**', '**/build/**',
     ],
     ignoreInitial: true,
     persistent: true,
+    depth: 5,
+    usePolling: false,
+  });
+
+  watcher.on('error', (err) => {
+    // EMFILE: too many open files — gracefully ignore, watcher still works for watched files
+    if ((err as NodeJS.ErrnoException).code !== 'EMFILE') {
+      process.stderr.write(`[watcher] ${err}\n`);
+    }
   });
 
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
