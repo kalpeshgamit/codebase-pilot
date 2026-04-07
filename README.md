@@ -483,6 +483,16 @@ The Prompts page shows:
 | Git context | Branch, commit message, hash, dirty count |
 | Duration | Pack execution time |
 
+### Privacy & Security — What We Don't Track
+
+> **codebase-pilot does NOT intercept, proxy, or call any AI provider APIs.**
+>
+> We don't track AI response tokens, API costs, or model outputs. That data belongs to your AI provider (Anthropic, OpenAI, etc.) and accessing it would require API key access — a security risk we refuse to take.
+>
+> **What we track:** Only your local codebase context — file tokens, compression savings, git state, and prompt text (via opt-in Claude Code hooks). Everything stays on your machine. Zero cloud. Zero telemetry.
+>
+> **Our goal:** Help you **reduce** the tokens you send to AI tools, not monitor what AI tools send back.
+
 ---
 
 ## Benchmarks
