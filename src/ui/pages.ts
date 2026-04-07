@@ -1740,8 +1740,10 @@ export function renderSecurity(data: SecurityPageData, port: number): string {
   const body = `
     <h1 class="page-title">Security Scanner</h1>
     ${cards}
-    ${catTable}
-    ${detectedTable}`;
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+      ${catTable}
+      ${detectedTable}
+    </div>`;
 
   return layout('Security', '/security', body, port);
 }
