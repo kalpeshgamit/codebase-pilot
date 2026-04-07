@@ -1,5 +1,5 @@
 import { resolve, basename } from 'node:path';
-import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync, openSync, realpathSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { spawn } from 'node:child_process';
@@ -73,6 +73,26 @@ function isPortOpen(port: number): Promise<boolean> {
   });
 }
 
+/** Check if daemon is already running. Returns true if user should exit. */
+async function checkExistingDaemon(): Promise<boolean> {
+  const existing = readPid();
+  if (existing && isProcessRunning(existing.pid)) {
+    const portUp = await isPortOpen(existing.port);
+    if (portUp) {
+      console.log(`  UI already running at http://localhost:${existing.port}`);
+      console.log(`  PID: ${existing.pid} | Project: ${basename(existing.root)}`);
+      console.log('');
+      console.log('  To restart: codebase-pilot ui --stop && codebase-pilot ui');
+      console.log('');
+      return true;
+    }
+    // Process exists but port not responding — stale, kill it
+    try { process.kill(existing.pid, 'SIGTERM'); } catch { /* ignore */ }
+    removePid();
+  }
+  return false;
+}
+
 export async function uiCommand(options: UiOptions): Promise<void> {
   const port = parseInt(options.port, 10) || DEFAULT_PORT;
 
@@ -125,22 +145,8 @@ export async function uiCommand(options: UiOptions): Promise<void> {
   // --- Start ---
   const root = resolve(options.dir);
 
-  // Check if already running
-  const existing = readPid();
-  if (existing && isProcessRunning(existing.pid)) {
-    const portUp = await isPortOpen(existing.port);
-    if (portUp) {
-      console.log(`  UI already running at http://localhost:${existing.port}`);
-      console.log(`  PID: ${existing.pid} | Project: ${basename(existing.root)}`);
-      console.log('');
-      console.log('  To restart: codebase-pilot ui --stop && codebase-pilot ui');
-      console.log('');
-      return;
-    }
-    // Process exists but port not responding — stale, kill it
-    try { process.kill(existing.pid, 'SIGTERM'); } catch { /* ignore */ }
-    removePid();
-  }
+  // Check if already running (isolated scope — no data flows to spawn)
+  if (await checkExistingDaemon()) return;
 
   // Foreground mode (blocking, for debugging)
   if (options.foreground) {
@@ -150,18 +156,17 @@ export async function uiCommand(options: UiOptions): Promise<void> {
   }
 
   // Daemon mode — spawn a separate daemon entry point
+  // Daemon handles its own log file internally via CODEBASE_PILOT_LOG env var
   const logFile = getLogFile();
-  const logFd = openSync(logFile, 'a');
 
   // Resolve daemon.js relative to the real binary path (follows symlinks from npm link/global)
-  const realBin = realpathSync(process.argv[1]);
-  const daemonPath = join(resolve(realBin, '..'), '..', 'ui', 'daemon.js');
+  const daemonPath = join(resolve(realpathSync(process.argv[1]), '..'), '..', 'ui', 'daemon.js');
 
   const child = spawn(process.execPath, [daemonPath, root, String(port)], {
     detached: true,
-    stdio: ['ignore', logFd, logFd],
+    stdio: 'ignore',
     cwd: root,
-    env: { ...process.env, CODEBASE_PILOT_DAEMON: '1' },
+    env: { ...process.env, CODEBASE_PILOT_DAEMON: '1', CODEBASE_PILOT_LOG: logFile },
   });
 
   child.unref();

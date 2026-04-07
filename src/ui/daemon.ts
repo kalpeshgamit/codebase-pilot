@@ -4,13 +4,23 @@
 
 import { resolve, basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync, createWriteStream } from 'node:fs';
 import { homedir } from 'node:os';
 import { Worker } from 'node:worker_threads';
 import chokidar from 'chokidar';
 
 import { startUiServer, warmCache, invalidateCache } from './server.js';
 import { readPackLogs, readGlobalLogs, getStats, getProjectSummaries, logPackRun } from '../packer/usage-logger.js';
+
+// Redirect stdout/stderr to log file if specified by parent process
+const logPath = process.env.CODEBASE_PILOT_LOG;
+if (logPath) {
+  try {
+    const logStream = createWriteStream(logPath, { flags: 'a' });
+    process.stdout.write = logStream.write.bind(logStream) as typeof process.stdout.write;
+    process.stderr.write = logStream.write.bind(logStream) as typeof process.stderr.write;
+  } catch { /* ignore — continue with default stdio */ }
+}
 
 const root = process.argv[2] || process.cwd();
 const port = parseInt(process.argv[3] || '7456', 10);
