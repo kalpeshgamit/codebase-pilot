@@ -197,7 +197,7 @@ Pattern categories, risk levels, detected secrets — side by side.
 | Feature | Details |
 |---------|---------|
 | **Pack & Compress** | XML/Markdown output, regex-based compression (8 languages), agent-scoped packing |
-| **Security Scanner** | 152 patterns across 15 categories — cloud, payment, AI, crypto, generic |
+| **Security Scanner** | 180 patterns across 15 categories — cloud, payment, AI, crypto, generic |
 | **Blast Radius** | Import graph analysis, risk scoring (0-100), affected test detection |
 | **Full-Text Search** | SQLite FTS5 with BM25 ranking, snippet extraction, highlighted matches |
 | **Web Dashboard** | 7 pages, dark/light theme, glassmorphism UI, real-time SSE updates |
@@ -209,7 +209,7 @@ Pattern categories, risk levels, detected secrets — side by side.
 | **Visualization** | D3.js interactive force-directed import graph (drag, zoom, search) |
 | **Benchmarks** | `eval` command — tokens, compression ratio, import edges, timing |
 | **Usage Stats** | Per-project + system-wide savings tracking (today/week/month) |
-| **56 Languages** | 3 tiers: 17 full ecosystem, 21 package+test, 18 extension-only |
+| **76 Languages** | 3 tiers: 17 full ecosystem, 21 package+test, 38 extension-only |
 | **58 Frameworks** | Next.js, Django, Gin, Axum, Spring Boot, Rails, Laravel, and more |
 | **39 Test Runners** | Vitest, pytest, Go test, Cargo test, JUnit, RSpec, and more |
 | **32 ORMs** | Prisma, SQLAlchemy, GORM, Diesel, Hibernate, ActiveRecord, and more |
