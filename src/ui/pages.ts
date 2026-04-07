@@ -962,7 +962,8 @@ function esc(s: string): string {
 }
 
 function fmtNum(n: number): string {
-  return n.toLocaleString('en-US');
+  const safe = Number(n) || 0;
+  return safe.toLocaleString('en-US');
 }
 
 function riskColor(level: string): string {

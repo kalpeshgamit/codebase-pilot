@@ -85,14 +85,21 @@ export function readGlobalLogs(): PackRun[] {
 // Stats computation
 // ---------------------------------------------------------------------------
 
+/** Sanitize a log entry — guard every numeric field against undefined/NaN */
+function safe(l: PackRun): { raw: number; packed: number } {
+  const raw = Number(l.tokensRaw) || 0;
+  const packed = Number(l.tokensPacked) || 0;
+  return { raw, packed };
+}
+
 export function getStats(logs: PackRun[], days: number): UsageStats {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
   const recent = logs.filter(l => new Date(l.date) >= cutoff);
   return {
     sessions: recent.length,
-    tokensSaved: recent.reduce((sum, l) => sum + (l.tokensRaw - l.tokensPacked), 0),
-    tokensUsed: recent.reduce((sum, l) => sum + l.tokensPacked, 0),
+    tokensSaved: recent.reduce((sum, l) => { const s = safe(l); return sum + Math.max(0, s.raw - s.packed); }, 0),
+    tokensUsed: recent.reduce((sum, l) => sum + safe(l).packed, 0),
   };
 }
 
@@ -106,14 +113,14 @@ export function getProjectSummaries(logs: PackRun[]): ProjectSummary[] {
   }
 
   const summaries: ProjectSummary[] = [];
-  for (const [key, runs] of byProject) {
+  for (const [, runs] of byProject) {
     runs.sort((a, b) => b.date.localeCompare(a.date));
     summaries.push({
       project: runs[0].project,
       projectPath: runs[0].projectPath,
       sessions: runs.length,
-      tokensSaved: runs.reduce((sum, l) => sum + (l.tokensRaw - l.tokensPacked), 0),
-      tokensUsed: runs.reduce((sum, l) => sum + l.tokensPacked, 0),
+      tokensSaved: runs.reduce((sum, l) => { const s = safe(l); return sum + Math.max(0, s.raw - s.packed); }, 0),
+      tokensUsed: runs.reduce((sum, l) => sum + safe(l).packed, 0),
       lastUsed: runs[0].date,
     });
   }
