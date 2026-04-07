@@ -1,0 +1,20 @@
+{
+  "name": "codebase-pilot",
+  "owner": {
+    "name": "Kalpesh Gamit (KG)",
+    "email": "kalpa.hacker@gmail.com",
+    "url": "https://github.com/kalpeshgamit"
+  },
+  "metadata": {
+    "description": "AI context engine — pack, compress, optimize any codebase for LLMs. Save 60-90% tokens.",
+    "homepage": "https://github.com/kalpeshgamit/codebase-pilot"
+  },
+  "plugins": [
+    {
+      "name": "codebase-pilot",
+      "version": "0.4.1",
+      "source": "./plugin",
+      "description": "Token-aware context engine — pack, compress, blast radius, security scan, incremental packing, import graph pruning"
+    }
+  ]
+}

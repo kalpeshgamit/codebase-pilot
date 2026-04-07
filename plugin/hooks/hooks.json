@@ -1,0 +1,28 @@
+{
+  "description": "codebase-pilot hooks — prompt tracking and session context",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codebase-pilot-log-prompt",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codebase-pilot pack --compress --dry-run 2>/dev/null || true",
+            "timeout": 30,
+            "statusMessage": "codebase-pilot: scanning project..."
+          }
+        ]
+      }
+    ]
+  }
+}

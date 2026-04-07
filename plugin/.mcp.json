@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "codebase-pilot": {
+      "type": "stdio",
+      "command": "codebase-pilot",
+      "args": ["serve"]
+    }
+  }
+}
