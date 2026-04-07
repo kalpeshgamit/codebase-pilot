@@ -162,9 +162,11 @@ watcher.on('all', async (event, filePath) => {
   autoPackTimer = setTimeout(() => {
     const count = changedFileCount;
     changedFileCount = 0;
+    // Don't auto-pack on fresh installs — user must run `pack` at least once first
+    const lastPack = getLastPackTime();
+    if (lastPack === 0) return;
     // Respect cooldown — don't pack again if we just packed recently
-    const msSincePack = Date.now() - getLastPackTime();
-    if (msSincePack < AUTOPILOT_COOLDOWN_MS) return;
+    if ((Date.now() - lastPack) < AUTOPILOT_COOLDOWN_MS) return;
     runAutoPack(`${count} file${count !== 1 ? 's' : ''} changed`);
   }, AUTOPILOT_DEBOUNCE_MS);
 });
@@ -194,9 +196,9 @@ globalWatcher.on('change', () => {
 });
 globalWatcher.on('error', () => { /* ignore */ });
 
-// Auto-pack on startup if no recent pack
-const msSincePack = Date.now() - getLastPackTime();
-if (msSincePack > AUTOPILOT_COOLDOWN_MS) {
+// Auto-pack on startup — only if project has prior pack history (not fresh install)
+const lastPackTime = getLastPackTime();
+if (lastPackTime > 0 && (Date.now() - lastPackTime) > AUTOPILOT_COOLDOWN_MS) {
   setTimeout(() => runAutoPack('startup'), 2000);
 }
 
