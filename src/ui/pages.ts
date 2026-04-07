@@ -1115,6 +1115,7 @@ export interface DashboardData {
   framework: string | null;
   testRunner: string | null;
   topFile?: { path: string; tokens: number };
+  dailyTrend?: Array<{ date: string; saved: number; used: number; sessions: number }>;
 }
 
 export function renderDashboard(data: DashboardData, port: number): string {
@@ -1420,11 +1421,46 @@ export function renderDashboard(data: DashboardData, port: number): string {
       <polyline points="${sparkPoints}" fill="none" stroke="var(--success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>` : '';
 
+  // 7-day token trend chart
+  const trend = data.dailyTrend || [];
+  const trendMax = Math.max(...trend.map(d => d.saved + d.used), 1);
+  const hasTrendData = trend.some(d => d.saved > 0 || d.used > 0);
+  const trendChart = hasTrendData ? `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;">Token Trend (7 Days)</div>
+        <div style="font-size:10px;color:var(--text-dim);">Saved + Used per day</div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:6px;height:100px;">
+        ${trend.map(d => {
+          const total = d.saved + d.used;
+          const heightPct = total > 0 ? Math.max((total / trendMax) * 100, 4) : 0;
+          const savedPct = total > 0 ? (d.saved / total) * 100 : 0;
+          const usedPct = 100 - savedPct;
+          const tooltip = `${d.date}: ${fmtShort(d.saved)} saved, ${fmtShort(d.used)} used (${d.sessions} sessions)`;
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;" title="${esc(tooltip)}">
+            <div style="width:100%;height:100px;display:flex;flex-direction:column;justify-content:flex-end;">
+              ${total > 0 ? `<div style="width:100%;height:${heightPct}%;border-radius:4px 4px 2px 2px;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="flex:${savedPct};background:var(--success);min-height:${savedPct > 0 ? '2px' : '0'};"></div>
+                <div style="flex:${usedPct};background:#ff6800;min-height:${usedPct > 0 ? '2px' : '0'};"></div>
+              </div>` : '<div style="width:100%;height:4px;background:var(--border);border-radius:2px;"></div>'}
+            </div>
+            <div style="font-size:9px;color:var(--text-dim);white-space:nowrap;">${esc(d.date)}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;gap:16px;margin-top:10px;font-size:10px;">
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:var(--success);border-radius:2px;"></span> Saved</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#ff6800;border-radius:2px;"></span> Used</span>
+      </div>
+    </div>` : '';
+
   const body = `
     <h1 class="page-title">${esc(data.projectName)}</h1>
     ${welcomeHtml}
     ${statCards}
     ${suggestionsHtml}
+    ${trendChart}
     ${savingsChart}
     ${recentTable}
     ${projectInfo}
@@ -1891,8 +1927,11 @@ export function renderFiles(data: FilesPageData, port: number): string {
   function buildRow(f: typeof sorted[0]): string {
     const pct = data.totalTokens > 0 ? ((f.tokens / data.totalTokens) * 100).toFixed(1) : '0.0';
     const barPct = ((f.tokens / maxTokens) * 100).toFixed(1);
+    const sizeWarn = f.tokens > 10000 ? '<span style="color:#f85149;font-size:9px;margin-left:4px;" title="Large file — consider splitting">L</span>'
+      : f.tokens > 5000 ? '<span style="color:#ff6800;font-size:9px;margin-left:4px;" title="Medium-large file">M</span>'
+      : '';
     return `<tr>
-      <td class="mono"><a href="/impact?file=${encodeURIComponent(f.relativePath)}">${esc(f.relativePath)}</a></td>
+      <td class="mono"><a href="/impact?file=${encodeURIComponent(f.relativePath)}">${esc(f.relativePath)}</a>${sizeWarn}</td>
       <td>${f.language ? esc(f.language) : `<span style="color:var(--text-muted)">-</span>`}</td>
       <td class="mono" style="text-align:right;">${fmtNum(f.tokens)}</td>
       <td style="text-align:right;">${pct}%</td>
@@ -1973,12 +2012,22 @@ export function renderFiles(data: FilesPageData, port: number): string {
 })();
 <\/script>`;
 
+  const largeFiles = sorted.filter(f => f.tokens > 10000).length;
+  const medFiles = sorted.filter(f => f.tokens > 5000 && f.tokens <= 10000).length;
+  const fileSummary = (largeFiles > 0 || medFiles > 0) ? `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;gap:20px;font-size:12px;">
+      ${largeFiles > 0 ? `<span><span style="color:#f85149;font-weight:700;">${largeFiles}</span> <span style="color:var(--text-muted);">large files (&gt;10K tokens)</span> <span style="color:#f85149;font-size:9px;">L</span></span>` : ''}
+      ${medFiles > 0 ? `<span><span style="color:#ff6800;font-weight:700;">${medFiles}</span> <span style="color:var(--text-muted);">medium files (&gt;5K tokens)</span> <span style="color:#ff6800;font-size:9px;">M</span></span>` : ''}
+      <span><span style="color:var(--success);font-weight:700;">${sorted.length - largeFiles - medFiles}</span> <span style="color:var(--text-muted);">optimal (&lt;5K tokens)</span></span>
+    </div>` : '';
+
   const body = `
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
       <h1 class="page-title" style="margin-bottom:0">Files</h1>
       <span class="mono" style="color:var(--text-muted);font-size:12px;">${fmtNum(data.files.length)} files, ${fmtShort(data.totalTokens)} tokens total</span>
       <span id="files-loaded" class="mono" style="color:var(--text-dim);font-size:11px;">${Math.min(BATCH, sorted.length)} of ${sorted.length} loaded</span>
     </div>
+    ${fileSummary}
     <div class="table-wrap">
       <table id="files-table">
         <thead><tr>

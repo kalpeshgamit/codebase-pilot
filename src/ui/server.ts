@@ -146,6 +146,18 @@ async function buildDashboardData(root: string): Promise<DashboardData> {
     topFile: files.length > 0
       ? (() => { const sorted = [...files].sort((a, b) => b.tokens - a.tokens); return { path: sorted[0].relativePath, tokens: sorted[0].tokens }; })()
       : undefined,
+    dailyTrend: (() => {
+      const days: Array<{ date: string; saved: number; used: number; sessions: number }> = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i);
+        const next = new Date(d); next.setDate(next.getDate() + 1);
+        const dayLogs = logs.filter(r => { const t = new Date(r.date).getTime(); return t >= d.getTime() && t < next.getTime(); });
+        const saved = dayLogs.reduce((s, r) => s + Math.max(0, (r.tokensRaw ?? 0) - (r.tokensPacked ?? 0)), 0);
+        const used = dayLogs.reduce((s, r) => s + (r.tokensPacked ?? 0), 0);
+        days.push({ date: d.toLocaleDateString('en-US', { weekday: 'short' }), saved, used, sessions: dayLogs.length });
+      }
+      return days;
+    })(),
   };
 }
 
