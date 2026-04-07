@@ -1560,8 +1560,9 @@ export interface FilesPageData {
 export function renderFiles(data: FilesPageData, port: number): string {
   const sorted = [...data.files].sort((a, b) => b.tokens - a.tokens);
   const maxTokens = sorted.length > 0 ? sorted[0].tokens : 1;
+  const BATCH = 30;
 
-  const rows = sorted.map(f => {
+  function buildRow(f: typeof sorted[0]): string {
     const pct = data.totalTokens > 0 ? ((f.tokens / data.totalTokens) * 100).toFixed(1) : '0.0';
     const barPct = ((f.tokens / maxTokens) * 100).toFixed(1);
     return `<tr>
@@ -1571,11 +1572,56 @@ export function renderFiles(data: FilesPageData, port: number): string {
       <td style="text-align:right;">${pct}%</td>
       <td><div class="bar-bg"><div class="bar-fill" style="width:${barPct}%"></div></div></td>
     </tr>`;
-  }).join('');
+  }
 
-  const sortScript = `
+  const initialRows = sorted.slice(0, BATCH).map(buildRow).join('');
+  const allFilesJson = JSON.stringify(sorted.map(f => ({
+    p: f.relativePath, l: f.language, t: f.tokens,
+    pct: data.totalTokens > 0 ? ((f.tokens / data.totalTokens) * 100).toFixed(1) : '0.0',
+    bar: ((f.tokens / maxTokens) * 100).toFixed(1),
+  })));
+
+  const filesScript = `
 <script>
 (function() {
+  var allFiles = ${allFilesJson};
+  var loaded = ${BATCH};
+  var loading = false;
+  var tbody = document.querySelector('#files-table tbody');
+  var mainEl = document.querySelector('.main');
+  var counter = document.getElementById('files-loaded');
+
+  function escH(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function fmtN(n) { return n.toLocaleString(); }
+
+  function addRows(count) {
+    var end = Math.min(loaded + count, allFiles.length);
+    for (var i = loaded; i < end; i++) {
+      var f = allFiles[i];
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td class="mono"><a href="/impact?file=' + encodeURIComponent(f.p) + '">' + escH(f.p) + '</a></td>'
+        + '<td>' + (f.l ? escH(f.l) : '<span style="color:var(--text-muted)">-</span>') + '</td>'
+        + '<td class="mono" style="text-align:right;">' + fmtN(f.t) + '</td>'
+        + '<td style="text-align:right;">' + f.pct + '%</td>'
+        + '<td><div class="bar-bg"><div class="bar-fill" style="width:' + f.bar + '%"></div></div></td>';
+      tbody.appendChild(tr);
+    }
+    loaded = end;
+    if (counter) counter.textContent = loaded + ' of ' + allFiles.length + ' loaded';
+    loading = false;
+  }
+
+  if (mainEl) {
+    mainEl.addEventListener('scroll', function() {
+      if (loading || loaded >= allFiles.length) return;
+      if (mainEl.scrollTop + mainEl.clientHeight >= mainEl.scrollHeight - 200) {
+        loading = true;
+        addRows(${BATCH});
+      }
+    });
+  }
+
+  // Sort
   var table = document.querySelector('#files-table');
   var headers = table.querySelectorAll('thead th');
   var sortCol = 2;
@@ -1584,19 +1630,18 @@ export function renderFiles(data: FilesPageData, port: number): string {
   headers.forEach(function(th, i) {
     th.addEventListener('click', function() {
       if (sortCol === i) { sortAsc = !sortAsc; } else { sortCol = i; sortAsc = i === 0; }
-      var tbody = table.querySelector('tbody');
-      var rows = Array.from(tbody.querySelectorAll('tr'));
-      rows.sort(function(a, b) {
-        var av = a.children[i].textContent.trim();
-        var bv = b.children[i].textContent.trim();
-        if (i >= 2) {
-          av = parseFloat(av.replace(/,/g, '')) || 0;
-          bv = parseFloat(bv.replace(/,/g, '')) || 0;
-          return sortAsc ? av - bv : bv - av;
-        }
-        return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+      // Sort all data
+      allFiles.sort(function(a, b) {
+        var av, bv;
+        if (i === 0) { av = a.p; bv = b.p; return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av); }
+        if (i === 1) { av = a.l || ''; bv = b.l || ''; return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av); }
+        av = a.t; bv = b.t;
+        return sortAsc ? av - bv : bv - av;
       });
-      rows.forEach(function(r) { tbody.appendChild(r); });
+      // Re-render
+      tbody.innerHTML = '';
+      loaded = 0;
+      addRows(${BATCH});
     });
   });
 })();
@@ -1606,6 +1651,7 @@ export function renderFiles(data: FilesPageData, port: number): string {
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
       <h1 class="page-title" style="margin-bottom:0">Files</h1>
       <span class="mono" style="color:var(--text-muted);font-size:12px;">${fmtNum(data.files.length)} files, ${fmtNum(data.totalTokens)} tokens total</span>
+      <span id="files-loaded" class="mono" style="color:var(--text-dim);font-size:11px;">${Math.min(BATCH, sorted.length)} of ${sorted.length} loaded</span>
     </div>
     <div class="table-wrap">
       <table id="files-table">
@@ -1616,10 +1662,10 @@ export function renderFiles(data: FilesPageData, port: number): string {
           <th style="text-align:right;">% Total</th>
           <th style="width:120px;"></th>
         </tr></thead>
-        <tbody>${rows}</tbody>
+        <tbody>${initialRows}</tbody>
       </table>
     </div>
-    ${sortScript}`;
+    ${filesScript}`;
 
   return layout('Files', '/files', body, port);
 }
