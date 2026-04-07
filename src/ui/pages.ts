@@ -1152,6 +1152,30 @@ export function renderDashboard(data: DashboardData, port: number): string {
         } catch(err) {}
       });
 
+      es.addEventListener('autopilot', function(e) {
+        try {
+          var d = JSON.parse(e.data);
+          var ap = document.getElementById('autopilot-status');
+          if (!ap) {
+            ap = document.createElement('div');
+            ap.id = 'autopilot-status';
+            ap.style.cssText = 'position:fixed;top:16px;right:24px;background:rgba(13,17,23,0.97);border:1px solid rgba(63,185,80,0.35);border-radius:10px;padding:10px 16px;font-size:12px;z-index:9000;display:flex;align-items:center;gap:8px;backdrop-filter:blur(12px);max-width:340px;transition:opacity 0.3s;';
+            document.body.appendChild(ap);
+          }
+          ap.style.opacity = '1';
+          if (d.status === 'packing') {
+            ap.innerHTML = '<span style="width:8px;height:8px;background:#ff6800;border-radius:50%;display:inline-block;animation:pulse 1s infinite;flex-shrink:0;"></span><span><strong style="color:#ff6800;">Autopilot</strong> packing… <span style="color:var(--text-muted);">' + d.trigger + '</span></span>';
+          } else if (d.status === 'done') {
+            var secWarn = d.secretCount > 0 ? ' <span style="color:#f85149;">⚠ ' + d.secretCount + ' secret' + (d.secretCount>1?'s':'') + '</span>' : '';
+            ap.innerHTML = '<span style="width:8px;height:8px;background:var(--success);border-radius:50%;display:inline-block;flex-shrink:0;"></span><span><strong style="color:var(--success);">Autopilot</strong> packed ' + Number(d.files).toLocaleString('en-US') + ' files · ' + Number(d.tokens).toLocaleString('en-US') + ' tokens' + secWarn + ' <span style="color:var(--text-muted);">(' + d.trigger + ')</span></span>';
+            setTimeout(function() { if(ap) { ap.style.opacity='0'; setTimeout(function(){if(ap&&ap.parentNode)ap.parentNode.removeChild(ap);},400); }}, 6000);
+          } else if (d.status === 'error') {
+            ap.innerHTML = '<span style="width:8px;height:8px;background:#f85149;border-radius:50%;display:inline-block;flex-shrink:0;"></span><span><strong style="color:#f85149;">Autopilot error</strong> — ' + d.trigger + '</span>';
+            setTimeout(function() { if(ap) { ap.style.opacity='0'; setTimeout(function(){if(ap&&ap.parentNode)ap.parentNode.removeChild(ap);},400); }}, 5000);
+          }
+        } catch(err) {}
+      });
+
       es.addEventListener('file-change', function(e) {
         try {
           var d = JSON.parse(e.data);

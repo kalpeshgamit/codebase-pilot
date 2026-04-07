@@ -4,14 +4,15 @@
 import { createServer, type ServerResponse } from 'node:http';
 import { resolve, basename, join } from 'node:path';
 import { URL } from 'node:url';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import chokidar from 'chokidar';
 
 import { detect } from '../scanner/detector.js';
 import { collectFiles } from '../packer/collector.js';
+import { packProject } from '../packer/index.js';
 import { buildImportGraph, getReverseDependencies, computeBlastRadius } from '../intelligence/imports.js';
-import { readPackLogs, readGlobalLogs, getStats, getProjectSummaries, getRecentRuns } from '../packer/usage-logger.js';
+import { readPackLogs, readGlobalLogs, getStats, getProjectSummaries, getRecentRuns, logPackRun } from '../packer/usage-logger.js';
 import { formatTokenCount } from '../packer/token-counter.js';
 import { createSearchIndex } from '../intelligence/search.js';
 import { scanForSecrets } from '../security/scanner.js';
@@ -62,6 +63,83 @@ function htmlResponse(res: import('node:http').ServerResponse, html: string): vo
     'Cache-Control': 'no-cache',
   });
   res.end(html);
+}
+
+// ---------------------------------------------------------------------------
+// Autopilot engine — auto-pack + auto-scan, no manual commands needed
+// ---------------------------------------------------------------------------
+
+const AUTOPILOT_COOLDOWN_MS = 10 * 60 * 1000; // 10 min between auto-packs
+const AUTOPILOT_DEBOUNCE_MS = 60 * 1000;       // 60s debounce after file changes
+
+function getLastPackTime(root: string): number {
+  const logs = readPackLogs(root);
+  if (!logs.length) return 0;
+  const last = logs[logs.length - 1];
+  return last ? new Date(last.date).getTime() : 0;
+}
+
+async function runAutoPack(root: string, trigger: string, broadcastFn: (event: string, data: unknown) => void): Promise<void> {
+  try {
+    broadcastFn('autopilot', { status: 'packing', trigger, time: new Date().toISOString() });
+
+    // Auto-init: create .codebase-pilot dir if missing
+    const configDir = resolve(root, '.codebase-pilot');
+    if (!existsSync(configDir)) mkdirSync(configDir, { recursive: true });
+
+    const result = packProject({ dir: root, format: 'xml', compress: false, noSecurity: false });
+
+    // Log the auto-pack run
+    logPackRun(root, {
+      date: new Date().toISOString(),
+      project: basename(root),
+      projectPath: root,
+      tokensRaw: result.tokenCount,
+      tokensPacked: result.tokenCount,
+      files: result.fileCount,
+      compressed: false,
+      command: `auto-pack (${trigger})`,
+    });
+
+    // Write output file silently
+    const outputPath = resolve(root, '.codebase-pilot', 'context.xml');
+    writeFileSync(outputPath, result.output, 'utf8');
+
+    // Run security scan
+    const files = collectFiles(root, {});
+    let secretCount = 0;
+    const secretAlerts: Array<{ file: string; count: number }> = [];
+    for (const f of files.slice(0, 200)) {
+      try {
+        const content = readFileSync(resolve(root, f.relativePath), 'utf8');
+        const secrets = scanForSecrets(content, f.relativePath);
+        if (secrets.length > 0) {
+          secretCount += secrets.length;
+          secretAlerts.push({ file: f.relativePath, count: secrets.length });
+        }
+      } catch { /* skip unreadable */ }
+    }
+
+    const dashData = await buildDashboardData(root);
+    broadcastFn('autopilot', {
+      status: 'done',
+      trigger,
+      files: result.fileCount,
+      tokens: result.tokenCount,
+      secretCount,
+      secretAlerts: secretAlerts.slice(0, 5),
+      time: new Date().toISOString(),
+    });
+    broadcastFn('stats-update', {
+      totalFiles: dashData.totalFiles,
+      totalTokens: dashData.totalTokens,
+      today: dashData.today,
+      week: dashData.week,
+      recentRuns: dashData.recentRuns.slice(0, 5),
+    });
+  } catch (err) {
+    broadcastFn('autopilot', { status: 'error', trigger, error: String(err), time: new Date().toISOString() });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -231,6 +309,31 @@ export function startUiServer(root: string, port: number): void {
         });
       } catch { /* ignore */ }
     }, 1000);
+  });
+
+  // ── Autopilot: auto-pack on start if no recent pack ──────────────────────
+  const lastPack = getLastPackTime(root);
+  const msSincePack = Date.now() - lastPack;
+  if (msSincePack > AUTOPILOT_COOLDOWN_MS) {
+    // Run after a short delay so the server is fully up first
+    setTimeout(() => runAutoPack(root, 'startup', broadcast), 2000);
+  }
+
+  // ── Autopilot: auto re-pack on significant file changes ──────────────────
+  let autoPackTimer: ReturnType<typeof setTimeout> | null = null;
+  let changedFileCount = 0;
+
+  watcher.on('all', (event, filePath) => {
+    // Only trigger on source file changes (not config/lock files)
+    if (!['add', 'change', 'unlink'].includes(event)) return;
+    if (filePath.endsWith('.json') && filePath.includes('package')) return;
+    changedFileCount++;
+    if (autoPackTimer) clearTimeout(autoPackTimer);
+    autoPackTimer = setTimeout(() => {
+      const count = changedFileCount;
+      changedFileCount = 0;
+      runAutoPack(root, `${count} file${count !== 1 ? 's' : ''} changed`, broadcast);
+    }, AUTOPILOT_DEBOUNCE_MS);
   });
 
   // Watch current project usage-log for dashboard updates
