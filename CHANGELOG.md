@@ -3,6 +3,30 @@
 All notable changes to codebase-pilot are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.8.2] — 2026-04-07
+
+### Added
+- **`codebase-pilot compare`** — token impact of changes with $ cost
+- **Cost estimation ($)** — real dollar values in CLI, dashboard, tooltips
+- **Project Health Score** — circular SVG indicator (0-100) on dashboard
+- **Pre-commit hook** — `init` auto-installs git hook for secret scanning
+- **GitHub Action** — `action.yml` for CI/CD, PR token report workflow
+- **`/api/export`** — full dashboard data as JSON
+- **`/api/badge`** — dynamic SVG badge showing savings %
+- **Sparklines** in dashboard stat cards (7-day trends)
+- **7-day token trend chart** — stacked daily bars
+- **Smart suggestions card** — actionable tips on dashboard
+- **Welcome screen** — 3-step guide for new users
+- **Security health score** — 97% Excellent badge
+- **Risk distribution chart** — color-coded severity bar
+- **Language distribution bar** — visual breakdown on dashboard
+- **File size warnings** — red L (>10K), orange M (>5K) on Files page
+- **Project comparison chart** — horizontal bars on Projects page
+- **Agent summary stats** — model cost indicators ($/$$$/$$$$)
+- **Search tips** — quick-search buttons
+- **Graph stats overlay** — nodes, edges, directories, tokens
+- **Impact flow diagram** — visual dependency chain
+
 ## [0.5.1] — 2026-04-07
 
 ### Security

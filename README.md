@@ -81,10 +81,13 @@ codebase-pilot pack --compress --copy
 # 4. Scan for secrets before committing
 codebase-pilot scan-secrets
 
-# 5. Open web dashboard
-codebase-pilot ui    # → http://localhost:7456
+# 5. See cost savings
+codebase-pilot compare   # "+16K tokens (+$0.05/prompt)"
 
-# 6. (Optional) Install as always-on service
+# 6. Open web dashboard
+codebase-pilot ui    # → http://localhost:7456 (health score, trend charts, $)
+
+# 7. (Optional) Install as always-on service
 codebase-pilot service   # auto-starts on login, tracks forever
 ```
 
@@ -253,6 +256,12 @@ Pattern categories, risk levels, detected secrets — side by side.
 | **Visualization** | D3.js interactive force-directed import graph (drag, zoom, search) |
 | **Benchmarks** | `eval` command — tokens, compression ratio, import edges, timing |
 | **Usage Stats** | Per-project + system-wide savings tracking (today/week/month) |
+| **Cost Estimation** | Real $ per prompt — "$0.12/prompt, saved $0.32" (Claude Sonnet pricing) |
+| **Health Score** | Project health 0-100 — compression, file sizes, usage, gamified |
+| **Compare** | `compare` shows token impact of changes — "+16K tokens (+$0.05/prompt)" |
+| **GitHub Action** | CI/CD: auto-comment on PRs with token report + cost saved |
+| **Pre-commit Hook** | Auto-scans secrets before every commit — blocks if detected |
+| **Export API** | `/api/export` — full JSON data, `/api/badge` — dynamic SVG |
 | **Always-On Daemon** | System service (launchd/systemd/Task Scheduler), auto-pack, tracks forever |
 | **76 Languages** | 3 tiers: 17 full ecosystem, 21 package+test, 38 extension-only |
 | **58 Frameworks** | Next.js, Django, Gin, Axum, Spring Boot, Rails, Laravel, and more |
@@ -283,6 +292,7 @@ codebase-pilot serve                                     # MCP server (stdio)
 codebase-pilot watch                                     # file watcher
 codebase-pilot stats [--global]                          # usage history
 codebase-pilot eval                                      # benchmarks
+codebase-pilot compare                                   # token impact of changes (+$0.05/prompt)
 codebase-pilot health                                    # validate agent setup
 codebase-pilot fix                                       # auto-repair stale paths
 codebase-pilot eject                                     # remove dependency
@@ -492,6 +502,57 @@ The Prompts page shows:
 > **What we track:** Only your local codebase context — file tokens, compression savings, git state, and prompt text (via opt-in Claude Code hooks). Everything stays on your machine. Zero cloud. Zero telemetry.
 >
 > **Our goal:** Help you **reduce** the tokens you send to AI tools, not monitor what AI tools send back.
+
+---
+
+## Cost Estimation
+
+Every token count now shows real dollar value:
+
+```bash
+codebase-pilot pack --compress
+
+  Files:    95 packed
+  Tokens:   ~35,388 (compressed from ~125,228, 72% reduction)
+  Cost:     ~$0.11 per prompt (saved ~$0.27)
+```
+
+Dashboard shows weekly/monthly cost: `$36.25 saved · $18.23 used`
+
+Based on Claude Sonnet input pricing ($3/1M tokens). Works with any model — costs scale proportionally.
+
+---
+
+## Compare Changes
+
+See the token impact of your recent changes:
+
+```bash
+codebase-pilot compare
+
+  Changes:
+    + 8 added (3,630 tokens)
+    ~ 17 modified (74,562 tokens now, was 61,347)
+
+  Token impact: +16,845 tokens (+$0.05 per prompt)
+  Total now:    156,334 tokens (~$0.47/prompt)
+
+  Top changes by tokens:
+    ~ 39,257 tokens  src/ui/pages.ts
+    ~ 5,632 tokens   src/mcp/server.ts
+```
+
+---
+
+## Export & Badge
+
+```bash
+# Export full dashboard data as JSON
+curl http://localhost:7456/api/export > report.json
+
+# Dynamic SVG badge for README
+# Add: ![](http://localhost:7456/api/badge)
+```
 
 ---
 
