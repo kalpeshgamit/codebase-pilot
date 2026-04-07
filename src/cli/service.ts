@@ -1,6 +1,7 @@
 // src/cli/service.ts — Install/uninstall codebase-pilot daemon as a system service.
-// macOS: launchd plist at ~/Library/LaunchAgents/com.codebase-pilot.daemon.plist
-// Linux: systemd user unit at ~/.config/systemd/user/codebase-pilot.service
+// macOS:   launchd plist   ~/Library/LaunchAgents/com.codebase-pilot.daemon.plist
+// Linux:   systemd unit    ~/.config/systemd/user/codebase-pilot.service
+// Windows: Task Scheduler  "codebase-pilot-daemon" task (runs at logon, hidden)
 
 import { resolve, join, dirname } from 'node:path';
 import { homedir, platform } from 'node:os';
@@ -116,7 +117,6 @@ function installMacOS(root: string, port: number): void {
   const plistDir = join(homedir(), 'Library', 'LaunchAgents');
   if (!existsSync(plistDir)) mkdirSync(plistDir, { recursive: true });
 
-  // Unload existing if present
   runSilent('launchctl', ['unload', LAUNCHD_PLIST]);
 
   writeFileSync(LAUNCHD_PLIST, buildLaunchDPlist(root, port), 'utf8');
@@ -125,7 +125,7 @@ function installMacOS(root: string, port: number): void {
   if (loaded) {
     console.log(`  Service loaded: ${LAUNCHD_LABEL}`);
   } else {
-    console.error(`  Failed to load service automatically.`);
+    console.error('  Failed to load service automatically.');
     console.log(`  Plist written — load manually: launchctl load "${LAUNCHD_PLIST}"`);
   }
 }
@@ -146,7 +146,7 @@ function statusMacOS(): void {
     return;
   }
   const out = runCapture('launchctl', ['list', LAUNCHD_LABEL]);
-  // launchctl list output: "PID" = 12345;  (no quotes around integer value)
+  // launchctl list format: "PID" = 12345;
   const pidMatch = out.match(/"PID"\s*=\s*"?(\d+)"?/);
   const pid = pidMatch ? pidMatch[1] : null;
   if (pid) {
@@ -206,7 +206,7 @@ function installLinux(root: string, port: number): void {
   if (enabled && started) {
     console.log(`  Service enabled + started: ${SYSTEMD_SERVICE_NAME}`);
   } else {
-    console.log(`  Unit written — enable manually:`);
+    console.log('  Unit written — enable manually:');
     console.log(`    systemctl --user daemon-reload`);
     console.log(`    systemctl --user enable ${SYSTEMD_SERVICE_NAME}`);
     console.log(`    systemctl --user start ${SYSTEMD_SERVICE_NAME}`);
@@ -246,6 +246,120 @@ function statusLinux(): void {
 }
 
 // ---------------------------------------------------------------------------
+// Windows Task Scheduler
+// ---------------------------------------------------------------------------
+
+const WIN_TASK_NAME = 'codebase-pilot-daemon';
+// schtasks.exe lives in System32, always accessible
+const SCHTASKS = 'schtasks.exe';
+
+function buildWinXml(root: string, port: number): string {
+  const node = getNodePath();
+  const daemon = getDaemonPath();
+  const logDir = join(homedir(), '.codebase-pilot');
+  // Escape for XML
+  const esc = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  return `<?xml version="1.0" encoding="UTF-16"?>
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Description>codebase-pilot daemon — AI context engine background tracker</Description>
+  </RegistrationInfo>
+  <Triggers>
+    <LogonTrigger>
+      <Enabled>true</Enabled>
+      <UserId>${process.env.USERNAME || process.env.USER || ''}</UserId>
+    </LogonTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author">
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+    <RestartOnFailure>
+      <Interval>PT1M</Interval>
+      <Count>999</Count>
+    </RestartOnFailure>
+    <Enabled>true</Enabled>
+  </Settings>
+  <Actions Context="Author">
+    <Exec>
+      <Command>${esc(node)}</Command>
+      <Arguments>${esc(daemon)} ${esc(root)} ${port}</Arguments>
+      <WorkingDirectory>${esc(root)}</WorkingDirectory>
+    </Exec>
+  </Actions>
+</Task>
+`;
+}
+
+function installWindows(root: string, port: number): void {
+  const logDir = join(homedir(), '.codebase-pilot');
+  if (!existsSync(logDir)) mkdirSync(logDir, { recursive: true });
+
+  // Write the XML task definition to a temp file
+  const xmlPath = join(logDir, 'task.xml');
+  writeFileSync(xmlPath, buildWinXml(root, port), 'utf16le');
+
+  // Delete existing task if present (ignore errors)
+  runSilent(SCHTASKS, ['/delete', '/tn', WIN_TASK_NAME, '/f']);
+
+  // Create task from XML
+  const created = runSilent(SCHTASKS, ['/create', '/xml', xmlPath, '/tn', WIN_TASK_NAME, '/f']);
+
+  // Clean up temp XML
+  try { unlinkSync(xmlPath); } catch { /* ignore */ }
+
+  if (created) {
+    // Start it immediately (don't wait for next logon)
+    runSilent(SCHTASKS, ['/run', '/tn', WIN_TASK_NAME]);
+    console.log(`  Task created + started: ${WIN_TASK_NAME}`);
+  } else {
+    console.error('  Failed to create scheduled task.');
+    console.log('  Try running as Administrator if this fails.');
+  }
+}
+
+function uninstallWindows(): void {
+  const out = runCapture(SCHTASKS, ['/query', '/tn', WIN_TASK_NAME]);
+  if (!out || out.includes('ERROR')) {
+    console.log('  Service not installed.');
+    return;
+  }
+  runSilent(SCHTASKS, ['/end', '/tn', WIN_TASK_NAME]);
+  const deleted = runSilent(SCHTASKS, ['/delete', '/tn', WIN_TASK_NAME, '/f']);
+  console.log(deleted ? `  Task removed: ${WIN_TASK_NAME}` : '  Failed to remove task.');
+}
+
+function statusWindows(): void {
+  const out = runCapture(SCHTASKS, ['/query', '/tn', WIN_TASK_NAME, '/fo', 'LIST', '/v']);
+  if (!out || out.includes('ERROR')) {
+    console.log('  Status: not installed');
+    return;
+  }
+  const statusMatch = out.match(/Status:\s*(.+)/i);
+  const pidMatch = out.match(/Last Result:\s*(.+)/i);
+  const status = statusMatch ? statusMatch[1].trim() : 'unknown';
+  const running = out.includes('Running');
+  console.log(`  Status: ${running ? 'running' : status}`);
+  if (pidMatch) console.log(`  Last result: ${pidMatch[1].trim()}`);
+  console.log(`  Task name: ${WIN_TASK_NAME}`);
+  console.log('  Manage: Task Scheduler → Task Scheduler Library');
+}
+
+function restartWindows(): boolean {
+  runSilent(SCHTASKS, ['/end', '/tn', WIN_TASK_NAME]);
+  return runSilent(SCHTASKS, ['/run', '/tn', WIN_TASK_NAME]);
+}
+
+// ---------------------------------------------------------------------------
 // Main command
 // ---------------------------------------------------------------------------
 
@@ -253,12 +367,15 @@ export async function serviceCommand(options: ServiceOptions): Promise<void> {
   const os = platform();
   const port = parseInt(options.port, 10) || 7456;
   const root = resolve(options.dir);
+  const isWindows = os === 'win32';
+  const isMac = os === 'darwin';
+  const isLinux = os === 'linux';
 
   console.log('');
 
-  if (os !== 'darwin' && os !== 'linux') {
-    console.error('  codebase-pilot service is only supported on macOS and Linux.');
-    console.log('  On Windows, use Task Scheduler or WSL with systemd.');
+  if (!isMac && !isLinux && !isWindows) {
+    console.error('  codebase-pilot service is not supported on this platform.');
+    console.log('  Supported: macOS, Linux, Windows');
     console.log('');
     return;
   }
@@ -266,8 +383,9 @@ export async function serviceCommand(options: ServiceOptions): Promise<void> {
   // --- Uninstall ---
   if (options.uninstall) {
     console.log('  Uninstalling codebase-pilot service...');
-    if (os === 'darwin') uninstallMacOS();
-    else uninstallLinux();
+    if (isMac) uninstallMacOS();
+    else if (isLinux) uninstallLinux();
+    else uninstallWindows();
     console.log('');
     return;
   }
@@ -275,8 +393,9 @@ export async function serviceCommand(options: ServiceOptions): Promise<void> {
   // --- Status ---
   if (options.status) {
     console.log('  codebase-pilot service status');
-    if (os === 'darwin') statusMacOS();
-    else statusLinux();
+    if (isMac) statusMacOS();
+    else if (isLinux) statusLinux();
+    else statusWindows();
     console.log('');
     return;
   }
@@ -285,11 +404,13 @@ export async function serviceCommand(options: ServiceOptions): Promise<void> {
   if (options.restart) {
     console.log('  Restarting codebase-pilot service...');
     let ok = false;
-    if (os === 'darwin') {
+    if (isMac) {
       runSilent('launchctl', ['unload', LAUNCHD_PLIST]);
       ok = runSilent('launchctl', ['load', LAUNCHD_PLIST]);
-    } else {
+    } else if (isLinux) {
       ok = runSilent('systemctl', ['--user', 'restart', SYSTEMD_SERVICE_NAME]);
+    } else {
+      ok = restartWindows();
     }
     console.log(ok ? '  Service restarted.' : '  Restart failed — check status.');
     console.log('');
@@ -313,7 +434,7 @@ export async function serviceCommand(options: ServiceOptions): Promise<void> {
   console.log(`  Daemon:   ${daemonPath}`);
   console.log('');
 
-  if (os === 'darwin') {
+  if (isMac) {
     installMacOS(root, port);
     console.log('');
     console.log('  The daemon will now:');
@@ -324,7 +445,7 @@ export async function serviceCommand(options: ServiceOptions): Promise<void> {
     console.log('');
     console.log(`  Open dashboard: http://localhost:${port}`);
     console.log('  Remove service: codebase-pilot service --uninstall');
-  } else {
+  } else if (isLinux) {
     installLinux(root, port);
     console.log('');
     console.log('  The daemon will now:');
@@ -339,6 +460,18 @@ export async function serviceCommand(options: ServiceOptions): Promise<void> {
     console.log('');
     console.log('  Tip: to keep daemon running when logged out:');
     console.log('    loginctl enable-linger $USER');
+  } else {
+    installWindows(root, port);
+    console.log('');
+    console.log('  The daemon will now:');
+    console.log('    start automatically on login (Task Scheduler)');
+    console.log('    restart up to 999 times if it crashes');
+    console.log('    track all packs + auto-pack on file changes');
+    console.log('    write logs to %USERPROFILE%\\.codebase-pilot\\daemon.log');
+    console.log('');
+    console.log(`  Open dashboard: http://localhost:${port}`);
+    console.log('  View task:      Task Scheduler → Task Scheduler Library');
+    console.log('  Remove service: codebase-pilot service --uninstall');
   }
 
   console.log('');
