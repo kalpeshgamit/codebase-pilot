@@ -1,5 +1,5 @@
 import { resolve, dirname } from 'node:path';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { detect, printScan } from '../scanner/detector.js';
 import { generateAgents } from '../agents/generator.js';
@@ -90,6 +90,26 @@ export async function initCommand(options: InitOptions): Promise<void> {
   } else {
     console.log('    \x1b[32m✓ No secrets detected\x1b[0m');
   }
+
+  // Set up MCP server config for Claude Code (enables automatic token tracking)
+  try {
+    const mcpConfigPath = resolve(root, '.claude', 'mcp.json');
+    let mcpConfig: Record<string, unknown> = {};
+    if (existsSync(mcpConfigPath)) {
+      try { mcpConfig = JSON.parse(readFileSync(mcpConfigPath, 'utf8')); } catch { /* ignore */ }
+    }
+    const servers = (mcpConfig.mcpServers || {}) as Record<string, unknown>;
+    if (!servers['codebase-pilot']) {
+      servers['codebase-pilot'] = { command: 'codebase-pilot', args: ['serve'] };
+      mcpConfig.mcpServers = servers;
+      const mcpDir = resolve(root, '.claude');
+      if (!existsSync(mcpDir)) mkdirSync(mcpDir, { recursive: true });
+      writeFileSync(mcpConfigPath, JSON.stringify(mcpConfig, null, 2) + '\n', 'utf8');
+      console.log('');
+      console.log('  MCP server:');
+      console.log('    \x1b[32m✓ .claude/mcp.json configured\x1b[0m — Claude Code will auto-track token usage');
+    }
+  } catch { /* ignore — MCP setup is optional */ }
 
   console.log('');
   console.log('  Done! Start Claude Code and try:');

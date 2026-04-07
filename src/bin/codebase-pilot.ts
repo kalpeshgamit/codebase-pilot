@@ -78,6 +78,9 @@ program
   .option('--compress', 'Compress code (extract signatures, fold bodies)', false)
   .option('--agent <name>', 'Pack only files in agent context')
   .option('--no-security', 'Skip secret detection')
+  .option('--dry-run', 'Preview what would be packed without writing output', false)
+  .option('--affected', 'Pack only files changed since last pack (incremental)', false)
+  .option('--prune <file>', 'Pack only files reachable from target file via imports')
   .action(packCommand);
 
 program

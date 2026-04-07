@@ -8,6 +8,7 @@ import { formatXml } from './formatter-xml.js';
 import { formatMarkdown } from './formatter-md.js';
 import { scanForSecrets, isEnvFile } from '../security/scanner.js';
 import { compressCode } from '../compress/regex-compress.js';
+import { buildImportGraph, getReverseDependencies } from '../intelligence/imports.js';
 import type { AgentsConfig } from '../types.js';
 
 export interface PackOptions {
@@ -16,6 +17,8 @@ export interface PackOptions {
   compress: boolean;
   agent?: string;
   noSecurity: boolean;
+  affectedOnly?: string[];  // If set, only pack these relative paths
+  pruneTarget?: string;     // If set, only pack files reachable from this file
 }
 
 export interface PackResult {
@@ -45,6 +48,42 @@ export function packProject(options: PackOptions): PackResult {
 
   // Collect files
   let files = collectFiles(root, { agentContextPaths });
+
+  // --affected: filter to only changed files
+  if (options.affectedOnly) {
+    const affectedSet = new Set(options.affectedOnly);
+    files = files.filter(f => affectedSet.has(f.relativePath));
+  }
+
+  // --prune: filter to files reachable from target via import graph
+  if (options.pruneTarget) {
+    const graph = buildImportGraph(root);
+    const reverseGraph = getReverseDependencies(graph);
+    const reachable = new Set<string>();
+    reachable.add(options.pruneTarget);
+
+    // Collect imports (what the target depends on) — recursive
+    function collectImports(file: string) {
+      const deps = graph.get(file);
+      if (!deps) return;
+      for (const dep of deps) {
+        if (!reachable.has(dep)) { reachable.add(dep); collectImports(dep); }
+      }
+    }
+    collectImports(options.pruneTarget);
+
+    // Collect reverse deps (what depends on the target) — recursive
+    function collectDependents(file: string) {
+      const deps = reverseGraph.get(file);
+      if (!deps) return;
+      for (const dep of deps) {
+        if (!reachable.has(dep)) { reachable.add(dep); collectDependents(dep); }
+      }
+    }
+    collectDependents(options.pruneTarget);
+
+    files = files.filter(f => reachable.has(f.relativePath));
+  }
 
   // Security scan
   if (!options.noSecurity) {

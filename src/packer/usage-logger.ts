@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, appendFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
+import { execFileSync } from 'node:child_process';
 
 export interface PackRun {
   date: string;         // ISO 8601
@@ -12,6 +13,27 @@ export interface PackRun {
   agent?: string;
   compressed: boolean;
   command: string;       // which command generated this: pack, tokens, etc.
+  // Git context (added v0.4.0)
+  branch?: string;       // current git branch
+  commit?: string;       // last commit message (short)
+  commitHash?: string;   // short commit hash
+  dirty?: number;        // number of uncommitted changes
+  duration?: number;     // pack duration in ms
+}
+
+/** Collect git context for a project root. Fast, non-blocking, never throws. */
+export function getGitContext(root: string): { branch?: string; commit?: string; commitHash?: string; dirty?: number } {
+  try {
+    const run = (args: string[]) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 3000 }).trim();
+    const branch = run(['rev-parse', '--abbrev-ref', 'HEAD']);
+    const commitHash = run(['rev-parse', '--short', 'HEAD']);
+    const commit = run(['log', '-1', '--format=%s']);
+    const status = run(['status', '--porcelain']);
+    const dirty = status ? status.split('\n').filter(l => l.trim()).length : 0;
+    return { branch, commit, commitHash, dirty };
+  } catch {
+    return {};
+  }
 }
 
 export interface UsageStats {

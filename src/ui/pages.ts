@@ -2249,16 +2249,31 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
     const pctDisplay = savePct > 0
       ? `<span style="color:${savePctColor};font-weight:600">${savePct}%</span>`
       : `<span style="color:var(--text-muted)" title="Run with --compress to save tokens">—</span>`;
-    return `<tr id="pr-row-${i}" style="animation:fadeIn 0.3s ease both;animation-delay:${Math.min(i * 0.02, 0.5)}s">
+    const branchHtml = (r as any).branch
+      ? `<span class="badge" style="background:rgba(136,98,232,0.15);color:var(--purple);font-size:10px;">${esc((r as any).branch)}</span>`
+      : '<span style="color:var(--text-dim)">—</span>';
+    const commitHtml = (r as any).commit
+      ? `<span style="font-size:10px;" title="${esc((r as any).commitHash || '')}">${esc(((r as any).commit || '').slice(0, 40))}${((r as any).commit || '').length > 40 ? '…' : ''}</span>`
+      : '';
+    const dirtyHtml = (r as any).dirty && (r as any).dirty > 0
+      ? ` <span style="color:#ff6800;font-size:9px;" title="${(r as any).dirty} uncommitted changes">+${(r as any).dirty}</span>`
+      : '';
+    const durationHtml = (r as any).duration
+      ? `<span style="font-size:10px;color:var(--text-dim)">${((r as any).duration / 1000).toFixed(1)}s</span>`
+      : '';
+    const runJson = esc(JSON.stringify(r));
+    return `<tr id="pr-row-${i}" data-run='${runJson}' onclick="openPromptDrawer(this)" style="cursor:pointer;animation:fadeIn 0.3s ease both;animation-delay:${Math.min(i * 0.02, 0.5)}s">
       <td class="mono" style="font-size:11px;color:var(--text-muted)">${esc(timeStr)}</td>
       <td><strong>${esc(r.project)}</strong></td>
-      <td class="mono" style="font-size:10px;color:var(--text-muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.projectPath)}">${esc(r.projectPath)}</td>
+      <td>${branchHtml}${dirtyHtml}</td>
+      <td style="font-size:11px;">${commitHtml}</td>
       <td>${esc(r.command)} ${compress}${agentBadge}</td>
       <td class="mono">${r.files}</td>
       <td class="mono" style="color:#ff6800">${fmtNum(raw)}</td>
       <td class="mono" style="color:var(--accent)">${fmtNum(packed)}</td>
       <td class="mono">${savedDisplay}</td>
       <td class="mono">${pctDisplay}</td>
+      <td>${durationHtml}</td>
     </tr>`;
   }).join('');
 
@@ -2270,9 +2285,9 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
       </div>
       <table id="prompts-table">
         <thead><tr>
-          <th>Time</th><th>Project</th><th>Path</th><th>Command</th><th>Files</th>
+          <th>Time</th><th>Project</th><th>Branch</th><th>Last Commit</th><th>Command</th><th>Files</th>
           <th style="color:#ff6800">Raw Tokens</th><th style="color:var(--accent)">Packed</th>
-          <th style="color:var(--success)">Saved</th><th>Save %</th>
+          <th style="color:var(--success)">Saved</th><th>Save %</th><th>Duration</th>
         </tr></thead>
         <tbody id="prompts-tbody">${rows}</tbody>
       </table>
@@ -2301,17 +2316,25 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
           var timeStr = new Date(r.date).toLocaleString('en-GB', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
           var savedDisp = saved > 0 ? saved.toLocaleString('en-US') : '<span style="color:var(--text-muted)" title="Run with --compress to save tokens">—</span>';
           var pctDisp = pct > 0 ? '<span style="color:' + pctColor + ';font-weight:600">' + pct + '%</span>' : '<span style="color:var(--text-muted)" title="Run with --compress to save tokens">—</span>';
+          var branchHtml = r.branch ? '<span class="badge" style="background:rgba(136,98,232,0.15);color:var(--purple);font-size:10px;">' + r.branch + '</span>' : '<span style="color:var(--text-dim)">—</span>';
+          var dirtyHtml = r.dirty && r.dirty > 0 ? ' <span style="color:#ff6800;font-size:9px;" title="' + r.dirty + ' uncommitted changes">+' + r.dirty + '</span>' : '';
+          var commitHtml = r.commit ? '<span style="font-size:10px;" title="' + (r.commitHash||'') + '">' + (r.commit||'').slice(0,40) + (r.commit && r.commit.length>40?'…':'') + '</span>' : '';
+          var durationHtml = r.duration ? '<span style="font-size:10px;color:var(--text-dim)">' + (r.duration/1000).toFixed(1) + 's</span>' : '';
           var tr = document.createElement('tr');
-          tr.style.cssText = 'animation:rowSlide 0.4s ease both;background:rgba(63,185,80,0.05);';
+          tr.setAttribute('data-run', JSON.stringify(r));
+          tr.setAttribute('onclick', 'openPromptDrawer(this)');
+          tr.style.cssText = 'cursor:pointer;animation:rowSlide 0.4s ease both;background:rgba(63,185,80,0.05);';
           tr.innerHTML = '<td class="mono" style="font-size:11px;color:var(--text-muted)">' + timeStr + '</td>'
             + '<td><strong>' + r.project + '</strong></td>'
-            + '<td class="mono" style="font-size:10px;color:var(--text-muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + r.projectPath + '">' + r.projectPath + '</td>'
+            + '<td>' + branchHtml + dirtyHtml + '</td>'
+            + '<td style="font-size:11px;">' + commitHtml + '</td>'
             + '<td>' + r.command + ' ' + compress + agent + '</td>'
             + '<td class="mono">' + r.files + '</td>'
             + '<td class="mono" style="color:#ff6800">' + Number(r.tokensRaw).toLocaleString('en-US') + '</td>'
             + '<td class="mono" style="color:var(--accent)">' + Number(r.tokensPacked).toLocaleString('en-US') + '</td>'
             + '<td class="mono">' + savedDisp + '</td>'
-            + '<td class="mono">' + pctDisp + '</td>';
+            + '<td class="mono">' + pctDisp + '</td>'
+            + '<td>' + durationHtml + '</td>';
           var tbody = document.getElementById('prompts-tbody');
           if (tbody) tbody.insertBefore(tr, tbody.firstChild);
 
@@ -2365,7 +2388,7 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
           tbody.insertBefore(progressRow, tbody.firstChild);
         }
         var bar = '<div style="height:3px;background:rgba(255,104,0,0.15);border-radius:2px;overflow:hidden;margin-top:4px;"><div style="height:100%;width:' + pct + '%;background:#ff6800;border-radius:2px;transition:width 0.4s ease;"></div></div>';
-        progressRow.innerHTML = '<td colspan="9" style="padding:10px 14px;">'
+        progressRow.innerHTML = '<td colspan="12" style="padding:10px 14px;">'
           + '<div style="display:flex;align-items:center;gap:10px;">'
           + '<span style="width:10px;height:10px;border:2px solid #ff6800;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin 0.8s linear infinite;flex-shrink:0;"></span>'
           + '<span style="color:#ff6800;font-weight:600;">Autopilot</span>'
@@ -2408,11 +2431,118 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
       @keyframes spin { to { transform: rotate(360deg); } }
     </style>`;
 
+  const drawerHtml = `
+    <div id="prompt-drawer" style="position:fixed;top:0;right:0;width:420px;height:100vh;background:var(--bg);border-left:1px solid var(--border);transform:translateX(100%);transition:transform 0.25s ease;overflow-y:auto;z-index:999;box-shadow:-8px 0 30px rgba(0,0,0,0.3);">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:1;">
+        <strong style="font-size:14px;">Session Details</strong>
+        <button onclick="document.getElementById('prompt-drawer').style.transform='translateX(100%)'" style="background:var(--surface);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-size:16px;line-height:1;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;">&times;</button>
+      </div>
+      <div id="prompt-drawer-body" style="padding:20px;"></div>
+    </div>
+    <script>
+    function openPromptDrawer(tr) {
+      var raw = tr.getAttribute('data-run');
+      if (!raw) return;
+      var r;
+      try { r = JSON.parse(raw); } catch(e) { return; }
+      var drawer = document.getElementById('prompt-drawer');
+      var body = document.getElementById('prompt-drawer-body');
+      drawer.style.transform = 'translateX(0)';
+
+      var saved = (r.tokensRaw || 0) - (r.tokensPacked || 0);
+      var pct = r.tokensRaw > 0 ? Math.round((saved / r.tokensRaw) * 100) : 0;
+      var d = new Date(r.date);
+      var timeStr = d.toLocaleString('en-GB', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+      var html = '<div style="display:flex;flex-direction:column;gap:16px;">';
+
+      // Project & Time
+      html += '<div style="background:var(--surface);border-radius:8px;padding:14px;border:1px solid var(--border);">';
+      html += '<div style="font-size:18px;font-weight:700;margin-bottom:8px;">' + (r.project || 'unknown') + '</div>';
+      html += '<div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">' + timeStr + '</div>';
+      if (r.projectPath) html += '<div style="font-size:11px;color:var(--text-dim);word-break:break-all;">' + r.projectPath + '</div>';
+      html += '</div>';
+
+      // Git Context
+      if (r.branch || r.commit) {
+        html += '<div style="background:var(--surface);border-radius:8px;padding:14px;border:1px solid var(--border);">';
+        html += '<div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin-bottom:10px;letter-spacing:0.5px;">Git Context</div>';
+        if (r.branch) html += '<div style="margin-bottom:6px;"><span style="color:var(--text-muted);font-size:11px;margin-right:8px;">Branch</span><span class="badge" style="background:rgba(136,98,232,0.15);color:var(--purple);font-size:11px;">' + r.branch + '</span></div>';
+        if (r.commit) html += '<div style="margin-bottom:6px;"><span style="color:var(--text-muted);font-size:11px;margin-right:8px;">Commit</span><span style="font-size:12px;">' + r.commit + '</span></div>';
+        if (r.commitHash) html += '<div style="margin-bottom:6px;"><span style="color:var(--text-muted);font-size:11px;margin-right:8px;">Hash</span><code style="font-size:11px;background:var(--bg);padding:2px 6px;border-radius:4px;">' + r.commitHash + '</code></div>';
+        if (r.dirty !== undefined) {
+          var dirtyColor = r.dirty > 0 ? '#ff6800' : 'var(--success)';
+          html += '<div><span style="color:var(--text-muted);font-size:11px;margin-right:8px;">Working tree</span><span style="color:' + dirtyColor + ';font-size:12px;font-weight:600;">' + (r.dirty > 0 ? r.dirty + ' uncommitted changes' : 'clean') + '</span></div>';
+        }
+        html += '</div>';
+      }
+
+      // Token Breakdown
+      html += '<div style="background:var(--surface);border-radius:8px;padding:14px;border:1px solid var(--border);">';
+      html += '<div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin-bottom:10px;letter-spacing:0.5px;">Token Breakdown</div>';
+      var rows = [
+        ['Files packed', r.files || 0],
+        ['Raw tokens', (r.tokensRaw || 0).toLocaleString('en-US')],
+        ['Packed tokens', (r.tokensPacked || 0).toLocaleString('en-US')],
+        ['Tokens saved', saved > 0 ? saved.toLocaleString('en-US') : '—'],
+        ['Compression', pct > 0 ? pct + '%' : '—'],
+      ];
+      for (var i = 0; i < rows.length; i++) {
+        var isHighlight = rows[i][0] === 'Tokens saved';
+        html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);">';
+        html += '<span style="color:var(--text-muted);font-size:12px;">' + rows[i][0] + '</span>';
+        html += '<span class="mono" style="font-size:12px;' + (isHighlight && saved > 0 ? 'color:var(--success);font-weight:600;' : '') + '">' + rows[i][1] + '</span>';
+        html += '</div>';
+      }
+      html += '</div>';
+
+      // Command & Meta
+      html += '<div style="background:var(--surface);border-radius:8px;padding:14px;border:1px solid var(--border);">';
+      html += '<div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin-bottom:10px;letter-spacing:0.5px;">Run Details</div>';
+      html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--text-muted);font-size:12px;">Command</span><span style="font-size:12px;">' + (r.command || 'pack') + '</span></div>';
+      html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--text-muted);font-size:12px;">Compressed</span><span style="font-size:12px;">' + (r.compressed ? '<span style="color:var(--success);">Yes</span>' : 'No') + '</span></div>';
+      if (r.agent) html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--text-muted);font-size:12px;">Agent</span><span class="badge badge-blue" style="font-size:11px;">' + r.agent + '</span></div>';
+      if (r.duration) html += '<div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:var(--text-muted);font-size:12px;">Duration</span><span style="font-size:12px;">' + (r.duration / 1000).toFixed(1) + 's</span></div>';
+      html += '</div>';
+
+      // Savings visual bar
+      if (saved > 0 && r.tokensRaw > 0) {
+        var usedPct = Math.round((r.tokensPacked / r.tokensRaw) * 100);
+        var savedPct = 100 - usedPct;
+        html += '<div style="background:var(--surface);border-radius:8px;padding:14px;border:1px solid var(--border);">';
+        html += '<div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin-bottom:10px;letter-spacing:0.5px;">Savings Breakdown</div>';
+        html += '<div style="height:20px;background:var(--bg);border-radius:4px;overflow:hidden;display:flex;">';
+        html += '<div style="width:' + usedPct + '%;background:#ff6800;"></div>';
+        html += '<div style="width:' + savedPct + '%;background:var(--success);"></div>';
+        html += '</div>';
+        html += '<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;">';
+        html += '<span style="color:#ff6800;">' + usedPct + '% used (' + r.tokensPacked.toLocaleString('en-US') + ')</span>';
+        html += '<span style="color:var(--success);">' + savedPct + '% saved (' + saved.toLocaleString('en-US') + ')</span>';
+        html += '</div>';
+        html += '</div>';
+      }
+
+      html += '</div>';
+      body.innerHTML = html;
+    }
+
+    // Close drawer when clicking outside
+    document.addEventListener('click', function(e) {
+      var drawer = document.getElementById('prompt-drawer');
+      if (drawer && drawer.style.transform === 'translateX(0)') {
+        if (!drawer.contains(e.target) && !e.target.closest('tr[data-run]')) {
+          drawer.style.transform = 'translateX(100%)';
+        }
+      }
+    });
+    </script>`;
+
   const body = `
     <h1 class="page-title">Prompts</h1>
     ${summaryCards}
     ${tableHtml}
-    ${sseScript}`;
+    ${sseScript}
+    ${drawerHtml}`;
 
   return layout('Prompts', '/prompts', body, port);
 }

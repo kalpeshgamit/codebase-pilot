@@ -4,7 +4,7 @@ import { resolve, basename } from 'node:path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { packProject } from '../packer/index.js';
 import { collectFiles } from '../packer/collector.js';
-import { logPackRun } from '../packer/usage-logger.js';
+import { logPackRun, getGitContext } from '../packer/usage-logger.js';
 import { scanForSecrets } from '../security/scanner.js';
 
 function send(msg: object) { parentPort?.postMessage(msg); }
@@ -14,6 +14,8 @@ async function run() {
 
   try {
     send({ type: 'progress', step: 'collecting', label: 'Collecting files…', pct: 10 });
+    const packStart = Date.now();
+    const git = getGitContext(root);
 
     const configDir = resolve(root, '.codebase-pilot');
     if (!existsSync(configDir)) mkdirSync(configDir, { recursive: true });
@@ -34,6 +36,11 @@ async function run() {
       files: result.fileCount,
       compressed: true,
       command: `auto-pack (${trigger})`,
+      branch: git.branch,
+      commit: git.commit,
+      commitHash: git.commitHash,
+      dirty: git.dirty,
+      duration: Date.now() - packStart,
     });
 
     send({ type: 'progress', step: 'scanning', label: 'Scanning secrets…', pct: 80 });

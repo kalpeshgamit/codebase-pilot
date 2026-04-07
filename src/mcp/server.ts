@@ -5,7 +5,8 @@ import { packProject } from '../packer/index.js';
 import { collectFiles } from '../packer/collector.js';
 import { countTokens, formatTokenCount } from '../packer/token-counter.js';
 import { scanForSecrets } from '../security/scanner.js';
-import { readPackLogs, getStats } from '../packer/usage-logger.js';
+import { readPackLogs, getStats, logPackRun, getGitContext } from '../packer/usage-logger.js';
+import { basename } from 'node:path';
 import type { AgentsConfig, HealthCheckResult } from '../types.js';
 
 // ---------------------------------------------------------------------------
@@ -284,7 +285,28 @@ async function handleToolCall(root: string, name: string, args: Record<string, u
       const compress = (args.compress as boolean) ?? false;
       const agent = args.agent as string | undefined;
       const noSecurity = (args.noSecurity as boolean) ?? false;
+      const packStart = Date.now();
       const result = packProject({ dir: root, format, compress, agent, noSecurity });
+      const git = getGitContext(root);
+
+      // Track MCP tool calls for the Prompts page
+      logPackRun(root, {
+        date: new Date().toISOString(),
+        project: basename(root),
+        projectPath: root,
+        tokensRaw: result.rawTokens,
+        tokensPacked: result.totalTokens,
+        files: result.fileCount,
+        agent,
+        compressed: compress,
+        command: 'mcp:pack_codebase',
+        branch: git.branch,
+        commit: git.commit,
+        commitHash: git.commitHash,
+        dirty: git.dirty,
+        duration: Date.now() - packStart,
+      });
+
       return {
         fileCount: result.fileCount,
         totalTokens: result.totalTokens,
@@ -532,8 +554,21 @@ async function handleMessage(root: string, msg: JsonRpcRequest): Promise<void> {
     case 'tools/call': {
       const toolName = params?.name as string;
       const toolArgs = (params?.arguments as Record<string, unknown>) ?? {};
+      const callStart = Date.now();
       try {
         const result = await handleToolCall(root, toolName, toolArgs);
+
+        // Log MCP tool usage (non-pack tools get a lightweight log entry)
+        if (toolName !== 'pack_codebase') {
+          try {
+            const mcpLogDir = join(resolve(root, '.codebase-pilot'));
+            if (!existsSync(mcpLogDir)) { const { mkdirSync } = await import('node:fs'); mkdirSync(mcpLogDir, { recursive: true }); }
+            const entry = JSON.stringify({ date: new Date().toISOString(), tool: toolName, args: Object.keys(toolArgs), duration: Date.now() - callStart }) + '\n';
+            const { appendFileSync } = await import('node:fs');
+            appendFileSync(join(mcpLogDir, 'mcp-calls.jsonl'), entry, 'utf8');
+          } catch { /* ignore logging errors */ }
+        }
+
         sendResult(id, {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         });
