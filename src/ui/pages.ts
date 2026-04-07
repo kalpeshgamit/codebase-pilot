@@ -1957,12 +1957,66 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
       </div>`;
   }
 
+  const projectsSseScript = `
+    <script>
+    (function() {
+      var es = new EventSource('/api/events');
+
+      function animateVal(el, newVal) {
+        var target = newVal;
+        var current = parseInt((el.textContent || '0').replace(/,/g, '')) || 0;
+        if (current === target) return;
+        var duration = 800, start = performance.now();
+        el.style.transition = 'color 0.3s';
+        el.style.color = 'var(--success)';
+        (function step(now) {
+          var p = Math.min((now - start) / duration, 1);
+          var ease = 1 - Math.pow(1 - p, 3);
+          el.textContent = Math.round(current + (target - current) * ease).toLocaleString();
+          if (p < 1) requestAnimationFrame(step);
+          else { el.textContent = target.toLocaleString(); setTimeout(function(){ el.style.color=''; }, 1200); }
+        })(start);
+      }
+
+      es.addEventListener('projects-update', function(e) {
+        try {
+          var d = JSON.parse(e.data);
+          var cards = document.querySelectorAll('.card-value');
+          // Order: Total Projects(0), Total Sessions(1), Tokens Saved(2), Tokens Used(3), Overall(4)
+          if (cards[1] && d.allTime) animateVal(cards[1], d.allTime.sessions);
+          if (cards[2] && d.allTime) animateVal(cards[2], d.allTime.tokensSaved);
+          if (cards[3] && d.allTime) animateVal(cards[3], d.allTime.tokensUsed);
+          if (cards[4] && d.allTime) animateVal(cards[4], d.allTime.tokensSaved + d.allTime.tokensUsed);
+
+          // Show live toast
+          var toast = document.createElement('div');
+          toast.style.cssText = 'position:fixed;bottom:20px;right:24px;background:rgba(63,185,80,0.15);color:var(--success);padding:10px 16px;border-radius:8px;font-size:12px;z-index:100;animation:fadeIn 0.3s ease;border:1px solid rgba(63,185,80,0.3);backdrop-filter:blur(12px);';
+          var proj = d.projects && d.projects.length ? d.projects[d.projects.length-1] : null;
+          toast.textContent = proj ? '⚡ ' + proj.project + ' ran a pack session' : '⚡ Projects updated';
+          document.body.appendChild(toast);
+          setTimeout(function() { toast.style.opacity='0'; toast.style.transition='opacity 0.4s'; }, 3500);
+          setTimeout(function() { toast.remove(); }, 4000);
+        } catch(err) {}
+      });
+
+      es.addEventListener('connected', function() {
+        var badge = document.getElementById('live-badge');
+        if (badge) badge.style.display = 'inline-flex';
+      });
+      es.onerror = function() {
+        var badge = document.getElementById('live-badge');
+        if (badge) badge.style.display = 'none';
+      };
+    })();
+    </script>`;
+
   const body = `
-    <h1 class="page-title">System-Wide Overview</h1>
+    <h1 class="page-title">System-Wide Overview <span id="live-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--success);background:rgba(63,185,80,0.12);border:1px solid rgba(63,185,80,0.25);border-radius:20px;padding:2px 10px;vertical-align:middle;"><span style="width:6px;height:6px;background:var(--success);border-radius:50%;display:inline-block;animation:pulse 1.5s infinite;"></span>LIVE</span></h1>
     ${cards}
     ${savingsChart}
     ${projectRows}
-    ${recentTable}`;
+    ${recentTable}
+    ${projectsSseScript}`;
 
   return layout('Projects', '/projects', body, port);
 }

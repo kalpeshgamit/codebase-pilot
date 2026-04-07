@@ -2,9 +2,10 @@
 // Zero external deps — uses node:http only.
 
 import { createServer, type ServerResponse } from 'node:http';
-import { resolve, basename } from 'node:path';
+import { resolve, basename, join } from 'node:path';
 import { URL } from 'node:url';
 import { existsSync, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import chokidar from 'chokidar';
 
 import { detect } from '../scanner/detector.js';
@@ -231,7 +232,7 @@ export function startUiServer(root: string, port: number): void {
     }, 1000);
   });
 
-  // Also watch usage-log for pack run events
+  // Watch current project usage-log for dashboard updates
   const usageLogPath = resolve(root, '.codebase-pilot', 'usage-log.jsonl');
   const usageWatcher = chokidar.watch(usageLogPath, { ignoreInitial: true, persistent: true });
   usageWatcher.on('change', async () => {
@@ -246,6 +247,22 @@ export function startUiServer(root: string, port: number): void {
       });
     } catch { /* ignore */ }
   });
+
+  // Watch global history log — fires when ANY project runs pack (cross-project real-time)
+  const globalLogPath = join(homedir(), '.codebase-pilot', 'history.jsonl');
+  const globalWatcher = chokidar.watch(globalLogPath, { ignoreInitial: true, persistent: true, usePolling: false });
+  globalWatcher.on('change', () => {
+    try {
+      const globalLogs = readGlobalLogs();
+      const today = getStats(globalLogs, 1);
+      const week = getStats(globalLogs, 7);
+      const month = getStats(globalLogs, 30);
+      const allTime = getStats(globalLogs, 99999);
+      const projects = getProjectSummaries(globalLogs);
+      broadcast('projects-update', { today, week, month, allTime, projects });
+    } catch { /* ignore */ }
+  });
+  globalWatcher.on('error', () => { /* ignore */ });
 
   const server = createServer(async (req, res) => {
     const url = new URL(req.url || '/', `http://localhost:${port}`);
