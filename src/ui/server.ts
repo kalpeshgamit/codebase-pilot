@@ -354,29 +354,31 @@ export function startUiServer(root: string, port: number): void {
 
   // Watch global history log — fires when ANY project runs pack (cross-project real-time)
   const globalLogPath = join(homedir(), '.codebase-pilot', 'history.jsonl');
-  let lastGlobalLogSize = readGlobalLogs().length;
+  let lastGlobalLogSize = readGlobalLogs().filter(r => (r.tokensRaw ?? 0) > 0 || (r.tokensPacked ?? 0) > 0).length;
   const globalWatcher = chokidar.watch(globalLogPath, { ignoreInitial: true, persistent: true, usePolling: false });
   globalWatcher.on('change', () => {
     try {
       const globalLogs = readGlobalLogs();
-      const today = getStats(globalLogs, 1);
-      const week = getStats(globalLogs, 7);
-      const month = getStats(globalLogs, 30);
-      const allTime = getStats(globalLogs, 99999);
-      const projects = getProjectSummaries(globalLogs);
+      // Sanitize: skip entries with missing/zero token data
+      const validLogs = globalLogs.filter(r => (r.tokensRaw ?? 0) > 0 || (r.tokensPacked ?? 0) > 0);
+      const today = getStats(validLogs, 1);
+      const week = getStats(validLogs, 7);
+      const month = getStats(validLogs, 30);
+      const allTime = getStats(validLogs, 99999);
+      const projects = getProjectSummaries(validLogs);
       broadcast('projects-update', { today, week, month, allTime, projects });
 
-      // Broadcast the newest run to the Prompts page
-      if (globalLogs.length > lastGlobalLogSize && globalLogs.length > 0) {
-        const newRun = globalLogs[globalLogs.length - 1];
-        const totalSaved = globalLogs.reduce((s, r) => s + (r.tokensRaw - r.tokensPacked), 0);
-        const totalUsed = globalLogs.reduce((s, r) => s + r.tokensPacked, 0);
+      // Broadcast the newest VALID run to the Prompts page
+      if (validLogs.length > lastGlobalLogSize && validLogs.length > 0) {
+        const newRun = validLogs[validLogs.length - 1];
+        const totalSaved = validLogs.reduce((s, r) => s + ((r.tokensRaw ?? 0) - (r.tokensPacked ?? 0)), 0);
+        const totalUsed = validLogs.reduce((s, r) => s + (r.tokensPacked ?? 0), 0);
         broadcast('prompt-added', {
           run: newRun,
-          totals: { sessions: globalLogs.length, saved: totalSaved, used: totalUsed },
+          totals: { sessions: validLogs.length, saved: totalSaved || 0, used: totalUsed || 0 },
         });
       }
-      lastGlobalLogSize = globalLogs.length;
+      lastGlobalLogSize = validLogs.length;
     } catch { /* ignore */ }
   });
   globalWatcher.on('error', () => { /* ignore */ });
@@ -429,11 +431,12 @@ export function startUiServer(root: string, port: number): void {
 
       if (pathname === '/prompts') {
         const globalLogs = readGlobalLogs();
-        // Sort DESC (newest first), sanitize undefined fields
+        // Sanitize + sort DESC (newest first)
         const sorted = [...globalLogs]
           .map(r => ({ ...r, tokensRaw: r.tokensRaw ?? 0, tokensPacked: r.tokensPacked ?? 0, files: r.files ?? 0 }))
+          .filter(r => r.tokensRaw > 0 || r.tokensPacked > 0)
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        const totalSaved = sorted.reduce((s, r) => s + (r.tokensRaw - r.tokensPacked), 0);
+        const totalSaved = sorted.reduce((s, r) => s + Math.max(0, r.tokensRaw - r.tokensPacked), 0);
         const totalUsed = sorted.reduce((s, r) => s + r.tokensPacked, 0);
         const data: PromptsPageData = {
           runs: sorted,
