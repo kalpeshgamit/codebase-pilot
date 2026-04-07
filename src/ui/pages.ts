@@ -32,6 +32,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
   const nav = [
     { href: '/', label: 'Dashboard', icon: 'layout-dashboard' },
     { href: '/projects', label: 'Projects', icon: 'folder-kanban' },
+    { href: '/prompts', label: 'Prompts', icon: 'history' },
     { href: '/graph', label: 'Graph', icon: 'git-branch' },
     { href: '/search', label: 'Search', icon: 'search' },
     { href: '/agents', label: 'Agents', icon: 'bot' },
@@ -2019,6 +2020,174 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
     ${projectsSseScript}`;
 
   return layout('Projects', '/projects', body, port);
+}
+
+// ---------------------------------------------------------------------------
+// Prompts (all pack sessions system-wide, real-time, DESC)
+// ---------------------------------------------------------------------------
+
+export interface PromptsPageData {
+  runs: Array<{
+    date: string;
+    project: string;
+    projectPath: string;
+    command: string;
+    files: number;
+    tokensRaw: number;
+    tokensPacked: number;
+    compressed: boolean;
+    agent?: string;
+  }>;
+  totalSaved: number;
+  totalUsed: number;
+  totalSessions: number;
+}
+
+export function renderPrompts(data: PromptsPageData, port: number): string {
+  const avgSavePct = data.totalUsed + data.totalSaved > 0
+    ? Math.round((data.totalSaved / (data.totalSaved + data.totalUsed)) * 100) : 0;
+
+  const summaryCards = `
+    <div class="cards">
+      <div class="card" style="border-top:3px solid var(--purple);cursor:default;"
+        data-tip='${JSON.stringify({title:"Total Sessions",rows:[["All projects",fmtNum(data.totalSessions)]],note:"Every pack run across all projects on this machine."})}'>
+        <div class="card-label">Total Sessions</div>
+        <div class="card-value" id="pr-sessions" style="color:var(--purple);">${fmtNum(data.totalSessions)}</div>
+      </div>
+      <div class="card" style="border-top:3px solid #ff6800;cursor:default;"
+        data-tip='${JSON.stringify({title:"Total Tokens Used",rows:[["Sent to AI",fmtNum(data.totalUsed)],["After pack/compress",""]],note:"Sum of tokensPacked across all sessions."})}'>
+        <div class="card-label">Total Tokens Used</div>
+        <div class="card-value" id="pr-used" style="color:#ff6800;">${fmtNum(data.totalUsed)}</div>
+      </div>
+      <div class="card" style="border-top:3px solid var(--success);cursor:default;"
+        data-tip='${JSON.stringify({title:"Total Tokens Saved",rows:[["Saved",fmtNum(data.totalSaved)],["Save rate",avgSavePct+"%"]],note:"Raw tokens minus packed tokens. Higher = better efficiency."})}'>
+        <div class="card-label">Total Tokens Saved</div>
+        <div class="card-value" id="pr-saved" style="color:var(--success);">${fmtNum(data.totalSaved)}</div>
+        <div class="card-sub">${avgSavePct}% avg efficiency</div>
+      </div>
+      <div class="card" style="border-top:3px solid var(--accent);cursor:default;"
+        data-tip='${JSON.stringify({title:"Overall Tokens",rows:[["Total",fmtNum(data.totalSaved+data.totalUsed)],["Used",fmtNum(data.totalUsed)],["Saved",fmtNum(data.totalSaved)]],note:"Combined total of all token activity."})}'>
+        <div class="card-label">Overall Tokens</div>
+        <div class="card-value" id="pr-overall" style="color:var(--accent);">${fmtNum(data.totalSaved + data.totalUsed)}</div>
+      </div>
+    </div>`;
+
+  const rows = data.runs.map((r, i) => {
+    const saved = r.tokensRaw - r.tokensPacked;
+    const savePct = r.tokensRaw > 0 ? Math.round((saved / r.tokensRaw) * 100) : 0;
+    const d = new Date(r.date);
+    const timeStr = d.toLocaleString();
+    const compress = r.compressed ? '<span class="badge badge-green">compressed</span>' : '';
+    const agentBadge = r.agent ? `<span class="badge badge-blue">${esc(r.agent)}</span>` : '';
+    const savePctColor = savePct >= 60 ? 'var(--success)' : savePct >= 30 ? '#ff6800' : 'var(--text-muted)';
+    return `<tr id="pr-row-${i}" style="animation:fadeIn 0.3s ease both;animation-delay:${Math.min(i * 0.02, 0.5)}s">
+      <td class="mono" style="font-size:11px;color:var(--text-muted)">${esc(timeStr)}</td>
+      <td><strong>${esc(r.project)}</strong></td>
+      <td class="mono" style="font-size:10px;color:var(--text-muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.projectPath)}">${esc(r.projectPath)}</td>
+      <td>${esc(r.command)} ${compress}${agentBadge}</td>
+      <td class="mono">${r.files}</td>
+      <td class="mono" style="color:#ff6800">${fmtNum(r.tokensRaw)}</td>
+      <td class="mono" style="color:var(--accent)">${fmtNum(r.tokensPacked)}</td>
+      <td class="mono" style="color:var(--success)">${fmtNum(saved)}</td>
+      <td class="mono" style="color:${savePctColor};font-weight:600">${savePct}%</td>
+    </tr>`;
+  }).join('');
+
+  const tableHtml = `
+    <div class="table-wrap" id="prompts-table-wrap">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <h3 style="margin:0;">All Prompt Sessions <span id="live-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--success);background:rgba(63,185,80,0.12);border:1px solid rgba(63,185,80,0.25);border-radius:20px;padding:2px 10px;margin-left:8px;"><span style="width:6px;height:6px;background:var(--success);border-radius:50%;display:inline-block;animation:pulse 1.5s infinite;"></span>LIVE</span></h3>
+        <div style="font-size:12px;color:var(--text-muted);">${fmtNum(data.runs.length)} sessions — newest first</div>
+      </div>
+      <table id="prompts-table">
+        <thead><tr>
+          <th>Time</th><th>Project</th><th>Path</th><th>Command</th><th>Files</th>
+          <th style="color:#ff6800">Raw Tokens</th><th style="color:var(--accent)">Packed</th>
+          <th style="color:var(--success)">Saved</th><th>Save %</th>
+        </tr></thead>
+        <tbody id="prompts-tbody">${rows}</tbody>
+      </table>
+    </div>`;
+
+  const sseScript = `
+    <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} @keyframes rowSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}</style>
+    <script>
+    (function() {
+      var es = new EventSource('/api/events');
+
+      es.addEventListener('connected', function() {
+        var b = document.getElementById('live-badge');
+        if (b) b.style.display = 'inline-flex';
+      });
+
+      es.addEventListener('prompt-added', function(e) {
+        try {
+          var d = JSON.parse(e.data);
+          var r = d.run;
+          var saved = r.tokensRaw - r.tokensPacked;
+          var pct = r.tokensRaw > 0 ? Math.round((saved / r.tokensRaw) * 100) : 0;
+          var pctColor = pct >= 60 ? 'var(--success)' : pct >= 30 ? '#ff6800' : 'var(--text-muted)';
+          var compress = r.compressed ? '<span class="badge badge-green">compressed</span>' : '';
+          var agent = r.agent ? '<span class="badge badge-blue">' + r.agent + '</span>' : '';
+          var tr = document.createElement('tr');
+          tr.style.cssText = 'animation:rowSlide 0.4s ease both;background:rgba(63,185,80,0.05);';
+          tr.innerHTML = '<td class="mono" style="font-size:11px;color:var(--text-muted)">' + new Date(r.date).toLocaleString() + '</td>'
+            + '<td><strong>' + r.project + '</strong></td>'
+            + '<td class="mono" style="font-size:10px;color:var(--text-muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + r.projectPath + '">' + r.projectPath + '</td>'
+            + '<td>' + r.command + ' ' + compress + agent + '</td>'
+            + '<td class="mono">' + r.files + '</td>'
+            + '<td class="mono" style="color:#ff6800">' + Number(r.tokensRaw).toLocaleString() + '</td>'
+            + '<td class="mono" style="color:var(--accent)">' + Number(r.tokensPacked).toLocaleString() + '</td>'
+            + '<td class="mono" style="color:var(--success)">' + saved.toLocaleString() + '</td>'
+            + '<td class="mono" style="color:' + pctColor + ';font-weight:600">' + pct + '%</td>';
+          var tbody = document.getElementById('prompts-tbody');
+          if (tbody) tbody.insertBefore(tr, tbody.firstChild);
+
+          // Update summary cards
+          function animVal(id, val) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            var cur = parseInt((el.textContent || '0').replace(/,/g,'')) || 0;
+            var dur = 600, st = performance.now();
+            el.style.color = 'var(--success)';
+            (function step(now) {
+              var p = Math.min((now-st)/dur,1), ease=1-Math.pow(1-p,3);
+              el.textContent = Math.round(cur+(val-cur)*ease).toLocaleString();
+              if(p<1) requestAnimationFrame(step);
+              else { el.textContent=val.toLocaleString(); setTimeout(function(){ el.style.color=''; },1000); }
+            })(st);
+          }
+          if (d.totals) {
+            animVal('pr-sessions', d.totals.sessions);
+            animVal('pr-used', d.totals.used);
+            animVal('pr-saved', d.totals.saved);
+            animVal('pr-overall', d.totals.saved + d.totals.used);
+          }
+
+          // Toast
+          var toast = document.createElement('div');
+          toast.style.cssText = 'position:fixed;bottom:20px;right:24px;background:rgba(63,185,80,0.15);color:var(--success);padding:10px 16px;border-radius:8px;font-size:12px;z-index:100;border:1px solid rgba(63,185,80,0.3);backdrop-filter:blur(12px);animation:fadeIn 0.3s ease;';
+          toast.textContent = '⚡ ' + r.project + ' — ' + pct + '% saved (' + saved.toLocaleString() + ' tokens)';
+          document.body.appendChild(toast);
+          setTimeout(function(){ toast.style.opacity='0'; toast.style.transition='opacity 0.4s'; }, 3500);
+          setTimeout(function(){ toast.remove(); }, 4000);
+        } catch(err) {}
+      });
+
+      es.onerror = function() {
+        var b = document.getElementById('live-badge');
+        if (b) b.style.display = 'none';
+      };
+    })();
+    </script>`;
+
+  const body = `
+    <h1 class="page-title">Prompts</h1>
+    ${summaryCards}
+    ${tableHtml}
+    ${sseScript}`;
+
+  return layout('Prompts', '/prompts', body, port);
 }
 
 // ---------------------------------------------------------------------------

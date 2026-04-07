@@ -26,12 +26,13 @@ import {
   renderFiles,
   renderImpact,
   renderProjects,
+  renderPrompts,
   renderSecurity,
   render404,
 } from './pages.js';
 
 import type { AgentsConfig } from '../types.js';
-import type { DashboardData, GraphPageData, AgentsPageData, FilesPageData, ImpactPageData, ProjectsPageData, SecurityPageData } from './pages.js';
+import type { DashboardData, GraphPageData, AgentsPageData, FilesPageData, ImpactPageData, ProjectsPageData, PromptsPageData, SecurityPageData } from './pages.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -250,6 +251,7 @@ export function startUiServer(root: string, port: number): void {
 
   // Watch global history log — fires when ANY project runs pack (cross-project real-time)
   const globalLogPath = join(homedir(), '.codebase-pilot', 'history.jsonl');
+  let lastGlobalLogSize = 0;
   const globalWatcher = chokidar.watch(globalLogPath, { ignoreInitial: true, persistent: true, usePolling: false });
   globalWatcher.on('change', () => {
     try {
@@ -260,6 +262,18 @@ export function startUiServer(root: string, port: number): void {
       const allTime = getStats(globalLogs, 99999);
       const projects = getProjectSummaries(globalLogs);
       broadcast('projects-update', { today, week, month, allTime, projects });
+
+      // Broadcast the newest run to the Prompts page
+      if (globalLogs.length > lastGlobalLogSize && globalLogs.length > 0) {
+        const newRun = globalLogs[globalLogs.length - 1];
+        const totalSaved = globalLogs.reduce((s, r) => s + (r.tokensRaw - r.tokensPacked), 0);
+        const totalUsed = globalLogs.reduce((s, r) => s + r.tokensPacked, 0);
+        broadcast('prompt-added', {
+          run: newRun,
+          totals: { sessions: globalLogs.length, saved: totalSaved, used: totalUsed },
+        });
+      }
+      lastGlobalLogSize = globalLogs.length;
     } catch { /* ignore */ }
   });
   globalWatcher.on('error', () => { /* ignore */ });
@@ -307,6 +321,22 @@ export function startUiServer(root: string, port: number): void {
           currentProject: root,
         };
         htmlResponse(res, renderProjects(data, port));
+        return;
+      }
+
+      if (pathname === '/prompts') {
+        const globalLogs = readGlobalLogs();
+        // Sort DESC (newest first)
+        const sorted = [...globalLogs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const totalSaved = globalLogs.reduce((s, r) => s + (r.tokensRaw - r.tokensPacked), 0);
+        const totalUsed = globalLogs.reduce((s, r) => s + r.tokensPacked, 0);
+        const data: PromptsPageData = {
+          runs: sorted,
+          totalSaved,
+          totalUsed,
+          totalSessions: globalLogs.length,
+        };
+        htmlResponse(res, renderPrompts(data, port));
         return;
       }
 
