@@ -13,6 +13,8 @@ import { buildImportGraph, getReverseDependencies, computeBlastRadius } from '..
 import { readPackLogs, readGlobalLogs, getStats, getProjectSummaries, getRecentRuns } from '../packer/usage-logger.js';
 import { formatTokenCount } from '../packer/token-counter.js';
 import { createSearchIndex } from '../intelligence/search.js';
+import { scanForSecrets } from '../security/scanner.js';
+import { SECRET_PATTERNS } from '../security/patterns.js';
 import { buildGraphData } from '../intelligence/visualize.js';
 
 import {
@@ -23,11 +25,12 @@ import {
   renderFiles,
   renderImpact,
   renderProjects,
+  renderSecurity,
   render404,
 } from './pages.js';
 
 import type { AgentsConfig } from '../types.js';
-import type { DashboardData, GraphPageData, AgentsPageData, FilesPageData, ImpactPageData, ProjectsPageData } from './pages.js';
+import type { DashboardData, GraphPageData, AgentsPageData, FilesPageData, ImpactPageData, ProjectsPageData, SecurityPageData } from './pages.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -307,6 +310,35 @@ export function startUiServer(root: string, port: number): void {
         }
         const data = buildImpactData(root, file);
         htmlResponse(res, renderImpact(data, port));
+        return;
+      }
+
+      if (pathname === '/security') {
+        const files = collectFiles(root, {});
+        const categories = new Map<string, number>();
+        for (const p of SECRET_PATTERNS) {
+          categories.set(p.category, (categories.get(p.category) || 0) + 1);
+        }
+        const detectedFiles: SecurityPageData['detectedFiles'] = [];
+        for (const file of files) {
+          const secrets = scanForSecrets(file.content, file.relativePath);
+          if (secrets.length > 0) {
+            detectedFiles.push({
+              file: file.relativePath,
+              secrets: secrets.map(s => ({ pattern: s.pattern, line: s.line })),
+            });
+          }
+        }
+        const data: SecurityPageData = {
+          totalPatterns: SECRET_PATTERNS.length,
+          categories: [...categories.entries()]
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count),
+          scannedFiles: files.length,
+          detectedFiles,
+          cleanFiles: files.length - detectedFiles.length,
+        };
+        htmlResponse(res, renderSecurity(data, port));
         return;
       }
 

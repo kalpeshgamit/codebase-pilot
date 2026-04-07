@@ -36,6 +36,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
     { href: '/search', label: 'Search', icon: 'search' },
     { href: '/agents', label: 'Agents', icon: 'bot' },
     { href: '/files', label: 'Files', icon: 'file-code-2' },
+    { href: '/security', label: 'Security', icon: 'shield-check' },
   ];
 
   const navItems = nav
@@ -1636,6 +1637,99 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
     ${recentTable}`;
 
   return layout('Projects', '/projects', body, port);
+}
+
+// ---------------------------------------------------------------------------
+// Security
+// ---------------------------------------------------------------------------
+
+export interface SecurityPageData {
+  totalPatterns: number;
+  categories: Array<{ name: string; count: number }>;
+  scannedFiles: number;
+  detectedFiles: Array<{ file: string; secrets: Array<{ pattern: string; line: number }> }>;
+  cleanFiles: number;
+}
+
+export function renderSecurity(data: SecurityPageData, port: number): string {
+  // Summary cards
+  const cards = `
+    <div class="cards">
+      <div class="card" style="border-top:2px solid var(--accent);">
+        <div class="card-label">Total Patterns</div>
+        <div class="card-value">${data.totalPatterns}</div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--success);">
+        <div class="card-label">Files Scanned</div>
+        <div class="card-value">${data.scannedFiles}</div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--danger);">
+        <div class="card-label">Files with Secrets</div>
+        <div class="card-value">${data.detectedFiles.length}</div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--success);">
+        <div class="card-label">Clean Files</div>
+        <div class="card-value">${data.cleanFiles}</div>
+      </div>
+    </div>`;
+
+  // Categories table
+  const catRows = data.categories.map(c => {
+    const barPct = data.totalPatterns > 0 ? Math.round((c.count / data.totalPatterns) * 100) : 0;
+    return `<tr>
+      <td><strong>${esc(c.name)}</strong></td>
+      <td class="mono">${c.count}</td>
+      <td><div class="bar-bg"><div class="bar-fill" style="width:${barPct}%"></div></div></td>
+    </tr>`;
+  }).join('');
+
+  const catTable = `
+    <div class="table-wrap">
+      <h3>Pattern Categories (${data.categories.length})</h3>
+      <table>
+        <thead><tr><th>Category</th><th>Patterns</th><th>Coverage</th></tr></thead>
+        <tbody>${catRows}</tbody>
+      </table>
+    </div>`;
+
+  // Detected secrets
+  let detectedTable = '';
+  if (data.detectedFiles.length > 0) {
+    const rows = data.detectedFiles.map(f => {
+      const secrets = f.secrets.map(s =>
+        `<span class="badge badge-red">${esc(s.pattern)} :${s.line}</span>`
+      ).join(' ');
+      return `<tr>
+        <td class="mono" style="font-size:12px;">${esc(f.file)}</td>
+        <td>${secrets}</td>
+        <td class="mono">${f.secrets.length}</td>
+      </tr>`;
+    }).join('');
+
+    detectedTable = `
+      <div class="table-wrap">
+        <h3>Detected Secrets (${data.detectedFiles.length} files)</h3>
+        <table>
+          <thead><tr><th>File</th><th>Patterns Found</th><th>Count</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  } else {
+    detectedTable = `
+      <div style="text-align:center;padding:40px;color:var(--success);font-size:16px;">
+        <div style="font-size:48px;margin-bottom:12px;">&#10003;</div>
+        <strong>No secrets detected</strong>
+        <div style="color:var(--text-muted);font-size:13px;margin-top:8px;">All files are clean</div>
+      </div>`;
+  }
+
+  const body = `
+    <h1 class="page-title">Security Scanner</h1>
+    ${cards}
+    ${catTable}
+    ${detectedTable}`;
+
+  return layout('Security', '/security', body, port);
 }
 
 // ---------------------------------------------------------------------------
