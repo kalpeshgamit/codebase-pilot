@@ -98,7 +98,17 @@ function runAutoPack(trigger: string): void {
 }
 
 // File watcher — always running regardless of browser connections
-const watcher = chokidar.watch(root, {
+// Use depth:3 and limited paths to avoid EMFILE (too many open files) on large projects
+const WATCH_DIRS = ['src', 'lib', 'app', 'apps', 'packages', 'services', 'server', 'api', 'pages', 'components', 'routes', 'controllers', 'models', 'views', 'helpers', 'utils', 'config', 'scripts', 'test', 'tests', 'spec', '__tests__'];
+const watchPaths: string[] = [];
+for (const dir of WATCH_DIRS) {
+  const p = resolve(root, dir);
+  if (existsSync(p)) watchPaths.push(p);
+}
+// If no known dirs found, watch root but with shallow depth
+if (watchPaths.length === 0) watchPaths.push(root);
+
+const watcher = chokidar.watch(watchPaths, {
   ignored: [
     '**/node_modules/**', '**/dist/**', '**/.git/**',
     '**/.codebase-pilot/**', '**/coverage/**', '**/*.log',
@@ -108,12 +118,20 @@ const watcher = chokidar.watch(root, {
   ],
   ignoreInitial: true,
   persistent: true,
-  depth: 5,
+  depth: 3,
   usePolling: false,
 });
 
 watcher.on('error', (err) => {
-  if ((err as NodeJS.ErrnoException).code !== 'EMFILE') process.stderr.write(`[watcher] ${err}\n`);
+  const code = (err as NodeJS.ErrnoException).code;
+  if (code === 'EMFILE' || code === 'ENFILE') {
+    // File descriptor exhaustion — disable watcher gracefully
+    process.stderr.write('[codebase-pilot] Too many open files — disabling file watcher. Auto-pack will not trigger on file changes.\n');
+    process.stderr.write('[codebase-pilot] Fix: increase file limit with `ulimit -n 10240` or reduce project size.\n');
+    watcher.close();
+  } else {
+    process.stderr.write(`[watcher] ${err}\n`);
+  }
 });
 
 // Broadcast file-change + secret alert to any open browsers

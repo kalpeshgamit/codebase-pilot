@@ -3,7 +3,23 @@
 // NOTE: All user-provided strings are escaped via esc() before interpolation
 // to prevent XSS. The search live-update uses textContent-safe patterns.
 
-import { basename } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+// Read version from package.json
+const __pages_dir = dirname(fileURLToPath(import.meta.url));
+let PKG_VERSION = '0.3.5';
+try {
+  // Try both paths: dist/ (built chunks) needs ../, src/ui/ (dev) needs ../../
+  for (const rel of ['..', '..\\..', '../..']) {
+    try {
+      const p = resolve(__pages_dir, rel, 'package.json');
+      const raw = readFileSync(p, 'utf8');
+      if (raw.includes('"codebase-pilot')) { PKG_VERSION = JSON.parse(raw).version; break; }
+    } catch { /* try next */ }
+  }
+} catch { /* use fallback */ }
 
 // ---------------------------------------------------------------------------
 // Theme tokens
@@ -872,7 +888,7 @@ window.CpSocket = (function() {
     <div class="sidebar-footer" style="flex-direction:column;gap:8px;">
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <a href="https://github.com/kalpeshgamit/codebase-pilot" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;text-decoration:none;"><i data-lucide="github" style="width:11px;height:11px;"></i>GitHub</a>
-        <a href="https://www.npmjs.com/package/codebase-pilot-cli" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;text-decoration:none;"><i data-lucide="package" style="width:11px;height:11px;"></i>npm v0.2.1</a>
+        <a href="https://www.npmjs.com/package/codebase-pilot-cli" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;text-decoration:none;"><i data-lucide="package" style="width:11px;height:11px;"></i>npm v${PKG_VERSION}</a>
         <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;"><i data-lucide="hexagon" style="width:11px;height:11px;"></i>Node &ge;18</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">

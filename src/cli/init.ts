@@ -1,4 +1,6 @@
-import { resolve } from 'node:path';
+import { resolve, dirname } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { detect, printScan } from '../scanner/detector.js';
 import { generateAgents } from '../agents/generator.js';
 import { generateClaudeMd } from '../generators/claude-md.js';
@@ -21,7 +23,9 @@ export async function initCommand(options: InitOptions): Promise<void> {
   const root = resolve(options.dir);
 
   console.log('');
-  console.log('  codebase-pilot v0.2.0');
+  let ver = '0.3.4';
+  try { ver = JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'package.json'), 'utf8')).version; } catch { /* fallback */ }
+  console.log(`  codebase-pilot v${ver}`);
   console.log('  ─────────────────────');
   console.log('');
   console.log('  Scanning project...');

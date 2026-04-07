@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { initCommand } from '../cli/init.js';
 import { scanCommand } from '../cli/scan.js';
 import { fixCommand } from '../cli/fix.js';
@@ -19,12 +22,17 @@ import { uiCommand } from '../cli/ui.js';
 import { scanSecretsCommand } from '../cli/scan-secrets.js';
 import { serviceCommand } from '../cli/service.js';
 
+// Read version from package.json so it stays in sync automatically
+const __dirname = dirname(fileURLToPath(import.meta.url));
+let version = '0.3.4';
+try { version = JSON.parse(readFileSync(resolve(__dirname, '..', '..', 'package.json'), 'utf8')).version; } catch { /* use fallback */ }
+
 const program = new Command();
 
 program
   .name('codebase-pilot')
   .description('AI context engine — pack, compress, and optimize any codebase. Save 60-90% tokens.')
-  .version('0.2.0');
+  .version(version);
 
 program
   .command('init')
