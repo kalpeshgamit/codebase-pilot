@@ -164,50 +164,6 @@ function layout(title: string, activePage: string, body: string, port: number, h
     display: inline-block;
   }
 
-  .jet-wrapper::before,
-  .jet-wrapper::after {
-    content: '';
-    position: absolute;
-    bottom: 2px;
-    width: 3px;
-    height: 14px;
-    border-radius: 0 0 3px 3px;
-    background: linear-gradient(to bottom, #ff6600, #ff4400, transparent);
-    animation: exhaust 0.6s ease-out infinite;
-    z-index: -1;
-  }
-
-  .jet-wrapper::before {
-    left: calc(50% - 10px);
-    animation-delay: 0s;
-  }
-
-  .jet-wrapper::after {
-    left: calc(50% + 7px);
-    animation-delay: 0.1s;
-  }
-
-  .jet-exhaust {
-    position: absolute;
-    bottom: -2px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 6px;
-    z-index: -1;
-  }
-
-  .jet-exhaust span {
-    width: 3px;
-    height: 3px;
-    border-radius: 50%;
-    animation: exhaust 0.5s ease-out infinite;
-  }
-
-  .jet-exhaust span:nth-child(1) { background: #ff6600; animation-delay: 0s; }
-  .jet-exhaust span:nth-child(2) { background: #ff4400; animation-delay: 0.08s; }
-  .jet-exhaust span:nth-child(3) { background: #ff6600; animation-delay: 0.16s; }
-  .jet-exhaust span:nth-child(4) { background: #ff4400; animation-delay: 0.04s; }
 
   .sidebar-brand img {
     width: 150px;
@@ -797,9 +753,6 @@ ${headExtra}
     <div class="sidebar-brand">
       <div class="jet-wrapper">
         <img src="/static/logo.png" alt="codebase-pilot" onerror="this.style.display='none'" />
-        <div class="jet-exhaust">
-          <span></span><span></span><span></span><span></span>
-        </div>
       </div>
       <div class="brand-text" style="margin-top:-6px;">Codebase Pilot</div>
     </div>
