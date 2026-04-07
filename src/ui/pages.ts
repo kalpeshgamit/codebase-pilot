@@ -2537,11 +2537,64 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
       body.innerHTML = html;
     }
 
+    function openUserPromptDrawer(tr) {
+      var raw = tr.getAttribute('data-prompt');
+      if (!raw) return;
+      var p;
+      try { p = JSON.parse(raw); } catch(e) { return; }
+      var drawer = document.getElementById('prompt-drawer');
+      var body = document.getElementById('prompt-drawer-body');
+      drawer.style.transform = 'translateX(0)';
+
+      var d = new Date(p.date);
+      var timeStr = d.toLocaleString('en-GB', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      var estTokens = Math.ceil((p.promptLength || 0) / 4);
+
+      var html = '<div style="display:flex;flex-direction:column;gap:16px;">';
+
+      // Header
+      html += '<div style="background:var(--surface);border-radius:8px;padding:14px;border:1px solid var(--border);">';
+      html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
+      html += '<span style="font-size:18px;font-weight:700;">' + (p.project || 'unknown') + '</span>';
+      if (p.branch) html += '<span class="badge" style="background:rgba(136,98,232,0.15);color:var(--purple);font-size:11px;">' + p.branch + '</span>';
+      html += '</div>';
+      html += '<div style="font-size:12px;color:var(--text-muted);">' + timeStr + '</div>';
+      if (p.projectPath) html += '<div style="font-size:11px;color:var(--text-dim);word-break:break-all;margin-top:4px;">' + p.projectPath + '</div>';
+      if (p.sessionId) html += '<div style="font-size:10px;color:var(--text-dim);margin-top:4px;">Session: <code style="background:var(--bg);padding:1px 5px;border-radius:3px;">' + p.sessionId + '</code></div>';
+      html += '</div>';
+
+      // Full Prompt Text
+      html += '<div style="background:var(--surface);border-radius:8px;padding:14px;border:1px solid var(--border);">';
+      html += '<div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin-bottom:10px;letter-spacing:0.5px;">Prompt Text</div>';
+      html += '<div style="font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;background:var(--bg);padding:12px;border-radius:6px;border:1px solid var(--border);max-height:400px;overflow-y:auto;">' + p.prompt.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
+      html += '</div>';
+
+      // Stats
+      html += '<div style="background:var(--surface);border-radius:8px;padding:14px;border:1px solid var(--border);">';
+      html += '<div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin-bottom:10px;letter-spacing:0.5px;">Stats</div>';
+      var stats = [
+        ['Characters', (p.promptLength || 0).toLocaleString('en-US')],
+        ['Est. tokens', '~' + estTokens.toLocaleString('en-US')],
+        ['Words', (p.prompt || '').split(/\\s+/).filter(Boolean).length.toLocaleString('en-US')],
+        ['Lines', (p.prompt || '').split('\\n').length],
+      ];
+      for (var i = 0; i < stats.length; i++) {
+        html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);">';
+        html += '<span style="color:var(--text-muted);font-size:12px;">' + stats[i][0] + '</span>';
+        html += '<span class="mono" style="font-size:12px;">' + stats[i][1] + '</span>';
+        html += '</div>';
+      }
+      html += '</div>';
+
+      html += '</div>';
+      body.innerHTML = html;
+    }
+
     // Close drawer when clicking outside
     document.addEventListener('click', function(e) {
       var drawer = document.getElementById('prompt-drawer');
       if (drawer && drawer.style.transform === 'translateX(0)') {
-        if (!drawer.contains(e.target) && !e.target.closest('tr[data-run]')) {
+        if (!drawer.contains(e.target) && !e.target.closest('tr[data-run]') && !e.target.closest('tr[data-prompt]')) {
           drawer.style.transform = 'translateX(100%)';
         }
       }
@@ -2555,12 +2608,13 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
     const branchBadge = p.branch
       ? `<span class="badge" style="background:rgba(136,98,232,0.15);color:var(--purple);font-size:10px;">${esc(p.branch)}</span>`
       : '';
-    const truncated = p.prompt.length > 120 ? esc(p.prompt.slice(0, 120)) + '…' : esc(p.prompt);
-    return `<tr style="animation:fadeIn 0.3s ease both;animation-delay:${Math.min(i * 0.02, 0.5)}s">
+    const truncated = p.prompt.length > 120 ? esc(p.prompt.slice(0, 120)) + '...' : esc(p.prompt);
+    const promptJson = esc(JSON.stringify(p));
+    return `<tr data-prompt='${promptJson}' onclick="openUserPromptDrawer(this)" style="cursor:pointer;animation:fadeIn 0.3s ease both;animation-delay:${Math.min(i * 0.02, 0.5)}s">
       <td class="mono" style="font-size:11px;color:var(--text-muted)">${esc(timeStr)}</td>
       <td><strong>${esc(p.project)}</strong></td>
       <td>${branchBadge}</td>
-      <td style="max-width:500px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.prompt)}">${truncated}</td>
+      <td style="max-width:500px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${truncated}</td>
       <td class="mono" style="font-size:11px;color:var(--text-dim)">${p.promptLength > 0 ? `~${Math.ceil(p.promptLength / 4)} tokens` : ''}</td>
     </tr>`;
   }).join('');
