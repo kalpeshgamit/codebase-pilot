@@ -174,9 +174,67 @@ function layout(title: string, activePage: string, body: string, port: number, h
   }
 
   .sidebar-brand:hover img {
-    filter: drop-shadow(0 0 16px rgba(63,185,80,0.5)) drop-shadow(0 2px 12px rgba(0,0,0,0.4));
+    filter: drop-shadow(0 0 20px rgba(63,185,80,0.7)) drop-shadow(0 0 40px rgba(255,104,0,0.35)) drop-shadow(0 2px 12px rgba(0,0,0,0.4));
     animation: jetHover 1.5s ease-in-out infinite;
   }
+
+  body.light .sidebar-brand:hover img {
+    filter: drop-shadow(0 0 16px rgba(22,163,74,0.6)) drop-shadow(0 0 30px rgba(255,104,0,0.25)) drop-shadow(0 2px 8px rgba(0,0,0,0.15));
+  }
+
+  /* Tooltip */
+  .stat-tooltip {
+    position: fixed;
+    z-index: 9999;
+    background: rgba(13,17,23,0.97);
+    border: 1px solid rgba(63,185,80,0.35);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text);
+    max-width: 260px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    line-height: 1.6;
+  }
+
+  body.light .stat-tooltip {
+    background: rgba(255,255,255,0.98);
+    border-color: rgba(22,163,74,0.3);
+    color: #1a1a2e;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  }
+
+  .stat-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .stat-tooltip strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--accent);
+    font-size: 13px;
+  }
+
+  .stat-tooltip .tip-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  body.light .stat-tooltip .tip-row {
+    border-bottom-color: rgba(0,0,0,0.06);
+  }
+
+  .stat-tooltip .tip-row:last-child { border-bottom: none; }
+  .stat-tooltip .tip-key { color: var(--text-muted); }
+  .stat-tooltip .tip-val { font-weight: 600; font-family: ${T.mono}; }
 
   .sidebar-brand:hover .jet-exhaust span {
     animation-duration: 0.3s;
@@ -797,6 +855,55 @@ function toggleTheme() {
   // Initialize Lucide icons
   if (window.lucide) lucide.createIcons();
 
+  // Tooltip system
+  (function() {
+    var tip = document.createElement('div');
+    tip.className = 'stat-tooltip';
+    tip.id = 'stat-tip';
+    document.body.appendChild(tip);
+    var hideTimer;
+    document.querySelectorAll('[data-tip]').forEach(function(card) {
+      card.addEventListener('mouseenter', function(e) {
+        clearTimeout(hideTimer);
+        var raw = card.getAttribute('data-tip') || '';
+        try {
+          var obj = JSON.parse(raw);
+          tip.innerHTML = '';
+          if (obj.title) {
+            var t = document.createElement('strong');
+            t.textContent = obj.title;
+            tip.appendChild(t);
+          }
+          (obj.rows || []).forEach(function(row) {
+            var d = document.createElement('div');
+            d.className = 'tip-row';
+            d.innerHTML = '<span class="tip-key">' + row[0] + '</span><span class="tip-val">' + row[1] + '</span>';
+            tip.appendChild(d);
+          });
+          if (obj.note) {
+            var n = document.createElement('div');
+            n.style.cssText = 'margin-top:6px;font-size:11px;color:var(--text-muted);font-style:italic;';
+            n.textContent = obj.note;
+            tip.appendChild(n);
+          }
+        } catch(_) { tip.textContent = raw; }
+        tip.classList.add('visible');
+      });
+      card.addEventListener('mousemove', function(e) {
+        var me = e;
+        var x = me.clientX + 14;
+        var y = me.clientY - 10;
+        if (x + 280 > window.innerWidth) x = me.clientX - 280;
+        if (y + tip.offsetHeight + 10 > window.innerHeight) y = me.clientY - tip.offsetHeight - 10;
+        tip.style.left = x + 'px';
+        tip.style.top = y + 'px';
+      });
+      card.addEventListener('mouseleave', function() {
+        tip.classList.remove('visible');
+      });
+    });
+  })();
+
   // Animate numbers: count up from 0 to target value
   document.querySelectorAll('.card-value').forEach(function(el) {
     var raw = el.textContent.replace(/,/g, '');
@@ -883,22 +990,32 @@ export interface DashboardData {
 export function renderDashboard(data: DashboardData, port: number): string {
   const statCards = `
     <div class="cards">
-      <div class="card" style="border-top:3px solid var(--blue);">
+      <div class="card" style="border-top:3px solid var(--blue);cursor:default;"
+        data-tip='${JSON.stringify({title:"Total Files",rows:[["Scanned files",fmtNum(data.totalFiles)],["Project","Current project only"]],note:"Files indexed in the last scan. Run \`codebase-pilot scan\` to refresh."})}'>
         <div class="card-label">Total Files</div>
         <div class="card-value" style="color:var(--blue);">${fmtNum(data.totalFiles)}</div>
       </div>
-      <div class="card" style="border-top:3px solid #ff6800;">
+      <div class="card" style="border-top:3px solid #ff6800;cursor:default;"
+        data-tip='${JSON.stringify({title:"Total Tokens",rows:[["Raw tokens",fmtNum(data.totalTokens)],["After compress","~"+fmtNum(Math.round(data.totalTokens*0.3))+" (est.)"],["Savings est.","~70%"]],note:"Raw token count of all scanned files. Use --compress to reduce by ~70%."})}'>
         <div class="card-label">Total Tokens</div>
         <div class="card-value" style="color:#ff6800;">${fmtNum(data.totalTokens)}</div>
       </div>
-      <div class="card" style="border-top:3px solid var(--purple);">
+      <div class="card" style="border-top:3px solid var(--purple);cursor:default;"
+        data-tip='${JSON.stringify({title:"Sessions Today",rows:[["Today",fmtNum(data.today.sessions)],["This week",fmtNum(data.week.sessions)],["This month",fmtNum(data.month.sessions)]],note:"Each \`pack\` run counts as one session."})}'>
         <div class="card-label">Sessions Today</div>
         <div class="card-value" style="color:var(--purple);">${fmtNum(data.today.sessions)}</div>
       </div>
-      <div class="card" style="border-top:3px solid var(--success);">
+      <div class="card" style="border-top:3px solid var(--success);cursor:default;"
+        data-tip='${JSON.stringify({title:"Tokens Saved This Week",rows:[["Saved",fmtNum(data.week.tokensSaved)],["Used",fmtNum(data.week.tokensUsed)],["Total",fmtNum(data.week.tokensSaved+data.week.tokensUsed)],["Save rate",((data.week.tokensSaved+data.week.tokensUsed)>0?Math.round((data.week.tokensSaved/(data.week.tokensSaved+data.week.tokensUsed))*100):0)+"%"]],note:"Tokens saved = raw tokens minus packed tokens across all sessions this week."})}'>
         <div class="card-label">Tokens Saved This Week</div>
         <div class="card-value" style="color:var(--success);">${fmtNum(data.week.tokensSaved)}</div>
         <div class="card-sub">${fmtNum(data.week.tokensUsed)} used</div>
+      </div>
+      <div class="card" style="border-top:3px solid var(--accent);cursor:default;"
+        data-tip='${JSON.stringify({title:"Overall Tokens This Month",rows:[["Saved",fmtNum(data.month.tokensSaved)],["Used",fmtNum(data.month.tokensUsed)],["Total",fmtNum(data.month.tokensSaved+data.month.tokensUsed)],["Sessions",fmtNum(data.month.sessions)]],note:"Combined token activity (used + saved) across all pack sessions this month."})}'>
+        <div class="card-label">Overall Tokens This Month</div>
+        <div class="card-value" style="color:var(--accent);">${fmtNum(data.month.tokensSaved + data.month.tokensUsed)}</div>
+        <div class="card-sub">${fmtNum(data.month.tokensSaved)} saved</div>
       </div>
     </div>`;
 
@@ -1720,23 +1837,34 @@ export interface ProjectsPageData {
 
 export function renderProjects(data: ProjectsPageData, port: number): string {
   // System-wide stat cards
+  const allTimeTotal = data.allTime.tokensSaved + data.allTime.tokensUsed;
+  const allTimeSavePct = allTimeTotal > 0 ? Math.round((data.allTime.tokensSaved / allTimeTotal) * 100) : 0;
   const cards = `
     <div class="cards">
-      <div class="card" style="border-top:3px solid var(--blue);">
+      <div class="card" style="border-top:3px solid var(--blue);cursor:default;"
+        data-tip='${JSON.stringify({title:"Total Projects",rows:[["Projects tracked",data.projects.length],["Active","Current working project"]],note:"Projects are discovered automatically when you run codebase-pilot in any directory."})}'>
         <div class="card-label">Total Projects</div>
         <div class="card-value" style="color:var(--blue);">${data.projects.length}</div>
       </div>
-      <div class="card" style="border-top:3px solid var(--purple);">
+      <div class="card" style="border-top:3px solid var(--purple);cursor:default;"
+        data-tip='${JSON.stringify({title:"Total Sessions",rows:[["All time",fmtNum(data.allTime.sessions)],["This month",fmtNum(data.month.sessions)],["This week",fmtNum(data.week.sessions)],["Today",fmtNum(data.today.sessions)]],note:"Each pack run = 1 session. Tracked across all projects system-wide."})}'>
         <div class="card-label">Total Sessions</div>
         <div class="card-value" style="color:var(--purple);">${fmtNum(data.allTime.sessions)}</div>
       </div>
-      <div class="card" style="border-top:3px solid var(--success);">
+      <div class="card" style="border-top:3px solid var(--success);cursor:default;"
+        data-tip='${JSON.stringify({title:"Tokens Saved (All Time)",rows:[["Saved",fmtNum(data.allTime.tokensSaved)],["Save rate",allTimeSavePct+"%"],["This month",fmtNum(data.month.tokensSaved)],["This week",fmtNum(data.week.tokensSaved)]],note:"Tokens saved = raw tokens minus packed/compressed tokens. Higher is better."})}'>
         <div class="card-label">Tokens Saved (All Time)</div>
         <div class="card-value" style="color:var(--success);">${fmtNum(data.allTime.tokensSaved)}</div>
       </div>
-      <div class="card" style="border-top:3px solid #ff6800;">
+      <div class="card" style="border-top:3px solid #ff6800;cursor:default;"
+        data-tip='${JSON.stringify({title:"Tokens Used (All Time)",rows:[["Used",fmtNum(data.allTime.tokensUsed)],["This month",fmtNum(data.month.tokensUsed)],["This week",fmtNum(data.week.tokensUsed)],["Today",fmtNum(data.today.tokensUsed)]],note:"Tokens actually sent to AI context after packing and compression."})}'>
         <div class="card-label">Tokens Used (All Time)</div>
         <div class="card-value" style="color:#ff6800;">${fmtNum(data.allTime.tokensUsed)}</div>
+      </div>
+      <div class="card" style="border-top:3px solid var(--accent);cursor:default;"
+        data-tip='${JSON.stringify({title:"Overall Tokens (All Time)",rows:[["Total",fmtNum(allTimeTotal)],["Saved",fmtNum(data.allTime.tokensSaved)],["Used",fmtNum(data.allTime.tokensUsed)],["Efficiency",allTimeSavePct+"%"]],note:"Grand total of all token activity. Saved + Used = Overall."})}'>
+        <div class="card-label">Overall Tokens (All Time)</div>
+        <div class="card-value" style="color:var(--accent);">${fmtNum(data.allTime.tokensSaved + data.allTime.tokensUsed)}</div>
       </div>
     </div>`;
 
