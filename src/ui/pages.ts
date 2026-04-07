@@ -111,7 +111,8 @@ function layout(title: string, activePage: string, body: string, port: number, h
     font-size: 14px;
     line-height: 1.5;
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
   }
 
   a { color: var(--accent); text-decoration: none; }
@@ -120,7 +121,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
   /* Sidebar */
   .sidebar {
     width: 220px;
-    min-height: 100vh;
+    height: 100vh;
     background: var(--surface);
     border-right: 1px solid var(--border);
     display: flex;
@@ -279,7 +280,8 @@ function layout(title: string, activePage: string, body: string, port: number, h
     flex: 1;
     margin-left: 220px;
     padding: 28px 36px;
-    min-height: 100vh;
+    height: 100vh;
+    overflow-y: auto;
     animation: fadeIn 0.3s ease both;
   }
 
@@ -1209,7 +1211,7 @@ export function renderGraph(data: GraphPageData, port: number): string {
       <span id="graph-stats" class="mono" style="color:var(--text-muted);font-size:12px;"></span>
     </div>
     <input type="text" id="graph-search" class="search-box" placeholder="Filter nodes..." style="margin-bottom:12px;">
-    <div id="graph-container" style="width:100%;height:calc(100vh - 140px);background:var(--surface);border:1px solid var(--border);border-radius:8px;position:relative;overflow:hidden;"></div>
+    <div id="graph-container" style="width:100%;height:calc(100vh - 170px);background:var(--surface);border:1px solid var(--border);border-radius:8px;position:relative;overflow:hidden;"></div>
     <div id="node-drawer" style="position:fixed;top:0;right:0;width:360px;height:100vh;background:var(--bg);border-left:1px solid var(--border);transform:translateX(100%);transition:transform 0.25s ease;overflow-y:auto;z-index:999;box-shadow:-8px 0 30px rgba(0,0,0,0.3);">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:1;">
         <strong style="font-size:14px;">File Details</strong>
