@@ -1,6 +1,6 @@
 {
   "name": "codebase-pilot",
-  "version": "0.4.1",
+  "version": "0.5.6",
   "description": "AI context engine — pack, compress, optimize any codebase for LLMs. Save 60-90% tokens. Zero cloud, zero lock-in.",
   "author": {
     "name": "Kalpesh Gamit (KG)",
