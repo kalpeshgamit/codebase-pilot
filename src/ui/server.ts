@@ -87,7 +87,7 @@ async function runAutoPack(root: string, trigger: string, broadcastFn: (event: s
     const configDir = resolve(root, '.codebase-pilot');
     if (!existsSync(configDir)) mkdirSync(configDir, { recursive: true });
 
-    const result = packProject({ dir: root, format: 'xml', compress: false, noSecurity: false });
+    const result = packProject({ dir: root, format: 'xml', compress: true, noSecurity: false });
 
     // Log the auto-pack run
     logPackRun(root, {
@@ -97,7 +97,7 @@ async function runAutoPack(root: string, trigger: string, broadcastFn: (event: s
       tokensRaw: result.rawTokens,
       tokensPacked: result.totalTokens,
       files: result.fileCount,
-      compressed: false,
+      compressed: true,
       command: `auto-pack (${trigger})`,
     });
 
@@ -121,11 +121,16 @@ async function runAutoPack(root: string, trigger: string, broadcastFn: (event: s
     }
 
     const dashData = await buildDashboardData(root);
+    const saved = result.rawTokens - result.totalTokens;
+    const savePct = result.rawTokens > 0 ? Math.round((saved / result.rawTokens) * 100) : 0;
     broadcastFn('autopilot', {
       status: 'done',
       trigger,
       files: result.fileCount,
       tokens: result.totalTokens,
+      rawTokens: result.rawTokens,
+      saved,
+      savePct,
       secretCount,
       secretAlerts: secretAlerts.slice(0, 5),
       time: new Date().toISOString(),
