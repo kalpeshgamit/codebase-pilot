@@ -176,6 +176,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
     50% { transform: translateY(-3px); }
   }
 
+
   .sidebar-brand {
     padding: 16px;
     border-bottom: 1px solid var(--border);
@@ -1034,6 +1035,7 @@ function toggleTheme() {
     requestAnimationFrame(step);
   });
 })();
+
 </script>
 </body>
 </html>`;
