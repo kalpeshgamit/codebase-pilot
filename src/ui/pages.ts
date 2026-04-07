@@ -2113,8 +2113,10 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
     </div>`;
 
   const rows = data.runs.map((r, i) => {
-    const saved = r.tokensRaw - r.tokensPacked;
-    const savePct = r.tokensRaw > 0 ? Math.round((saved / r.tokensRaw) * 100) : 0;
+    const raw = r.tokensRaw ?? 0;
+    const packed = r.tokensPacked ?? 0;
+    const saved = raw - packed;
+    const savePct = raw > 0 ? Math.round((saved / raw) * 100) : 0;
     const d = new Date(r.date);
     const timeStr = d.toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
     const compress = r.compressed ? '<span class="badge badge-green">compressed</span>' : '';
@@ -2130,8 +2132,8 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
       <td class="mono" style="font-size:10px;color:var(--text-muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.projectPath)}">${esc(r.projectPath)}</td>
       <td>${esc(r.command)} ${compress}${agentBadge}</td>
       <td class="mono">${r.files}</td>
-      <td class="mono" style="color:#ff6800">${fmtNum(r.tokensRaw)}</td>
-      <td class="mono" style="color:var(--accent)">${fmtNum(r.tokensPacked)}</td>
+      <td class="mono" style="color:#ff6800">${fmtNum(raw)}</td>
+      <td class="mono" style="color:var(--accent)">${fmtNum(packed)}</td>
       <td class="mono">${savedDisplay}</td>
       <td class="mono">${pctDisplay}</td>
     </tr>`;

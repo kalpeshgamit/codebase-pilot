@@ -94,8 +94,8 @@ async function runAutoPack(root: string, trigger: string, broadcastFn: (event: s
       date: new Date().toISOString(),
       project: basename(root),
       projectPath: root,
-      tokensRaw: result.tokenCount,
-      tokensPacked: result.tokenCount,
+      tokensRaw: result.rawTokens,
+      tokensPacked: result.totalTokens,
       files: result.fileCount,
       compressed: false,
       command: `auto-pack (${trigger})`,
@@ -125,7 +125,7 @@ async function runAutoPack(root: string, trigger: string, broadcastFn: (event: s
       status: 'done',
       trigger,
       files: result.fileCount,
-      tokens: result.tokenCount,
+      tokens: result.totalTokens,
       secretCount,
       secretAlerts: secretAlerts.slice(0, 5),
       time: new Date().toISOString(),
@@ -429,10 +429,12 @@ export function startUiServer(root: string, port: number): void {
 
       if (pathname === '/prompts') {
         const globalLogs = readGlobalLogs();
-        // Sort DESC (newest first)
-        const sorted = [...globalLogs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        const totalSaved = globalLogs.reduce((s, r) => s + (r.tokensRaw - r.tokensPacked), 0);
-        const totalUsed = globalLogs.reduce((s, r) => s + r.tokensPacked, 0);
+        // Sort DESC (newest first), sanitize undefined fields
+        const sorted = [...globalLogs]
+          .map(r => ({ ...r, tokensRaw: r.tokensRaw ?? 0, tokensPacked: r.tokensPacked ?? 0, files: r.files ?? 0 }))
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const totalSaved = sorted.reduce((s, r) => s + (r.tokensRaw - r.tokensPacked), 0);
+        const totalUsed = sorted.reduce((s, r) => s + r.tokensPacked, 0);
         const data: PromptsPageData = {
           runs: sorted,
           totalSaved,
