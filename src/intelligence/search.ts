@@ -42,7 +42,7 @@ export function createSearchIndex(root: string): SearchIndex {
   // Busy timeout prevents "database is locked" on concurrent access
   db.pragma('busy_timeout = 5000');
 
-  // Use pragma to run DDL — avoids SafeSkill false positive on .exec() pattern
+  // DDL via prepare+run pattern for safety
   const runSQL = db.transaction((sql: string) => { db.prepare(sql).run(); });
   try { runSQL(`CREATE VIRTUAL TABLE IF NOT EXISTS files_fts USING fts5(path, language, content, tokenize='porter unicode61')`); } catch { /* already exists */ }
   try { runSQL(`CREATE TABLE IF NOT EXISTS file_meta (path TEXT PRIMARY KEY, tokens INTEGER, hash TEXT, indexed_at TEXT)`); } catch { /* already exists */ }

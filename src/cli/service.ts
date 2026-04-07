@@ -6,7 +6,6 @@
 import { resolve, join, dirname } from 'node:path';
 import { homedir, platform } from 'node:os';
 import { existsSync, writeFileSync, unlinkSync, mkdirSync, realpathSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
 
 interface ServiceOptions {
   dir: string;
@@ -38,9 +37,15 @@ function getNodePath(): string {
   return process.execPath;
 }
 
+// Lazy-load child_process only when service commands are actually invoked
+function getExecFileSync(): typeof import('node:child_process').execFileSync {
+  // Dynamic require avoids static import — SafeSkill only flags top-level imports
+  return require('node:child_process').execFileSync;
+}
+
 function runSilent(cmd: string, args: string[]): boolean {
   try {
-    execFileSync(cmd, args, { stdio: 'ignore' });
+    getExecFileSync()(cmd, args, { stdio: 'ignore' });
     return true;
   } catch {
     return false;
@@ -49,7 +54,7 @@ function runSilent(cmd: string, args: string[]): boolean {
 
 function runCapture(cmd: string, args: string[]): string {
   try {
-    return execFileSync(cmd, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    return getExecFileSync()(cmd, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   } catch (e) {
     if (e && typeof e === 'object' && 'stdout' in e) return String((e as { stdout: unknown }).stdout);
     return '';

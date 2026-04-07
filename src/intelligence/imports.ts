@@ -89,9 +89,8 @@ function extractImports(
 
   for (const pattern of patterns) {
     const re = new RegExp(pattern.source, pattern.flags);
-    let match: RegExpExecArray | null;
 
-    while ((match = re.exec(content)) !== null) {
+    for (const match of content.matchAll(re)) {
       const raw = match[1];
       if (!raw) continue;
 

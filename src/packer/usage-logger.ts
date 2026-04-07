@@ -1,7 +1,6 @@
-import { existsSync, readFileSync, appendFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, appendFileSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
-import { execFileSync } from 'node:child_process';
 
 export interface PackRun {
   date: string;         // ISO 8601
@@ -21,16 +20,49 @@ export interface PackRun {
   duration?: number;     // pack duration in ms
 }
 
-/** Collect git context for a project root. Fast, non-blocking, never throws. */
+/** Collect git context by reading .git/ files directly — zero child_process. */
 export function getGitContext(root: string): { branch?: string; commit?: string; commitHash?: string; dirty?: number } {
   try {
-    const run = (args: string[]) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 3000 }).trim();
-    const branch = run(['rev-parse', '--abbrev-ref', 'HEAD']);
-    const commitHash = run(['rev-parse', '--short', 'HEAD']);
-    const commit = run(['log', '-1', '--format=%s']);
-    const status = run(['status', '--porcelain']);
-    const dirty = status ? status.split('\n').filter(l => l.trim()).length : 0;
-    return { branch, commit, commitHash, dirty };
+    const gitDir = join(root, '.git');
+    if (!existsSync(gitDir)) return {};
+
+    // Branch: read .git/HEAD
+    let branch: string | undefined;
+    const head = readFileSync(join(gitDir, 'HEAD'), 'utf8').trim();
+    if (head.startsWith('ref: refs/heads/')) {
+      branch = head.slice(16);
+    }
+
+    // Commit hash: resolve HEAD ref to full hash, take first 7 chars
+    let commitHash: string | undefined;
+    let commit: string | undefined;
+    if (branch) {
+      const refPath = join(gitDir, 'refs', 'heads', branch);
+      if (existsSync(refPath)) {
+        commitHash = readFileSync(refPath, 'utf8').trim().slice(0, 7);
+      }
+    } else if (/^[0-9a-f]{40}$/.test(head)) {
+      commitHash = head.slice(0, 7);
+    }
+
+    // Commit message: parse .git/COMMIT_EDITMSG or last line of reflog
+    const commitMsgPath = join(gitDir, 'COMMIT_EDITMSG');
+    if (existsSync(commitMsgPath)) {
+      commit = readFileSync(commitMsgPath, 'utf8').trim().split('\n')[0].slice(0, 100);
+    } else {
+      // Fallback: read reflog for last commit message
+      const reflogPath = join(gitDir, 'logs', 'HEAD');
+      if (existsSync(reflogPath)) {
+        const lines = readFileSync(reflogPath, 'utf8').trim().split('\n');
+        const last = lines[lines.length - 1] || '';
+        const msgMatch = last.match(/\t(.+)$/);
+        if (msgMatch) commit = msgMatch[1].replace(/^commit[^:]*: /, '').slice(0, 100);
+      }
+    }
+
+    // Dirty count: not available without git CLI, estimate from index mtime
+    // We skip dirty count to avoid child_process — it's a nice-to-have, not critical
+    return { branch, commit, commitHash };
   } catch {
     return {};
   }
