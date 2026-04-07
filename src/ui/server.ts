@@ -143,6 +143,9 @@ async function buildDashboardData(root: string): Promise<DashboardData> {
     languages: scan.languages,
     framework: scan.framework,
     testRunner: scan.testRunner,
+    topFile: files.length > 0
+      ? (() => { const sorted = [...files].sort((a, b) => b.tokens - a.tokens); return { path: sorted[0].relativePath, tokens: sorted[0].tokens }; })()
+      : undefined,
   };
 }
 

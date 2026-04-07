@@ -1114,6 +1114,7 @@ export interface DashboardData {
   languages: Array<{ name: string; percentage: number }>;
   framework: string | null;
   testRunner: string | null;
+  topFile?: { path: string; tokens: number };
 }
 
 export function renderDashboard(data: DashboardData, port: number): string {
@@ -1357,9 +1358,73 @@ export function renderDashboard(data: DashboardData, port: number): string {
     })();
     </script>`;
 
+  // Welcome screen for first-time users (no pack history)
+  const isFirstTime = data.recentRuns.length === 0 && data.today.sessions === 0;
+  const welcomeHtml = isFirstTime ? `
+    <div style="background:linear-gradient(135deg, var(--surface) 0%, rgba(63,185,80,0.08) 100%);border:1px solid var(--border);border-radius:16px;padding:40px;text-align:center;margin-bottom:24px;">
+      <div style="font-size:32px;margin-bottom:12px;">Welcome to Codebase Pilot</div>
+      <div style="color:var(--text-muted);font-size:14px;margin-bottom:24px;max-width:500px;margin-left:auto;margin-right:auto;">
+        Pack, compress, and optimize your codebase for AI. Save 60-90% tokens on every prompt.
+      </div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px 20px;text-align:left;max-width:200px;">
+          <div style="color:var(--blue);font-weight:700;font-size:13px;margin-bottom:6px;">Step 1</div>
+          <code style="font-size:11px;background:var(--surface);padding:4px 8px;border-radius:4px;">codebase-pilot pack --compress</code>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px 20px;text-align:left;max-width:200px;">
+          <div style="color:var(--purple);font-weight:700;font-size:13px;margin-bottom:6px;">Step 2</div>
+          <code style="font-size:11px;background:var(--surface);padding:4px 8px;border-radius:4px;">codebase-pilot scan-secrets</code>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px 20px;text-align:left;max-width:200px;">
+          <div style="color:var(--success);font-weight:700;font-size:13px;margin-bottom:6px;">Step 3</div>
+          <span style="font-size:12px;">Watch your savings grow here</span>
+        </div>
+      </div>
+    </div>` : '';
+
+  // Smart suggestions card
+  const suggestions: string[] = [];
+  if (data.topFile && data.topFile.tokens > 5000) {
+    suggestions.push(`<strong>${esc(data.topFile.path)}</strong> uses ${fmtNum(data.topFile.tokens)} tokens — consider splitting it into smaller modules`);
+  }
+  if (data.week.tokensSaved > 0 && data.week.tokensUsed > 0) {
+    const weekPct = Math.round((data.week.tokensSaved / (data.week.tokensSaved + data.week.tokensUsed)) * 100);
+    if (weekPct < 50) suggestions.push(`Your compression rate is ${weekPct}% this week — try <code>--compress</code> flag for 70%+ savings`);
+    else suggestions.push(`Great efficiency! ${weekPct}% tokens saved this week`);
+  }
+  if (data.recentRuns.length > 0 && !data.recentRuns.some(r => r.command?.includes('affected'))) {
+    suggestions.push('Try <code>pack --affected</code> for incremental packing — only packs changed files');
+  }
+  if (data.recentRuns.length > 0 && !data.recentRuns.some(r => r.command?.includes('prune'))) {
+    suggestions.push('Try <code>pack --prune &lt;file&gt;</code> for minimum AI context via import graph');
+  }
+
+  const suggestionsHtml = suggestions.length > 0 && !isFirstTime ? `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;">
+      <div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin-bottom:10px;letter-spacing:0.5px;">Suggestions</div>
+      ${suggestions.map(s => `<div style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--border);color:var(--text);">
+        <span style="color:var(--accent);margin-right:6px;">tip</span> ${s}
+      </div>`).join('')}
+    </div>` : '';
+
+  // Sparkline SVG for recent sessions (last 7 data points)
+  const sparkData = data.recentRuns.slice(0, 7).reverse().map(r => r.tokensRaw - r.tokensPacked);
+  const sparkMax = Math.max(...sparkData, 1);
+  const sparkPoints = sparkData.map((v, i) => {
+    const x = (i / Math.max(sparkData.length - 1, 1)) * 80 + 5;
+    const y = 25 - (v / sparkMax) * 20;
+    return `${x},${y}`;
+  }).join(' ');
+  const sparkSvg = sparkData.length >= 2 ? `
+    <svg width="90" height="30" viewBox="0 0 90 30" style="position:absolute;bottom:8px;right:8px;opacity:0.3;">
+      <polyline points="${sparkPoints}" fill="none" stroke="var(--success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>` : '';
+
   const body = `
     <h1 class="page-title">${esc(data.projectName)}</h1>
+    ${welcomeHtml}
     ${statCards}
+    ${suggestionsHtml}
     ${savingsChart}
     ${recentTable}
     ${projectInfo}
