@@ -2602,7 +2602,21 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
     </script>`;
 
   // User Prompts section (actual Claude Code prompts captured via hook)
-  const promptRows = data.promptLogs.slice(0, 100).map((p, i) => {
+  const PROMPT_INITIAL = 10;
+  const PROMPT_BATCH = 10;
+
+  // Build all rows as JSON for JS lazy loading
+  const allPromptsJson = JSON.stringify(data.promptLogs.map(p => ({
+    date: p.date,
+    project: p.project,
+    projectPath: p.projectPath,
+    prompt: p.prompt,
+    promptLength: p.promptLength,
+    branch: p.branch || '',
+    sessionId: p.sessionId || '',
+  })));
+
+  const promptRows = data.promptLogs.slice(0, PROMPT_INITIAL).map((p, i) => {
     const d = new Date(p.date);
     const timeStr = d.toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
     const branchBadge = p.branch
@@ -2619,6 +2633,14 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
     </tr>`;
   }).join('');
 
+  const showMoreBtn = data.promptLogs.length > PROMPT_INITIAL
+    ? `<div style="text-align:center;padding:12px;">
+        <button id="load-more-prompts" onclick="loadMorePrompts()" style="background:var(--surface);border:1px solid var(--border);color:var(--blue);cursor:pointer;padding:8px 24px;border-radius:8px;font-size:12px;font-weight:600;transition:all 0.2s;">
+          Show more <span id="prompts-remaining">(${data.promptLogs.length - PROMPT_INITIAL} more)</span>
+        </button>
+      </div>`
+    : '';
+
   const userPromptsHtml = data.promptLogs.length > 0 ? `
     <div class="table-wrap" style="margin-top:32px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
@@ -2629,9 +2651,48 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
         <thead><tr>
           <th>Time</th><th>Project</th><th>Branch</th><th>Prompt</th><th>Est. Tokens</th>
         </tr></thead>
-        <tbody>${promptRows}</tbody>
+        <tbody id="user-prompts-tbody">${promptRows}</tbody>
       </table>
-    </div>` : `
+      ${showMoreBtn}
+    </div>
+    <script>
+    (function() {
+      var allPrompts = ${allPromptsJson};
+      var loaded = ${PROMPT_INITIAL};
+      var batch = ${PROMPT_BATCH};
+      window.loadMorePrompts = function() {
+        var tbody = document.getElementById('user-prompts-tbody');
+        var end = Math.min(loaded + batch, allPrompts.length);
+        for (var i = loaded; i < end; i++) {
+          var p = allPrompts[i];
+          var d = new Date(p.date);
+          var timeStr = d.toLocaleString('en-GB', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+          var branchBadge = p.branch ? '<span class="badge" style="background:rgba(136,98,232,0.15);color:var(--purple);font-size:10px;">' + p.branch + '</span>' : '';
+          var truncated = p.prompt.length > 120 ? p.prompt.slice(0,120).replace(/</g,'&lt;').replace(/>/g,'&gt;') + '...' : p.prompt.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+          var estTok = p.promptLength > 0 ? '~' + Math.ceil(p.promptLength / 4) + ' tokens' : '';
+          var tr = document.createElement('tr');
+          tr.setAttribute('data-prompt', JSON.stringify(p));
+          tr.setAttribute('onclick', 'openUserPromptDrawer(this)');
+          tr.style.cssText = 'cursor:pointer;animation:fadeIn 0.3s ease both;';
+          tr.innerHTML = '<td class="mono" style="font-size:11px;color:var(--text-muted)">' + timeStr + '</td>'
+            + '<td><strong>' + p.project + '</strong></td>'
+            + '<td>' + branchBadge + '</td>'
+            + '<td style="max-width:500px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + truncated + '</td>'
+            + '<td class="mono" style="font-size:11px;color:var(--text-dim)">' + estTok + '</td>';
+          tbody.appendChild(tr);
+        }
+        loaded = end;
+        var remaining = allPrompts.length - loaded;
+        if (remaining <= 0) {
+          var btn = document.getElementById('load-more-prompts');
+          if (btn) btn.parentNode.removeChild(btn);
+        } else {
+          var span = document.getElementById('prompts-remaining');
+          if (span) span.textContent = '(' + remaining + ' more)';
+        }
+      };
+    })();
+    </script>` : `
     <div style="margin-top:32px;padding:24px;background:var(--surface);border-radius:12px;border:1px solid var(--border);text-align:center;">
       <div style="font-size:14px;color:var(--text-muted);margin-bottom:8px;">No prompts captured yet</div>
       <div style="font-size:12px;color:var(--text-dim);">Run <code style="background:var(--bg);padding:2px 6px;border-radius:4px;">codebase-pilot init</code> in your project to auto-configure Claude Code prompt tracking.</div>
