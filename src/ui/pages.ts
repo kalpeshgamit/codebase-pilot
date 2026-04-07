@@ -2246,7 +2246,11 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
       </div>
     </div>`;
 
-  const rows = data.runs.map((r, i) => {
+  const SESSIONS_INITIAL = 10;
+  const SESSIONS_BATCH = 10;
+  const allSessionsJson = JSON.stringify(data.runs);
+
+  const rows = data.runs.slice(0, SESSIONS_INITIAL).map((r, i) => {
     const raw = r.tokensRaw ?? 0;
     const packed = r.tokensPacked ?? 0;
     const saved = raw - packed;
@@ -2302,7 +2306,68 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
         </tr></thead>
         <tbody id="prompts-tbody">${rows}</tbody>
       </table>
+      ${data.runs.length > SESSIONS_INITIAL ? `<div style="text-align:center;padding:12px;">
+        <button id="load-more-sessions" onclick="loadMoreSessions()" style="background:var(--surface);border:1px solid var(--border);color:var(--success);cursor:pointer;padding:8px 24px;border-radius:8px;font-size:12px;font-weight:600;transition:all 0.2s;">
+          Show more <span id="sessions-remaining">(${data.runs.length - SESSIONS_INITIAL} more)</span>
+        </button>
+      </div>` : ''}
     </div>`;
+
+  const sessionsLazyScript = `
+    <script>
+    (function() {
+      var allSessions = ${allSessionsJson};
+      var loaded = ${SESSIONS_INITIAL};
+      var batch = ${SESSIONS_BATCH};
+      function escH(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+      window.loadMoreSessions = function() {
+        var tbody = document.getElementById('prompts-tbody');
+        var end = Math.min(loaded + batch, allSessions.length);
+        for (var i = loaded; i < end; i++) {
+          var r = allSessions[i];
+          var raw = r.tokensRaw || 0, packed = r.tokensPacked || 0;
+          var saved = raw - packed;
+          var pct = raw > 0 ? Math.round((saved/raw)*100) : 0;
+          var d = new Date(r.date);
+          var timeStr = d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+          var compress = r.compressed ? '<span class="badge badge-green">compressed</span>' : '';
+          var agent = r.agent ? '<span class="badge badge-blue">' + escH(r.agent) + '</span>' : '';
+          var pctColor = pct >= 60 ? 'var(--success)' : pct >= 30 ? '#ff6800' : 'var(--text-muted)';
+          var savedDisp = saved > 0 ? saved.toLocaleString('en-US') : '<span style="color:var(--text-muted)">—</span>';
+          var pctDisp = pct > 0 ? '<span style="color:'+pctColor+';font-weight:600">'+pct+'%</span>' : '<span style="color:var(--text-muted)">—</span>';
+          var branchHtml = r.branch ? '<span class="badge" style="background:rgba(136,98,232,0.15);color:var(--purple);font-size:10px;">'+escH(r.branch)+'</span>' : '<span style="color:var(--text-dim)">—</span>';
+          var dirtyHtml = r.dirty && r.dirty > 0 ? ' <span style="color:#ff6800;font-size:9px;">+'+r.dirty+'</span>' : '';
+          var commitHtml = r.commit ? '<span style="font-size:10px;" title="'+(r.commitHash||'')+'">'+escH((r.commit||'').slice(0,40))+(r.commit&&r.commit.length>40?'…':'')+'</span>' : '';
+          var durHtml = r.duration ? '<span style="font-size:10px;color:var(--text-dim)">'+(r.duration/1000).toFixed(1)+'s</span>' : '';
+          var tr = document.createElement('tr');
+          tr.setAttribute('data-run', JSON.stringify(r));
+          tr.setAttribute('onclick', 'openPromptDrawer(this)');
+          tr.style.cssText = 'cursor:pointer;animation:fadeIn 0.3s ease both;';
+          tr.innerHTML = '<td class="mono" style="font-size:11px;color:var(--text-muted)">' + escH(timeStr) + '</td>'
+            + '<td><strong>' + escH(r.project) + '</strong></td>'
+            + '<td>' + branchHtml + dirtyHtml + '</td>'
+            + '<td style="font-size:11px;">' + commitHtml + '</td>'
+            + '<td>' + escH(r.command) + ' ' + compress + agent + '</td>'
+            + '<td class="mono">' + r.files + '</td>'
+            + '<td class="mono" style="color:#ff6800">' + raw.toLocaleString('en-US') + '</td>'
+            + '<td class="mono" style="color:var(--accent)">' + packed.toLocaleString('en-US') + '</td>'
+            + '<td class="mono">' + savedDisp + '</td>'
+            + '<td class="mono">' + pctDisp + '</td>'
+            + '<td>' + durHtml + '</td>';
+          tbody.appendChild(tr);
+        }
+        loaded = end;
+        var remaining = allSessions.length - loaded;
+        if (remaining <= 0) {
+          var btn = document.getElementById('load-more-sessions');
+          if (btn) btn.parentNode.removeChild(btn);
+        } else {
+          var span = document.getElementById('sessions-remaining');
+          if (span) span.textContent = '(' + remaining + ' more)';
+        }
+      };
+    })();
+    </script>`;
 
   const sseScript = `
     <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} @keyframes rowSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}</style>
@@ -2704,6 +2769,7 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
     ${summaryCards}
     ${userPromptsHtml}
     ${tableHtml}
+    ${sessionsLazyScript}
     ${sseScript}
     ${drawerHtml}`;
 
