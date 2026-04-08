@@ -1,6 +1,6 @@
 {
   "name": "codebase-pilot-cli",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "description": "Claude Code context engine — pack, compress, and optimize any codebase for AI. Save 60-90% tokens.",
   "type": "module",
   "main": "dist/index.js",
