@@ -122,74 +122,44 @@ codebase-pilot service   # auto-starts on login, tracks forever
 
 ## How It Works
 
-<table>
-<tr>
-<td width="50%">
+```
+Your Codebase → scan → detect → pack → compress → security scan → AI-ready output
+   150K tokens                                              → 41K tokens (~$0.12/prompt)
+```
 
-**Architecture Pipeline**
+**The Pipeline:**
 
-Your codebase goes through scan → detect → pack → compress → security scan → output. 98K tokens becomes 7K.
+| Step | What happens | Impact |
+|------|-------------|--------|
+| **Scan** | Detect languages, frameworks, databases, test runners | 76 languages, 58 frameworks |
+| **Pack** | Collect files, apply agent scoping, format as XML/MD | Structured AI context |
+| **Compress** | Keep signatures, fold function bodies | 70% token reduction |
+| **Security** | 180 pattern secret scan, auto-exclude detected files | Zero leaked credentials |
+| **`--affected`** | SHA-256 hash — only pack changed files | 95%+ savings on iterations |
+| **`--prune`** | Import graph traversal — minimum viable context | Only files that matter |
 
-<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/diagrams/pipeline.png" alt="How codebase-pilot works" width="100%" />
-
-</td>
-<td width="50%">
-
-**Token Savings**
-
-Compression alone saves 70%. Add agent scoping for 93% reduction.
-
-<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/diagrams/savings.png" alt="Token savings comparison" width="100%" />
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-**Blast Radius Analysis**
-
-Change a file → see every dependent, transitive import, and affected test. Risk scored 0–100.
-
-<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/diagrams/blast-radius.png" alt="Blast radius analysis" width="100%" />
-
-</td>
-<td width="50%">
-
-**Agent Layer Architecture**
-
-7 layers — haiku for extraction, sonnet for implementation, opus for review gates.
-
-<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/diagrams/agent-layers.png" alt="Agent layer architecture" width="100%" />
-
-</td>
-</tr>
-<tr>
-<td colspan="2">
-
-**Multi-Platform Support** — one command generates configs for Claude Code, Cursor, Windsurf, and OpenAI Codex.
-
-<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/diagrams/platforms.png" alt="Multi-platform support" width="100%" />
-
-</td>
-</tr>
-</table>
+**Result:** 150K tokens → 41K packed → **$0.12/prompt instead of $0.45** (saves $0.33 per prompt, ~$36/week for active use).
 
 ---
 
 ## Token Savings
 
-The `tokens` command tracks your actual savings over time:
+```bash
+codebase-pilot pack --compress
 
+  Files:    104 packed
+  Tokens:   ~41,496 (compressed from ~150,810, 72% reduction)
+  Cost:     ~$0.12 per prompt (saved ~$0.33)
 ```
-  Savings estimate (per session):
-    Without codebase-pilot:   ~98,798 tokens
-    With pack --compress:      ~29,274 tokens
-    Pilot saves:              ~69,524 tokens per session
 
-  Your savings (from pack runs):
-    Today:      3 sessions  — ~92,232 tokens saved
-    This week:  5 sessions  — ~147,498 tokens saved
+```bash
+codebase-pilot compare
+
+  Token impact: +16,845 tokens (+$0.05 per prompt)
+  Total now:    156,334 tokens (~$0.47/prompt)
 ```
+
+The dashboard tracks savings over time: `$36.25 saved this week` — real dollars, not abstract tokens.
 
 ---
 
@@ -224,40 +194,42 @@ codebase-pilot service --uninstall
 Open the dashboard days or weeks later — all your token history is already there.
 
 ### Dashboard
-Live stat cards (K/M/B abbreviated), savings chart, recent sessions — auto-updates via WebSocket.
+Health score, sparklines, 7-day trend chart, $ cost, smart suggestions — dark navy theme with animated gradient branding.
 
 <img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/dashboard.png" alt="Dashboard" width="100%" />
 
-### Prompts (All Sessions)
-User prompts from Claude Code + pack sessions with git context (branch, commit, dirty files). Click any row for detail drawer with token breakdown + savings bar.
+### Prompts
+User prompts from Claude Code (via hooks) + all pack sessions with git context (branch, commit, dirty files). Click any row for detail drawer.
 
-### Projects (System-Wide)
-All projects in one view — sessions, tokens saved, efficiency per project.
+<img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/prompts.png" alt="Prompts" width="100%" />
+
+### Projects
+Cross-project comparison chart, efficiency progress bars, savings by project. System-wide token tracking.
 
 <img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/projects.png" alt="Projects" width="100%" />
 
 ### Import Graph
-Interactive D3.js force-directed graph. Nodes sized by tokens, colored by module. Drag, zoom, search.
+Interactive D3.js force-directed graph with stats overlay (nodes, edges, directories). Click nodes for blast radius.
 
 <img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/graph.png" alt="Import Graph" width="100%" />
 
 ### Search
-Full-text search with BM25 ranking. Highlighted matches with file path + line number.
+Full-text BM25 search with quick-search tips, result count badge, highlighted matches with file path + line number.
 
 <img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/search.png" alt="Search" width="100%" />
 
 ### Agents
-Layer architecture, model assignment, context paths, dependencies.
+Summary stats with model cost indicators (Haiku $, Opus $$$$), layer architecture, agent cards with context paths.
 
 <img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/agents.png" alt="Agents" width="100%" />
 
 ### Files
-All files with token counts, language tags, percentage of total.
+File size warnings (red L >10K, orange M >5K tokens), language distribution, per-file token breakdown with lazy loading.
 
 <img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/files.png" alt="Files" width="100%" />
 
 ### Security
-Pattern categories, risk levels, detected secrets — side by side.
+97% health score badge, risk distribution chart (critical/high/medium/low), pattern categories, detected secrets with drawer.
 
 <img src="https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/docs/screenshots/security.png" alt="Security" width="100%" />
 
