@@ -12,7 +12,7 @@
   <a href="https://img.shields.io/npm/dm/codebase-pilot-cli"><img src="https://img.shields.io/npm/dm/codebase-pilot-cli?style=flat-square&color=blue&label=downloads" alt="downloads" /></a>
   <a href="https://github.com/kalpeshgamit/codebase-pilot/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/kalpeshgamit/codebase-pilot/ci.yml?style=flat-square&label=CI" alt="CI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" /></a>
-  <a href="https://safeskill.dev/scan/kalpeshgamit-codebase-pilot"><img src="https://safeskill.dev/api/badge/kalpeshgamit-codebase-pilot?v=0.8.2" alt="SafeSkill" /></a>
+  <a href="https://safeskill.dev/scan/kalpeshgamit-codebase-pilot"><img src="https://safeskill.dev/api/badge/kalpeshgamit-codebase-pilot?v=1.0.0" alt="SafeSkill" /></a>
 </p>
 
 <p align="center">
