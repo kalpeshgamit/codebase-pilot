@@ -254,7 +254,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
 
 
   .sidebar-brand img {
-    width: 150px;
+    width: 200px;
     height: auto;
     margin-bottom: 6px;
     filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
@@ -1019,7 +1019,7 @@ window.CpSocket = (function() {
       <div class="jet-wrapper">
         <img src="${LOGO_DATA_URI || '/static/logo.png'}" alt="codebase-pilot" onerror="this.style.display='none'" />
       </div>
-      <div class="brand-text" style="margin-top:-6px;text-align:center;"><span style="display:block;font-size:20px;line-height:1.15;">Codebase</span><span style="display:block;font-size:26px;line-height:1.15;">Pilot</span></div>
+      <div class="brand-text" style="margin-top:-6px;text-align:center;">Codebase Pilot</div>
     </div>
     <nav>
       ${navItems}
