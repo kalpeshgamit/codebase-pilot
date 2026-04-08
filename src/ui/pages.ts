@@ -87,6 +87,8 @@ function layout(title: string, activePage: string, body: string, port: number, h
     --surface: #161b22;
     --surface-hover: #1c2129;
     --border: #30363d;
+    --glass: rgba(22, 27, 34, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.06);
     --text: #e6edf3;
     --text-muted: #8b949e;
     --text-dim: #484f58;
@@ -103,6 +105,8 @@ function layout(title: string, activePage: string, body: string, port: number, h
     --surface: #ffffff;
     --surface-hover: #f0f4f8;
     --border: #d8dee4;
+    --glass: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(0, 0, 0, 0.06);
     --text: #1a1a2e;
     --text-muted: #4a5568;
     --text-dim: #718096;
@@ -148,8 +152,10 @@ function layout(title: string, activePage: string, body: string, port: number, h
   .sidebar {
     width: 220px;
     height: 100vh;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
+    background: var(--glass);
+    backdrop-filter: blur(24px) saturate(1.3);
+    -webkit-backdrop-filter: blur(24px) saturate(1.3);
+    border-right: 1px solid var(--glass-border);
     display: flex;
     flex-direction: column;
     position: fixed;
@@ -157,6 +163,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
     left: 0;
     bottom: 0;
     z-index: 50;
+    box-shadow: 2px 0 20px rgba(0,0,0,0.15);
   }
 
   @keyframes exhaust {
@@ -387,10 +394,8 @@ function layout(title: string, activePage: string, body: string, port: number, h
   body.light .sidebar-brand img { filter: drop-shadow(0 2px 8px rgba(0,0,0,0.12)); }
   body.light .sidebar nav a:hover { background: #e8f5e9; }
   body.light .sidebar nav a.active { background: #e8f5e9; color: #16a34a; border-color: #16a34a; }
-  body.light .card { background: #ffffff; border-color: #e2e8f0; backdrop-filter: none; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
-  body.light .card:hover { box-shadow: 0 4px 16px rgba(22,163,74,0.1); border-color: #16a34a; }
   body.light .card-value { color: #1a1a2e; }
-  body.light .table-wrap { background: #ffffff; backdrop-filter: none; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  body.light .sidebar { background: rgba(255,255,255,0.8); box-shadow: 2px 0 20px rgba(0,0,0,0.06); }
   body.light thead th { background: #f8fafb; }
   body.light .badge-blue { background: #e8f5e9; color: #16a34a; }
   body.light .badge-green { background: #e8f5e9; color: #16a34a; border-color: #a7f3d0; }
@@ -413,6 +418,11 @@ function layout(title: string, activePage: string, body: string, port: number, h
     height: 100vh;
     overflow-y: auto;
     animation: fadeIn 0.3s ease both;
+    background-image:
+      linear-gradient(var(--glass-border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--glass-border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: -1px -1px;
   }
 
   /* Responsive */
@@ -443,25 +453,37 @@ function layout(title: string, activePage: string, body: string, port: number, h
   }
 
   .card {
-    background: rgba(22, 27, 34, 0.8);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(48, 54, 61, 0.5);
-    border-radius: 12px;
+    background: var(--glass);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
     padding: 20px;
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
     animation: fadeIn 0.4s ease both;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.04);
   }
 
   .card:nth-child(1) { animation-delay: 0.05s; }
   .card:nth-child(2) { animation-delay: 0.1s; }
   .card:nth-child(3) { animation-delay: 0.15s; }
   .card:nth-child(4) { animation-delay: 0.2s; }
+  .card:nth-child(5) { animation-delay: 0.25s; }
 
   .card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(63, 185, 80, 0.3);
-    box-shadow: 0 4px 24px rgba(63, 185, 80, 0.08);
+    transform: translateY(-3px);
+    border-color: rgba(63, 185, 80, 0.25);
+    box-shadow: 0 8px 32px rgba(63, 185, 80, 0.1), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
+  body.light .card {
+    background: rgba(255,255,255,0.7);
+    border-color: rgba(0,0,0,0.06);
+    box-shadow: 0 2px 16px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8);
+  }
+  body.light .card:hover {
+    box-shadow: 0 8px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
+    border-color: rgba(22,163,74,0.2);
   }
 
   .card-label {
@@ -495,15 +517,22 @@ function layout(title: string, activePage: string, body: string, port: number, h
 
   /* Tables */
   .table-wrap {
-    background: rgba(22, 27, 34, 0.8);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(48, 54, 61, 0.5);
-    border-radius: 12px;
+    background: var(--glass);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
     overflow: hidden;
     margin-bottom: 24px;
     animation: fadeIn 0.5s ease both;
     animation-delay: 0.2s;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+
+  body.light .table-wrap {
+    background: rgba(255,255,255,0.7);
+    border-color: rgba(0,0,0,0.06);
+    box-shadow: 0 2px 16px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8);
   }
 
   .table-wrap h3 {
