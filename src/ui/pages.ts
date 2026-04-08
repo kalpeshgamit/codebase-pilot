@@ -81,14 +81,15 @@ function layout(title: string, activePage: string, body: string, port: number, h
 <title>${title} - codebase-pilot</title>
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
 
   :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --surface-hover: #1c2129;
-    --border: #30363d;
-    --glass: rgba(22, 27, 34, 0.6);
-    --glass-border: rgba(255, 255, 255, 0.06);
+    --bg: #141824;
+    --surface: #1a1e2e;
+    --surface-hover: #222738;
+    --border: #2a2f42;
+    --glass: rgba(26, 30, 46, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.05);
     --text: #e6edf3;
     --text-muted: #8b949e;
     --text-dim: #484f58;
@@ -121,13 +122,28 @@ function layout(title: string, activePage: string, body: string, port: number, h
   html { scroll-behavior: smooth; }
 
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
   @keyframes slideIn {
-    from { opacity: 0; transform: translateX(-8px); }
+    from { opacity: 0; transform: translateX(-10px); }
     to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes slideCard {
+    from { opacity: 0; transform: translateY(16px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  @keyframes subtlePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
   }
 
   @keyframes barGrow {
@@ -152,10 +168,8 @@ function layout(title: string, activePage: string, body: string, port: number, h
   .sidebar {
     width: 220px;
     height: 100vh;
-    background: var(--glass);
-    backdrop-filter: blur(24px) saturate(1.3);
-    -webkit-backdrop-filter: blur(24px) saturate(1.3);
-    border-right: 1px solid var(--glass-border);
+    background: var(--bg);
+    border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     position: fixed;
@@ -163,7 +177,6 @@ function layout(title: string, activePage: string, body: string, port: number, h
     left: 0;
     bottom: 0;
     z-index: 50;
-    box-shadow: 2px 0 20px rgba(0,0,0,0.15);
   }
 
   @keyframes exhaust {
@@ -316,9 +329,11 @@ function layout(title: string, activePage: string, body: string, port: number, h
     padding: 12px 14px;
     border-radius: 8px;
     color: var(--text-muted);
-    font-size: 15px;
-    transition: all 0.2s ease;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     text-decoration: none;
+    letter-spacing: 0.01em;
   }
 
   .sidebar nav a:hover {
@@ -395,7 +410,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
   body.light .sidebar nav a:hover { background: #e8f5e9; }
   body.light .sidebar nav a.active { background: #e8f5e9; color: #16a34a; border-color: #16a34a; }
   body.light .card-value { color: #1a1a2e; }
-  body.light .sidebar { background: rgba(255,255,255,0.8); box-shadow: 2px 0 20px rgba(0,0,0,0.06); }
+  body.light .sidebar { background: #ffffff; box-shadow: 1px 0 4px rgba(0,0,0,0.04); }
   body.light thead th { background: #f8fafb; }
   body.light .badge-blue { background: #e8f5e9; color: #16a34a; }
   body.light .badge-green { background: #e8f5e9; color: #16a34a; border-color: #a7f3d0; }
@@ -418,11 +433,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
     height: 100vh;
     overflow-y: auto;
     animation: fadeIn 0.3s ease both;
-    background-image:
-      linear-gradient(var(--glass-border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--glass-border) 1px, transparent 1px);
-    background-size: 40px 40px;
-    background-position: -1px -1px;
+    background: var(--bg);
   }
 
   /* Responsive */
@@ -453,15 +464,25 @@ function layout(title: string, activePage: string, body: string, port: number, h
   }
 
   .card {
-    background: var(--glass);
-    backdrop-filter: blur(20px) saturate(1.2);
-    -webkit-backdrop-filter: blur(20px) saturate(1.2);
-    border: 1px solid var(--glass-border);
-    border-radius: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
     padding: 20px;
-    transition: all 0.25s ease;
-    animation: fadeIn 0.4s ease both;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.04);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideCard 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Subtle top highlight line */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
   }
 
   .card:nth-child(1) { animation-delay: 0.05s; }
@@ -471,20 +492,18 @@ function layout(title: string, activePage: string, body: string, port: number, h
   .card:nth-child(5) { animation-delay: 0.25s; }
 
   .card:hover {
-    transform: translateY(-3px);
-    border-color: rgba(63, 185, 80, 0.25);
-    box-shadow: 0 8px 32px rgba(63, 185, 80, 0.1), inset 0 1px 0 rgba(255,255,255,0.06);
+    transform: translateY(-2px);
+    border-color: rgba(63, 185, 80, 0.35);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(63, 185, 80, 0.1);
   }
 
   body.light .card {
-    background: rgba(255,255,255,0.7);
-    border-color: rgba(0,0,0,0.06);
-    box-shadow: 0 2px 16px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8);
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
-  body.light .card:hover {
-    box-shadow: 0 8px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
-    border-color: rgba(22,163,74,0.2);
-  }
+  body.light .card::before { background: linear-gradient(90deg, transparent, rgba(0,0,0,0.03), transparent); }
+  body.light .card:hover { transform: translateY(-2px); border-color: rgba(22,163,74,0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
 
   .card-label {
     font-size: 12px;
@@ -517,22 +536,19 @@ function layout(title: string, activePage: string, body: string, port: number, h
 
   /* Tables */
   .table-wrap {
-    background: var(--glass);
-    backdrop-filter: blur(20px) saturate(1.2);
-    -webkit-backdrop-filter: blur(20px) saturate(1.2);
-    border: 1px solid var(--glass-border);
-    border-radius: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
     overflow: hidden;
     margin-bottom: 24px;
     animation: fadeIn 0.5s ease both;
     animation-delay: 0.2s;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.04);
   }
 
   body.light .table-wrap {
-    background: rgba(255,255,255,0.7);
-    border-color: rgba(0,0,0,0.06);
-    box-shadow: 0 2px 16px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8);
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
   }
 
   .table-wrap h3 {
