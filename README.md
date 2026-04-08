@@ -16,22 +16,30 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white" alt="macOS" />
-  <img src="https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black" alt="Linux" />
-  <img src="https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white" alt="Windows" />
-  <img src="https://img.shields.io/badge/Ubuntu-E95420?style=flat-square&logo=ubuntu&logoColor=white" alt="Ubuntu" />
-  <img src="https://img.shields.io/badge/Alpine-0D597F?style=flat-square&logo=alpinelinux&logoColor=white" alt="Alpine" />
-  <img src="https://img.shields.io/badge/Debian-A81D33?style=flat-square&logo=debian&logoColor=white" alt="Debian" />
-  <img src="https://img.shields.io/badge/Node%20%E2%89%A518-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node" />
-  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/macOS-passing-000000?style=flat-square&logo=apple&logoColor=white" alt="macOS" />
+  <img src="https://img.shields.io/badge/Linux-passing-FCC624?style=flat-square&logo=linux&logoColor=black" alt="Linux" />
+  <img src="https://img.shields.io/badge/Windows-passing-0078D6?style=flat-square&logo=windows&logoColor=white" alt="Windows" />
+  <img src="https://img.shields.io/badge/Ubuntu-passing-E95420?style=flat-square&logo=ubuntu&logoColor=white" alt="Ubuntu" />
+  <img src="https://img.shields.io/badge/Alpine-passing-0D597F?style=flat-square&logo=alpinelinux&logoColor=white" alt="Alpine" />
+  <img src="https://img.shields.io/badge/Debian-passing-A81D33?style=flat-square&logo=debian&logoColor=white" alt="Debian" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Node%2018-passing-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node 18" />
+  <img src="https://img.shields.io/badge/Node%2020-passing-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node 20" />
+  <img src="https://img.shields.io/badge/Node%2022-passing-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node 22" />
+  <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/tests-143%20passed-brightgreen?style=flat-square" alt="Tests" />
+  <img src="https://img.shields.io/badge/build-passing-brightgreen?style=flat-square" alt="Build" />
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Claude%20Code-Plugin-blueviolet?style=flat-square&logo=anthropic&logoColor=white" alt="Claude Code" />
-  <img src="https://img.shields.io/badge/Cursor-Supported-blue?style=flat-square&logo=cursor&logoColor=white" alt="Cursor" />
+  <img src="https://img.shields.io/badge/Cursor-Supported-blue?style=flat-square" alt="Cursor" />
   <img src="https://img.shields.io/badge/Windsurf-Supported-blue?style=flat-square" alt="Windsurf" />
-  <img src="https://img.shields.io/badge/MCP-10%20Tools-orange?style=flat-square" alt="MCP" />
-  <img src="https://img.shields.io/badge/GitHub%20Action-Available-2088FF?style=flat-square&logo=githubactions&logoColor=white" alt="GitHub Action" />
+  <img src="https://img.shields.io/badge/MCP-10%20Tools%20%C2%B7%203%20Prompts-orange?style=flat-square" alt="MCP" />
+  <img src="https://img.shields.io/badge/GitHub%20Action-Marketplace-2088FF?style=flat-square&logo=githubactions&logoColor=white" alt="GitHub Action" />
+  <img src="https://img.shields.io/badge/security-180%20patterns-red?style=flat-square" alt="Security" />
 </p>
 
 ---
