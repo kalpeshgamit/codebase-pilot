@@ -216,17 +216,19 @@ function layout(title: string, activePage: string, body: string, port: number, h
     width: 150px;
     height: auto;
     margin-bottom: 6px;
-    filter: drop-shadow(0 2px 12px rgba(0,0,0,0.4));
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     animation: jetHover 3s ease-in-out infinite;
   }
 
   .sidebar-brand:hover img {
-    filter: drop-shadow(0 0 20px rgba(63,185,80,0.7)) drop-shadow(0 0 40px rgba(255,104,0,0.35)) drop-shadow(0 2px 12px rgba(0,0,0,0.4));
+    filter: drop-shadow(0 0 16px rgba(63,185,80,0.5)) drop-shadow(0 0 32px rgba(88,166,255,0.3)) drop-shadow(0 0 48px rgba(167,139,250,0.2));
     animation: jetHover 1.5s ease-in-out infinite;
+    transform: scale(1.02);
   }
 
   body.light .sidebar-brand:hover img {
-    filter: drop-shadow(0 0 16px rgba(22,163,74,0.6)) drop-shadow(0 0 30px rgba(255,104,0,0.25)) drop-shadow(0 2px 8px rgba(0,0,0,0.15));
+    filter: drop-shadow(0 0 12px rgba(22,163,74,0.4)) drop-shadow(0 0 24px rgba(37,99,235,0.2)) drop-shadow(0 0 36px rgba(124,58,237,0.15));
   }
 
   /* Tooltip */
@@ -291,19 +293,34 @@ function layout(title: string, activePage: string, body: string, port: number, h
 
   .brand-text {
     font-family: 'Space Grotesk', system-ui, sans-serif;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 700;
     letter-spacing: -0.5px;
-    background: linear-gradient(135deg, var(--accent), #2ea043);
+    background: linear-gradient(90deg, var(--accent), #58a6ff, #a78bfa, var(--accent));
+    background-size: 300% 100%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    animation: brandShimmer 6s ease-in-out infinite;
+  }
+
+  @keyframes brandShimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .sidebar-brand:hover .brand-text {
+    animation-duration: 2s;
   }
 
   body.light .brand-text {
-    background: linear-gradient(135deg, #16a34a, #059669);
+    background: linear-gradient(90deg, #16a34a, #2563eb, #7c3aed, #16a34a);
+    background-size: 300% 100%;
     -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
     background-clip: text;
+    animation: brandShimmer 6s ease-in-out infinite;
   }
 
   .sidebar-brand .brand-meta {
