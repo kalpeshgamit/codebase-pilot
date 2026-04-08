@@ -55,20 +55,26 @@ const T = {
 
 function layout(title: string, activePage: string, body: string, port: number, headExtra = ''): string {
   const nav = [
-    { href: '/', label: 'Dashboard', icon: 'layout-dashboard' },
-    { href: '/projects', label: 'Projects', icon: 'folder-kanban' },
-    { href: '/prompts', label: 'Prompts', icon: 'history' },
-    { href: '/graph', label: 'Graph', icon: 'git-branch' },
-    { href: '/search', label: 'Search', icon: 'search' },
-    { href: '/agents', label: 'Agents', icon: 'bot' },
-    { href: '/files', label: 'Files', icon: 'file-code-2' },
-    { href: '/security', label: 'Security', icon: 'shield-check' },
+    { href: '/', label: 'Dashboard', icon: 'layout-dashboard', color: '#3fb950', gradient: 'linear-gradient(135deg, #3fb950, #2ea043)' },
+    { href: '/projects', label: 'Projects', icon: 'folder-kanban', color: '#58a6ff', gradient: 'linear-gradient(135deg, #58a6ff, #388bfd)' },
+    { href: '/prompts', label: 'Prompts', icon: 'history', color: '#ff6800', gradient: 'linear-gradient(135deg, #ff6800, #e85d04)' },
+    { href: '/graph', label: 'Graph', icon: 'git-branch', color: '#a78bfa', gradient: 'linear-gradient(135deg, #a78bfa, #8b5cf6)' },
+    { href: '/search', label: 'Search', icon: 'search', color: '#f0c000', gradient: 'linear-gradient(135deg, #f0c000, #d29922)' },
+    { href: '/agents', label: 'Agents', icon: 'bot', color: '#f778ba', gradient: 'linear-gradient(135deg, #f778ba, #db61a2)' },
+    { href: '/files', label: 'Files', icon: 'file-code-2', color: '#79c0ff', gradient: 'linear-gradient(135deg, #79c0ff, #58a6ff)' },
+    { href: '/security', label: 'Security', icon: 'shield-check', color: '#f85149', gradient: 'linear-gradient(135deg, #f85149, #da3633)' },
   ];
 
   const navItems = nav
     .map(n => {
-      const active = n.href === activePage ? ' class="active"' : '';
-      return `<a href="${n.href}"${active}><i data-lucide="${n.icon}" class="nav-icon"></i>${n.label}</a>`;
+      const isActive = n.href === activePage;
+      const cls = isActive ? ' class="active"' : '';
+      const activeStyle = isActive ? ` style="border-left:3px solid ${n.color};background:${n.color}15;"` : '';
+      const iconStyle = isActive ? ` style="color:${n.color}"` : '';
+      const labelStyle = isActive
+        ? ` style="background:${n.gradient};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:700;"`
+        : '';
+      return `<a href="${n.href}"${cls}${activeStyle} data-color="${n.color}"><i data-lucide="${n.icon}" class="nav-icon"${iconStyle}></i><span${labelStyle}>${n.label}</span></a>`;
     })
     .join('\n        ');
 
@@ -358,12 +364,8 @@ function layout(title: string, activePage: string, body: string, port: number, h
     color: var(--text);
     text-decoration: none;
   }
-
   .sidebar nav a.active {
-    background: rgba(63, 185, 80, 0.12);
-    color: var(--accent);
     font-weight: 600;
-    border-left: 3px solid var(--accent);
     padding-left: 11px;
   }
 
@@ -994,6 +996,29 @@ function toggleTheme() {
   }
   // Initialize Lucide icons
   if (window.lucide) lucide.createIcons();
+
+  // Nav item hover colors from data-color
+  document.querySelectorAll('.sidebar nav a[data-color]').forEach(function(a) {
+    var color = a.getAttribute('data-color');
+    a.addEventListener('mouseenter', function() {
+      if (!a.classList.contains('active')) {
+        a.style.borderLeft = '3px solid ' + color;
+        a.style.paddingLeft = '11px';
+        a.style.background = color + '12';
+        a.querySelector('.nav-icon').style.color = color;
+        a.querySelector('span').style.color = color;
+      }
+    });
+    a.addEventListener('mouseleave', function() {
+      if (!a.classList.contains('active')) {
+        a.style.borderLeft = '';
+        a.style.paddingLeft = '';
+        a.style.background = '';
+        a.querySelector('.nav-icon').style.color = '';
+        a.querySelector('span').style.color = '';
+      }
+    });
+  });
 
   // Tooltip system
   (function() {
