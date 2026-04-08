@@ -9,10 +9,29 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/codebase-pilot-cli"><img src="https://img.shields.io/npm/v/codebase-pilot-cli?style=flat-square&color=blue" alt="npm" /></a>
+  <a href="https://img.shields.io/npm/dm/codebase-pilot-cli"><img src="https://img.shields.io/npm/dm/codebase-pilot-cli?style=flat-square&color=blue&label=downloads" alt="downloads" /></a>
   <a href="https://github.com/kalpeshgamit/codebase-pilot/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/kalpeshgamit/codebase-pilot/ci.yml?style=flat-square&label=CI" alt="CI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" /></a>
-  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%E2%89%A518-brightgreen?style=flat-square" alt="Node" /></a>
-  <a href="https://safeskill.dev/scan/kalpeshgamit-codebase-pilot"><img src="https://safeskill.dev/api/badge/kalpeshgamit-codebase-pilot?v=0.5.5" alt="SafeSkill" /></a>
+  <a href="https://safeskill.dev/scan/kalpeshgamit-codebase-pilot"><img src="https://safeskill.dev/api/badge/kalpeshgamit-codebase-pilot?v=0.8.2" alt="SafeSkill" /></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white" alt="macOS" />
+  <img src="https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black" alt="Linux" />
+  <img src="https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white" alt="Windows" />
+  <img src="https://img.shields.io/badge/Ubuntu-E95420?style=flat-square&logo=ubuntu&logoColor=white" alt="Ubuntu" />
+  <img src="https://img.shields.io/badge/Alpine-0D597F?style=flat-square&logo=alpinelinux&logoColor=white" alt="Alpine" />
+  <img src="https://img.shields.io/badge/Debian-A81D33?style=flat-square&logo=debian&logoColor=white" alt="Debian" />
+  <img src="https://img.shields.io/badge/Node%20%E2%89%A518-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node" />
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Claude%20Code-Plugin-blueviolet?style=flat-square&logo=anthropic&logoColor=white" alt="Claude Code" />
+  <img src="https://img.shields.io/badge/Cursor-Supported-blue?style=flat-square&logo=cursor&logoColor=white" alt="Cursor" />
+  <img src="https://img.shields.io/badge/Windsurf-Supported-blue?style=flat-square" alt="Windsurf" />
+  <img src="https://img.shields.io/badge/MCP-10%20Tools-orange?style=flat-square" alt="MCP" />
+  <img src="https://img.shields.io/badge/GitHub%20Action-Available-2088FF?style=flat-square&logo=githubactions&logoColor=white" alt="GitHub Action" />
 </p>
 
 ---
