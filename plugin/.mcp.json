@@ -2,8 +2,8 @@
   "mcpServers": {
     "codebase-pilot": {
       "type": "stdio",
-      "command": "codebase-pilot",
-      "args": ["serve"]
+      "command": "npx",
+      "args": ["codebase-pilot-cli", "serve"]
     }
   }
 }
