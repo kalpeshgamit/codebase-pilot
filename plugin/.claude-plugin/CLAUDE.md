@@ -3,10 +3,15 @@
 The codebase-pilot context engine optimizes token usage for large codebases.
 
 ## Available Skills
+- `/pilot-check` — Full health check in one pass (chains all below, saves ~75% tokens)
 - `/pack-context` — Pack codebase into AI-friendly format with compression
 - `/impact-analysis` — Analyze blast radius of file changes
 - `/scan-secrets` — Scan for leaked secrets and credentials
 - `/token-budget` — Check token counts and plan context budget
+
+## Auto Behavior
+- **SessionStart**: Automatically runs chained health check (pack + secrets + compare)
+- **UserPromptSubmit**: Captures every prompt for dashboard tracking
 
 ## Available MCP Tools
 Available tools (via MCP server):

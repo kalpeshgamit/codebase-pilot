@@ -12,7 +12,7 @@
   "plugins": [
     {
       "name": "codebase-pilot",
-      "version": "0.8.2",
+      "version": "0.9.9",
       "source": "./plugin",
       "description": "Token-aware context engine — pack, compress, blast radius, security scan, incremental packing, import graph pruning"
     }

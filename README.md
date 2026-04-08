@@ -242,7 +242,7 @@ File size warnings (red L >10K, orange M >5K tokens), language distribution, per
 | **Pack & Compress** | XML/Markdown output, regex-based compression (8 languages), agent-scoped packing |
 | **Incremental Pack** | `--affected` packs only changed files (SHA-256), `--prune` uses import graph for minimal context |
 | **Prompt Tracking** | Captures actual Claude Code prompts via hooks, git context (branch, commit, dirty), duration |
-| **Plugin Marketplace** | Install via `/plugin marketplace add` in Claude Code — 4 skills, hooks, MCP auto-config |
+| **Plugin Marketplace** | Install via `/plugin marketplace add` — 5 skills (chained), auto health check on session start, MCP auto-config |
 | **Security Scanner** | 180 patterns across 15 categories — cloud, payment, AI, crypto, generic |
 | **Blast Radius** | Import graph analysis, risk scoring (0-100), affected test detection |
 | **Full-Text Search** | SQLite FTS5 with BM25 ranking, snippet extraction, highlighted matches |
@@ -450,22 +450,27 @@ codebase-pilot pack --compress --dry-run
 
 ## Claude Code Plugin
 
-Install as a Claude Code plugin for built-in skills and auto-tracking:
+Install as a Claude Code plugin for built-in skills, auto health checks, and prompt tracking:
 
 ```
 /plugin marketplace add kalpeshgamit/codebase-pilot
 /plugin install codebase-pilot
 ```
 
-**4 Skills:**
+**5 Skills (chained):**
+- `/pilot-check` — **Full health check in one pass** (chains all 4 below, saves ~75% tokens)
 - `/pack-context` — Pack & compress with --affected, --prune, --dry-run
 - `/impact-analysis` — Blast radius for any file change
 - `/scan-secrets` — Security scan (180 patterns)
 - `/token-budget` — Token counts and savings planning
 
-**Auto-tracking:** Every prompt you type in Claude Code is captured and displayed on the web dashboard (Prompts page) with git context (branch, commit, dirty files).
+**Auto Health Check on Session Start:**
+When you open Claude Code, the plugin automatically runs a chained health check (pack analysis + secret scan + change comparison). Claude sees your project status before you type anything — zero manual commands.
 
-**MCP Server:** Auto-configured — 10 tools available to Claude Code.
+**Auto Prompt Tracking:**
+Every prompt you type in Claude Code is captured via `UserPromptSubmit` hook and displayed on the web dashboard (Prompts page) with git context (branch, commit, dirty files).
+
+**MCP Server:** Auto-configured — 10 tools + 3 prompts available to Claude Code.
 
 ---
 
