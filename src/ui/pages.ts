@@ -55,14 +55,14 @@ const T = {
 
 function layout(title: string, activePage: string, body: string, port: number, headExtra = ''): string {
   const nav = [
-    { href: '/', label: 'Dashboard', icon: 'layout-dashboard', color: '#3fb950', gradient: 'linear-gradient(135deg, #3fb950, #2ea043)' },
-    { href: '/projects', label: 'Projects', icon: 'folder-kanban', color: '#58a6ff', gradient: 'linear-gradient(135deg, #58a6ff, #388bfd)' },
-    { href: '/prompts', label: 'Prompts', icon: 'history', color: '#ff6800', gradient: 'linear-gradient(135deg, #ff6800, #e85d04)' },
-    { href: '/graph', label: 'Graph', icon: 'git-branch', color: '#a78bfa', gradient: 'linear-gradient(135deg, #a78bfa, #8b5cf6)' },
-    { href: '/search', label: 'Search', icon: 'search', color: '#f0c000', gradient: 'linear-gradient(135deg, #f0c000, #d29922)' },
-    { href: '/agents', label: 'Agents', icon: 'bot', color: '#f778ba', gradient: 'linear-gradient(135deg, #f778ba, #db61a2)' },
-    { href: '/files', label: 'Files', icon: 'file-code-2', color: '#79c0ff', gradient: 'linear-gradient(135deg, #79c0ff, #58a6ff)' },
-    { href: '/security', label: 'Security', icon: 'shield-check', color: '#f85149', gradient: 'linear-gradient(135deg, #f85149, #da3633)' },
+    { href: '/', label: 'Dashboard', icon: 'layout-dashboard', color: '#3fb950', lightColor: '#16a34a', gradient: 'linear-gradient(135deg, #3fb950, #2ea043)', lightGradient: 'linear-gradient(135deg, #16a34a, #15803d)' },
+    { href: '/projects', label: 'Projects', icon: 'folder-kanban', color: '#58a6ff', lightColor: '#2563eb', gradient: 'linear-gradient(135deg, #58a6ff, #388bfd)', lightGradient: 'linear-gradient(135deg, #2563eb, #1d4ed8)' },
+    { href: '/prompts', label: 'Prompts', icon: 'history', color: '#ff6800', lightColor: '#c2410c', gradient: 'linear-gradient(135deg, #ff6800, #e85d04)', lightGradient: 'linear-gradient(135deg, #c2410c, #9a3412)' },
+    { href: '/graph', label: 'Graph', icon: 'git-branch', color: '#a78bfa', lightColor: '#7c3aed', gradient: 'linear-gradient(135deg, #a78bfa, #8b5cf6)', lightGradient: 'linear-gradient(135deg, #7c3aed, #6d28d9)' },
+    { href: '/search', label: 'Search', icon: 'search', color: '#f0c000', lightColor: '#a16207', gradient: 'linear-gradient(135deg, #f0c000, #d29922)', lightGradient: 'linear-gradient(135deg, #a16207, #854d0e)' },
+    { href: '/agents', label: 'Agents', icon: 'bot', color: '#f778ba', lightColor: '#be185d', gradient: 'linear-gradient(135deg, #f778ba, #db61a2)', lightGradient: 'linear-gradient(135deg, #be185d, #9d174d)' },
+    { href: '/files', label: 'Files', icon: 'file-code-2', color: '#79c0ff', lightColor: '#0369a1', gradient: 'linear-gradient(135deg, #79c0ff, #58a6ff)', lightGradient: 'linear-gradient(135deg, #0369a1, #075985)' },
+    { href: '/security', label: 'Security', icon: 'shield-check', color: '#f85149', lightColor: '#dc2626', gradient: 'linear-gradient(135deg, #f85149, #da3633)', lightGradient: 'linear-gradient(135deg, #dc2626, #b91c1c)' },
   ];
 
   const activeNavColor = nav.find(n => n.href === activePage)?.color || '#3fb950';
@@ -72,12 +72,12 @@ function layout(title: string, activePage: string, body: string, port: number, h
       const isActive = n.href === activePage;
       const cls = isActive ? ' class="active"' : '';
       const activeStyle = isActive ? ` style="border-left:3px solid ${n.color};background:${n.color}15;"` : '';
-      // Always show unique color on icon and text
-      const iconStyle = ` style="color:${n.color}${isActive ? '' : ';opacity:0.6'}"`;
+      // Use data attributes for both dark and light colors — JS applies the right one
+      const iconStyle = ` style="color:var(--nav-color-${n.label.toLowerCase()})${isActive ? '' : ';opacity:0.65'}"`;
       const labelStyle = isActive
-        ? ` style="background:${n.gradient};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:700;"`
-        : ` style="color:${n.color};opacity:0.6"`;
-      return `<a href="${n.href}"${cls}${activeStyle} data-color="${n.color}"><i data-lucide="${n.icon}" class="nav-icon"${iconStyle}></i><span${labelStyle}>${n.label}</span></a>`;
+        ? ` style="background:var(--nav-gradient-${n.label.toLowerCase()});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:700;"`
+        : ` style="color:var(--nav-color-${n.label.toLowerCase()});opacity:0.65"`;
+      return `<a href="${n.href}"${cls}${activeStyle} data-color="${n.color}" data-light-color="${n.lightColor}"><i data-lucide="${n.icon}" class="nav-icon"${iconStyle}></i><span${labelStyle}>${n.label}</span></a>`;
     })
     .join('\n        ');
 
@@ -99,6 +99,22 @@ function layout(title: string, activePage: string, body: string, port: number, h
     --border: #2a2f42;
     --glass: rgba(26, 30, 46, 0.85);
     --glass-border: rgba(255, 255, 255, 0.05);
+    --nav-color-dashboard: #3fb950;
+    --nav-color-projects: #58a6ff;
+    --nav-color-prompts: #ff6800;
+    --nav-color-graph: #a78bfa;
+    --nav-color-search: #f0c000;
+    --nav-color-agents: #f778ba;
+    --nav-color-files: #79c0ff;
+    --nav-color-security: #f85149;
+    --nav-gradient-dashboard: linear-gradient(135deg, #3fb950, #2ea043);
+    --nav-gradient-projects: linear-gradient(135deg, #58a6ff, #388bfd);
+    --nav-gradient-prompts: linear-gradient(135deg, #ff6800, #e85d04);
+    --nav-gradient-graph: linear-gradient(135deg, #a78bfa, #8b5cf6);
+    --nav-gradient-search: linear-gradient(135deg, #f0c000, #d29922);
+    --nav-gradient-agents: linear-gradient(135deg, #f778ba, #db61a2);
+    --nav-gradient-files: linear-gradient(135deg, #79c0ff, #58a6ff);
+    --nav-gradient-security: linear-gradient(135deg, #f85149, #da3633);
     --text: #e6edf3;
     --text-muted: #8b949e;
     --text-dim: #484f58;
@@ -117,6 +133,22 @@ function layout(title: string, activePage: string, body: string, port: number, h
     --border: #d8dee4;
     --glass: rgba(255, 255, 255, 0.7);
     --glass-border: rgba(0, 0, 0, 0.06);
+    --nav-color-dashboard: #16a34a;
+    --nav-color-projects: #2563eb;
+    --nav-color-prompts: #c2410c;
+    --nav-color-graph: #7c3aed;
+    --nav-color-search: #a16207;
+    --nav-color-agents: #be185d;
+    --nav-color-files: #0369a1;
+    --nav-color-security: #dc2626;
+    --nav-gradient-dashboard: linear-gradient(135deg, #16a34a, #15803d);
+    --nav-gradient-projects: linear-gradient(135deg, #2563eb, #1d4ed8);
+    --nav-gradient-prompts: linear-gradient(135deg, #c2410c, #9a3412);
+    --nav-gradient-graph: linear-gradient(135deg, #7c3aed, #6d28d9);
+    --nav-gradient-search: linear-gradient(135deg, #a16207, #854d0e);
+    --nav-gradient-agents: linear-gradient(135deg, #be185d, #9d174d);
+    --nav-gradient-files: linear-gradient(135deg, #0369a1, #075985);
+    --nav-gradient-security: linear-gradient(135deg, #dc2626, #b91c1c);
     --text: #1a1a2e;
     --text-muted: #4a5568;
     --text-dim: #718096;
@@ -463,20 +495,19 @@ function layout(title: string, activePage: string, body: string, port: number, h
   /* Animated gradient mesh — uses active page color */
   .main::before {
     content: '';
-    position: fixed;
+    position: absolute;
     top: 0;
-    left: 220px;
+    left: 0;
     right: 0;
-    bottom: 0;
+    height: 100%;
+    min-height: 100vh;
     pointer-events: none;
     z-index: 0;
     opacity: 0.04;
     background:
-      radial-gradient(ellipse 600px 400px at 15% 15%, var(--page-color, #3fb950), transparent),
-      radial-gradient(ellipse 400px 400px at 85% 85%, var(--page-color, #3fb950), transparent),
-      radial-gradient(ellipse 300px 200px at 50% 50%, var(--page-color, #3fb950), transparent);
+      radial-gradient(ellipse 500px 350px at 30% 20%, var(--page-color, #3fb950), transparent),
+      radial-gradient(ellipse 400px 350px at 70% 70%, var(--page-color, #3fb950), transparent);
     animation: meshFloat 20s ease-in-out infinite alternate;
-    transition: background 1s ease;
   }
   body.light .main::before { opacity: 0.03; }
 
@@ -1033,12 +1064,15 @@ function toggleTheme() {
 
   // Nav item hover — brighten on hover, dim on idle
   document.querySelectorAll('.sidebar nav a[data-color]').forEach(function(a) {
-    var color = a.getAttribute('data-color');
+    var darkColor = a.getAttribute('data-color');
+    var lightColor = a.getAttribute('data-light-color') || darkColor;
+    function getColor() { return document.body.classList.contains('light') ? lightColor : darkColor; }
     a.addEventListener('mouseenter', function() {
       if (!a.classList.contains('active')) {
-        a.style.borderLeft = '3px solid ' + color;
+        var c = getColor();
+        a.style.borderLeft = '3px solid ' + c;
         a.style.paddingLeft = '11px';
-        a.style.background = color + '10';
+        a.style.background = c + '12';
         a.querySelector('.nav-icon').style.opacity = '1';
         a.querySelector('span').style.opacity = '1';
       }
@@ -1048,8 +1082,8 @@ function toggleTheme() {
         a.style.borderLeft = '';
         a.style.paddingLeft = '';
         a.style.background = '';
-        a.querySelector('.nav-icon').style.opacity = '0.6';
-        a.querySelector('span').style.opacity = '0.6';
+        a.querySelector('.nav-icon').style.opacity = '0.65';
+        a.querySelector('span').style.opacity = '0.65';
       }
     });
   });
