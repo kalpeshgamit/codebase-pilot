@@ -65,15 +65,18 @@ function layout(title: string, activePage: string, body: string, port: number, h
     { href: '/security', label: 'Security', icon: 'shield-check', color: '#f85149', gradient: 'linear-gradient(135deg, #f85149, #da3633)' },
   ];
 
+  const activeNavColor = nav.find(n => n.href === activePage)?.color || '#3fb950';
+
   const navItems = nav
     .map(n => {
       const isActive = n.href === activePage;
       const cls = isActive ? ' class="active"' : '';
       const activeStyle = isActive ? ` style="border-left:3px solid ${n.color};background:${n.color}15;"` : '';
-      const iconStyle = isActive ? ` style="color:${n.color}"` : '';
+      // Always show unique color on icon and text
+      const iconStyle = ` style="color:${n.color}${isActive ? '' : ';opacity:0.6'}"`;
       const labelStyle = isActive
         ? ` style="background:${n.gradient};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:700;"`
-        : '';
+        : ` style="color:${n.color};opacity:0.6"`;
       return `<a href="${n.href}"${cls}${activeStyle} data-color="${n.color}"><i data-lucide="${n.icon}" class="nav-icon"${iconStyle}></i><span${labelStyle}>${n.label}</span></a>`;
     })
     .join('\n        ');
@@ -320,6 +323,7 @@ function layout(title: string, activePage: string, body: string, port: number, h
     animation-duration: 2s;
   }
 
+
   body.light .brand-text {
     background: linear-gradient(90deg, #16a34a, #2563eb, #7c3aed, #16a34a);
     background-size: 300% 100%;
@@ -453,7 +457,37 @@ function layout(title: string, activePage: string, body: string, port: number, h
     overflow-y: auto;
     animation: fadeIn 0.3s ease both;
     background: var(--bg);
+    position: relative;
   }
+
+  /* Animated gradient mesh — uses active page color */
+  .main::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 220px;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.04;
+    background:
+      radial-gradient(ellipse 600px 400px at 15% 15%, var(--page-color, #3fb950), transparent),
+      radial-gradient(ellipse 400px 400px at 85% 85%, var(--page-color, #3fb950), transparent),
+      radial-gradient(ellipse 300px 200px at 50% 50%, var(--page-color, #3fb950), transparent);
+    animation: meshFloat 20s ease-in-out infinite alternate;
+    transition: background 1s ease;
+  }
+  body.light .main::before { opacity: 0.03; }
+
+  @keyframes meshFloat {
+    0% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(20px, -15px) scale(1.02); }
+    66% { transform: translate(-15px, 10px) scale(0.98); }
+    100% { transform: translate(10px, 5px) scale(1.01); }
+  }
+
+  .main > * { position: relative; z-index: 1; }
 
   /* Responsive */
   @media (max-width: 768px) {
@@ -954,7 +988,7 @@ window.CpSocket = (function() {
       <div class="jet-wrapper">
         <img src="${LOGO_DATA_URI || '/static/logo.png'}" alt="codebase-pilot" onerror="this.style.display='none'" />
       </div>
-      <div class="brand-text" style="margin-top:-6px;">Codebase Pilot</div>
+      <div class="brand-text" style="margin-top:-6px;text-align:center;"><span style="display:block;font-size:20px;line-height:1.15;">Codebase</span><span style="display:block;font-size:26px;line-height:1.15;">Pilot</span></div>
     </div>
     <nav>
       ${navItems}
@@ -974,7 +1008,7 @@ window.CpSocket = (function() {
       </div>
     </div>
   </aside>
-  <main class="main">
+  <main class="main" style="--page-color:${activeNavColor}">
     ${body}
   </main>
 <script>
@@ -997,16 +1031,16 @@ function toggleTheme() {
   // Initialize Lucide icons
   if (window.lucide) lucide.createIcons();
 
-  // Nav item hover colors from data-color
+  // Nav item hover — brighten on hover, dim on idle
   document.querySelectorAll('.sidebar nav a[data-color]').forEach(function(a) {
     var color = a.getAttribute('data-color');
     a.addEventListener('mouseenter', function() {
       if (!a.classList.contains('active')) {
         a.style.borderLeft = '3px solid ' + color;
         a.style.paddingLeft = '11px';
-        a.style.background = color + '12';
-        a.querySelector('.nav-icon').style.color = color;
-        a.querySelector('span').style.color = color;
+        a.style.background = color + '10';
+        a.querySelector('.nav-icon').style.opacity = '1';
+        a.querySelector('span').style.opacity = '1';
       }
     });
     a.addEventListener('mouseleave', function() {
@@ -1014,8 +1048,8 @@ function toggleTheme() {
         a.style.borderLeft = '';
         a.style.paddingLeft = '';
         a.style.background = '';
-        a.querySelector('.nav-icon').style.color = '';
-        a.querySelector('span').style.color = '';
+        a.querySelector('.nav-icon').style.opacity = '0.6';
+        a.querySelector('span').style.opacity = '0.6';
       }
     });
   });
