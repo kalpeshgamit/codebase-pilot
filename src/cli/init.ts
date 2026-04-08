@@ -144,13 +144,22 @@ fi
       try { settings = JSON.parse(readFileSync(settingsPath, 'utf8')); } catch { /* ignore */ }
     }
     const hooks = (settings.hooks || {}) as Record<string, unknown[]>;
-    // Check if our hook already exists (nested format: [{hooks:[{command:...}]}])
-    const existing = hooks.UserPromptSubmit as Array<{ hooks?: Array<{ command?: string }> }> | undefined;
-    const hasOurHook = existing?.some(entry =>
+    if (!hooks.UserPromptSubmit) hooks.UserPromptSubmit = [];
+    const items = hooks.UserPromptSubmit as Array<Record<string, unknown>>;
+
+    // Remove old flat-format entries from previous codebase-pilot versions
+    // (flat format causes Claude Code settings validation error)
+    hooks.UserPromptSubmit = items.filter(entry => {
+      if (Array.isArray(entry.hooks)) return true; // correct nested format — keep
+      if ((entry as { command?: string }).command?.includes('codebase-pilot-log-prompt')) return false; // our old broken format — remove
+      return true; // other hooks — keep
+    });
+
+    // Check if our hook exists in correct nested format
+    const hasOurHook = (hooks.UserPromptSubmit as Array<{ hooks?: Array<{ command?: string }> }>).some(entry =>
       entry.hooks?.some(h => h.command?.includes('codebase-pilot-log-prompt'))
     );
     if (!hasOurHook) {
-      if (!hooks.UserPromptSubmit) hooks.UserPromptSubmit = [];
       // Claude Code schema requires { hooks: [...] } wrapper
       (hooks.UserPromptSubmit as unknown[]).push({
         hooks: [{
