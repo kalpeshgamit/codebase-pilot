@@ -1,5 +1,5 @@
 {
-  "description": "codebase-pilot hooks — prompt tracking and session context",
+  "description": "codebase-pilot hooks — auto health check + prompt tracking",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -17,9 +17,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "codebase-pilot pack --compress --dry-run 2>/dev/null || true",
+            "command": "echo '--- codebase-pilot ---' && codebase-pilot pack --compress --dry-run 2>/dev/null && echo '---' && codebase-pilot scan-secrets 2>/dev/null | head -5 && echo '---' && codebase-pilot compare 2>/dev/null | head -10 || true",
             "timeout": 30,
-            "statusMessage": "codebase-pilot: scanning project..."
+            "statusMessage": "codebase-pilot: running health check..."
           }
         ]
       }
