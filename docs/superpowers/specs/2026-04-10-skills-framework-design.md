@@ -9,7 +9,7 @@ Status: Approved
 ## Problem
 
 codebase-pilot currently depends on the `superpowers` plugin for 14 workflow skills
-(brainstorming, TDD, debugging, planning, etc.). This creates an external dependency
+(thinking, TDD, debugging, planning, etc.). This creates an external dependency
 that users must install separately. The goal is to own these skills natively inside
 codebase-pilot so users get one plugin, zero external dependencies, and a tighter
 integration with codebase-pilot tooling.
@@ -41,7 +41,7 @@ plugin/
 
     # NEW — ported from superpowers
     using-codebase-pilot/         ← replaces superpowers:using-superpowers (full rewrite)
-    brainstorming/                ← copy + integrate pilot pack-context
+    thinking/                ← copy + integrate pilot pack-context
     writing-plans/                ← copy + reference agents.json
     executing-plans/              ← copy + namespace swap
     test-driven-development/      ← copy + namespace swap
@@ -82,7 +82,7 @@ Copy SKILL.md then add codebase-pilot-specific hooks:
 
 | Skill | Integration |
 |---|---|
-| `brainstorming` | Add: use `pilot pack-context` to load project context before design questions |
+| `thinking` | Add: use `pilot pack-context` to load project context before design questions |
 | `writing-plans` | Add: reference `agents.json` for agent boundaries when writing tasks |
 | `test-driven-development` | Add: use `pilot impact-analysis` to scope test coverage |
 | `systematic-debugging` | Add: use `pilot impact-analysis` to trace blast radius of bug |
@@ -105,7 +105,7 @@ Add 14 skill entries to `plugin/.claude-plugin/plugin.json`:
 {
   "skills": [
     { "name": "using-codebase-pilot", "path": "skills/using-codebase-pilot/SKILL.md" },
-    { "name": "brainstorming", "path": "skills/brainstorming/SKILL.md" },
+    { "name": "thinking", "path": "skills/thinking/SKILL.md" },
     { "name": "writing-plans", "path": "skills/writing-plans/SKILL.md" },
     { "name": "executing-plans", "path": "skills/executing-plans/SKILL.md" },
     { "name": "test-driven-development", "path": "skills/test-driven-development/SKILL.md" },
