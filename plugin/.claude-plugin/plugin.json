@@ -17,26 +17,5 @@
     "import-graph",
     "compression",
     "mcp"
-  ],
-  "skills": [
-    { "name": "pilot-check", "path": "skills/pilot-check/SKILL.md" },
-    { "name": "pack-context", "path": "skills/pack-context/SKILL.md" },
-    { "name": "scan-secrets", "path": "skills/scan-secrets/SKILL.md" },
-    { "name": "impact-analysis", "path": "skills/impact-analysis/SKILL.md" },
-    { "name": "token-budget", "path": "skills/token-budget/SKILL.md" },
-    { "name": "using-codebase-pilot", "path": "skills/using-codebase-pilot/SKILL.md" },
-    { "name": "thinking", "path": "skills/thinking/SKILL.md" },
-    { "name": "writing-plans", "path": "skills/writing-plans/SKILL.md" },
-    { "name": "executing-plans", "path": "skills/executing-plans/SKILL.md" },
-    { "name": "test-driven-development", "path": "skills/test-driven-development/SKILL.md" },
-    { "name": "systematic-debugging", "path": "skills/systematic-debugging/SKILL.md" },
-    { "name": "subagent-driven-development", "path": "skills/subagent-driven-development/SKILL.md" },
-    { "name": "dispatching-parallel-agents", "path": "skills/dispatching-parallel-agents/SKILL.md" },
-    { "name": "finishing-a-development-branch", "path": "skills/finishing-a-development-branch/SKILL.md" },
-    { "name": "requesting-code-review", "path": "skills/requesting-code-review/SKILL.md" },
-    { "name": "receiving-code-review", "path": "skills/receiving-code-review/SKILL.md" },
-    { "name": "verification-before-completion", "path": "skills/verification-before-completion/SKILL.md" },
-    { "name": "using-git-worktrees", "path": "skills/using-git-worktrees/SKILL.md" },
-    { "name": "writing-skills", "path": "skills/writing-skills/SKILL.md" }
   ]
 }
