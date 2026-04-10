@@ -5,7 +5,7 @@ import { collectFiles } from '../packer/collector.js';
 export interface ScoredFile {
   relativePath: string;
   score: number;
-  reason: 'bm25' | 'symbol' | 'import';
+  reason: 'bm25' | 'symbol' | 'import' | 'diff';
 }
 
 const STOP_WORDS = new Set([
@@ -83,7 +83,14 @@ export function selectFilesForTask(root: string, task: string): ScoredFile[] {
 
   if (seedMap.size === 0) return [];
 
-  // Stage 3 — Import graph expansion
+  return expandWithImportGraph(root, seedMap);
+}
+
+// Shared graph expansion — used by both selectFilesForTask and selectFilesForAuto
+function expandWithImportGraph(
+  root: string,
+  seedMap: Map<string, { score: number; reason: ScoredFile['reason'] }>,
+): ScoredFile[] {
   const resultMap = new Map<string, ScoredFile>();
 
   for (const [path, { score, reason }] of seedMap) {
@@ -124,7 +131,6 @@ export function selectFilesForTask(root: string, task: string): ScoredFile[] {
     }
   }
 
-  // High-centrality penalty for non-seed import expansions
   const allResults = [...resultMap.values()];
   const nonSeedCount = allResults.filter(f => !seedMap.has(f.relativePath)).length;
   const applyPenalty = nonSeedCount >= MIN_RESULT_SET_FOR_PENALTY;
@@ -143,4 +149,53 @@ export function selectFilesForTask(root: string, task: string): ScoredFile[] {
   return final
     .filter(f => f.score > 0.05)
     .sort((a, b) => b.score - a.score);
+}
+
+export function selectFilesForAuto(
+  root: string,
+  diffFiles: string[],
+  vocabularyQuery: string,
+): ScoredFile[] {
+  if (diffFiles.length === 0 && vocabularyQuery.trim().length === 0) return [];
+
+  // Collect existing file paths to filter out deleted files
+  let existingPaths: Set<string>;
+  try {
+    const files = collectFiles(root, {});
+    existingPaths = new Set(files.map(f => f.relativePath));
+  } catch {
+    existingPaths = new Set();
+  }
+
+  const seedMap = new Map<string, { score: number; reason: ScoredFile['reason'] }>();
+
+  // Diff files are guaranteed seeds at score=1.0
+  for (const f of diffFiles) {
+    if (existingPaths.size === 0 || existingPaths.has(f)) {
+      seedMap.set(f, { score: 1.0, reason: 'diff' });
+    }
+  }
+
+  // Vocabulary → BM25 seeds at score=0.7
+  if (vocabularyQuery.trim().length > 0) {
+    try {
+      const index = createSearchIndex(root);
+      const results = index.search(vocabularyQuery, 20);
+      index.close();
+
+      const rawScores = results.map(r => Math.abs(r.score));
+      const maxRaw = Math.max(...rawScores, 1);
+
+      for (const r of results) {
+        if (!seedMap.has(r.path)) {
+          const normalized = (Math.abs(r.score) / maxRaw) * 0.7;
+          seedMap.set(r.path, { score: normalized, reason: 'bm25' });
+        }
+      }
+    } catch { /* search index unavailable — diff seeds only */ }
+  }
+
+  if (seedMap.size === 0) return [];
+
+  return expandWithImportGraph(root, seedMap);
 }

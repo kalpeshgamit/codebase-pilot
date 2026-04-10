@@ -84,6 +84,7 @@ program
   .option('--prune <file>', 'Pack only files reachable from target file via imports')
   .option('--budget <tokens>', 'Cap total tokens — pack most-imported files first')
   .option('--task <description>', 'Pack only files relevant to this task description')
+  .option('--auto', 'Infer task from git diff, branch name, and recent commits', false)
   .action(packCommand);
 
 program

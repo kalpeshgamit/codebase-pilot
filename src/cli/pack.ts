@@ -18,6 +18,7 @@ interface PackCommandOptions {
   prune?: string;
   budget?: string;
   task?: string;
+  auto?: boolean;
 }
 
 export async function packCommand(options: PackCommandOptions): Promise<void> {
@@ -75,6 +76,14 @@ export async function packCommand(options: PackCommandOptions): Promise<void> {
     console.log('');
   }
 
+  // Mutual exclusion check
+  if (options.auto && options.task) {
+    console.error('  Error: Use either --auto or --task, not both.');
+    console.log('');
+    process.exitCode = 1;
+    return;
+  }
+
   try {
     const packStart = Date.now();
     const git = getGitContext(root);
@@ -95,6 +104,7 @@ export async function packCommand(options: PackCommandOptions): Promise<void> {
       pruneTarget: options.prune,
       budget,
       task: options.task,
+      auto: options.auto,
     });
 
     // Task selection summary
@@ -120,6 +130,20 @@ export async function packCommand(options: PackCommandOptions): Promise<void> {
       console.log('');
     }
 
+    // Auto-detection summary
+    if (options.auto && result.autoDescription !== undefined) {
+      console.log(`  Auto-detected: "${result.autoDescription}"`);
+      if (result.autoSignalSummary) {
+        console.log(`  Signals:  ${result.autoSignalSummary}`);
+      }
+      const changed = result.autoChangedCount ?? 0;
+      const related = result.autoRelatedCount ?? 0;
+      console.log(`  Changed:  ${changed} file${changed !== 1 ? 's' : ''}  (direct diff)`);
+      console.log(`  Related:  ${related} file${related !== 1 ? 's' : ''}  (BM25 + imports)`);
+      console.log(`  Total:    ${changed + related} files selected from ${result.totalFileCount ?? 0}`);
+      console.log('');
+    }
+
     // --dry-run: print summary and exit without writing
     if (options.dryRun) {
       console.log('  [DRY RUN] Preview — no files written');
@@ -133,12 +157,16 @@ export async function packCommand(options: PackCommandOptions): Promise<void> {
       console.log(`  Format:   ${format.toUpperCase()}`);
       console.log(`  Output:   ${outputPath} (not written)`);
 
-      // Show selected files with scores when --task is used
-      if (options.task && result.taskScores && result.taskScores.length > 0) {
+      // Show selected files with scores when --task or --auto is used
+      if ((options.task || options.auto) && result.taskScores && result.taskScores.length > 0) {
         console.log('');
         console.log('  Selected files:');
         for (const f of result.taskScores.slice(0, 15)) {
-          const reasonLabel = f.reason === 'import' ? '  \x1b[90m(import)\x1b[0m' : '';
+          const reasonLabel = f.reason === 'diff'
+            ? '  \x1b[32m(diff)\x1b[0m'
+            : f.reason === 'import'
+            ? '  \x1b[90m(import)\x1b[0m'
+            : '  \x1b[36m(BM25)\x1b[0m';
           console.log(`    score=${f.score.toFixed(2)}  ${f.relativePath}${reasonLabel}`);
         }
       }

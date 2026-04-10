@@ -9,8 +9,9 @@ import { formatMarkdown } from './formatter-md.js';
 import { scanForSecrets, isEnvFile } from '../security/scanner.js';
 import { compressCode } from '../compress/regex-compress.js';
 import { buildImportGraph, getReverseDependencies } from '../intelligence/imports.js';
-import { selectFilesForTask } from '../intelligence/task-selector.js';
+import { selectFilesForTask, selectFilesForAuto } from '../intelligence/task-selector.js';
 import type { ScoredFile } from '../intelligence/task-selector.js';
+import { extractGitSignals, synthesizeQuery, inferTaskDescription, buildSignalSummary, GENERIC_BRANCHES } from '../intelligence/git-signals.js';
 import type { AgentsConfig } from '../types.js';
 
 export interface PackOptions {
@@ -23,6 +24,7 @@ export interface PackOptions {
   pruneTarget?: string;     // If set, only pack files reachable from this file
   budget?: number;          // If set, cap total tokens at this limit (prioritize by centrality)
   task?: string;            // If set, select only files relevant to this task description
+  auto?: boolean;           // If set, infer task from git diff, branch name, and commits
 }
 
 export interface PackResult {
@@ -36,9 +38,17 @@ export interface PackResult {
   taskImportCount?: number;
   totalFileCount?: number;
   taskScores?: ScoredFile[];
+  autoDescription?: string;
+  autoSignalSummary?: string;
+  autoChangedCount?: number;
+  autoRelatedCount?: number;
 }
 
 export function packProject(options: PackOptions): PackResult {
+  if (options.auto && options.task) {
+    throw new Error('Use either --auto or --task, not both.');
+  }
+
   const root = options.dir;
   const projectName = basename(root);
   const skippedFiles: Array<{ file: string; reason: string }> = [];
@@ -116,6 +126,43 @@ export function packProject(options: PackOptions): PackResult {
     }
   }
 
+  // --auto: infer task from git signals
+  let autoDescription: string | undefined;
+  let autoSignalSummary: string | undefined;
+  let autoChangedCount: number | undefined;
+  let autoRelatedCount: number | undefined;
+  let autoScores: ScoredFile[] | undefined;
+
+  if (options.auto) {
+    const signals = extractGitSignals(root);
+    if (!signals.hasUsefulSignals) {
+      const reasons: string[] = [];
+      if (GENERIC_BRANCHES.has(signals.branchName)) {
+        reasons.push(`branch "${signals.branchName || 'unknown'}" is too generic`);
+      }
+      if (signals.stagedFiles.length === 0 && signals.unstagedFiles.length === 0) {
+        reasons.push('working tree is clean');
+      }
+      console.log('  Auto-detect: no task signals found');
+      for (const r of reasons) console.log(`    — ${r}`);
+      console.log('  Falling back to full pack. Use --task to describe your work manually.');
+      console.log('');
+    } else {
+      const diffFiles = [...new Set([...signals.stagedFiles, ...signals.unstagedFiles])];
+      const vocabQuery = synthesizeQuery(signals);
+      const selected = selectFilesForAuto(root, diffFiles, vocabQuery);
+      if (selected.length > 0) {
+        const selectedSet = new Set(selected.map(f => f.relativePath));
+        files = files.filter(f => selectedSet.has(f.relativePath));
+        autoDescription = inferTaskDescription(signals);
+        autoSignalSummary = buildSignalSummary(signals);
+        autoChangedCount = selected.filter(f => f.reason === 'diff').length;
+        autoRelatedCount = selected.filter(f => f.reason !== 'diff').length;
+        autoScores = selected;
+      }
+    }
+  }
+
   // --budget: cap total tokens, prioritize files by import graph centrality
   if (options.budget && options.budget > 0) {
     const graph = buildImportGraph(root);
@@ -189,8 +236,12 @@ export function packProject(options: PackOptions): PackResult {
       : undefined,
     taskBm25Count: taskBm25Count || undefined,
     taskImportCount: taskImportCount || undefined,
-    totalFileCount: options.task ? totalFileCount : undefined,
-    taskScores,
+    totalFileCount: (options.task || options.auto) ? totalFileCount : undefined,
+    taskScores: autoScores ?? taskScores,
+    autoDescription,
+    autoSignalSummary,
+    autoChangedCount,
+    autoRelatedCount,
   };
 }
 
