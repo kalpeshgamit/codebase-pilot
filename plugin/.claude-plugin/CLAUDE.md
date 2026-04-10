@@ -17,7 +17,7 @@ The codebase-pilot context engine optimizes token usage for large codebases.
 - `/writing-plans` — Write comprehensive implementation plans from specs
 - `/executing-plans` — Execute a written plan task-by-task with review checkpoints
 - `/test-driven-development` — TDD: write failing test first, red-green-refactor cycle
-- `/systematic-debugging` — Root cause investigation before any fix attempt
+- `/debugging` — Root cause investigation before any fix attempt
 - `/subagent-driven-development` — Fresh subagent per task with two-stage review
 - `/dispatching-parallel-agents` — Dispatch multiple independent agents concurrently
 - `/finishing-a-development-branch` — Complete dev branch: verify, PR, merge

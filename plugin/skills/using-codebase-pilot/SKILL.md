@@ -44,7 +44,7 @@ Example: `Skill("codebase-pilot:thinking")`
 - `codebase-pilot:writing-plans` — Write implementation plans from specs
 - `codebase-pilot:executing-plans` — Execute a written plan task-by-task
 - `codebase-pilot:test-driven-development` — TDD: red-green-refactor cycle
-- `codebase-pilot:systematic-debugging` — Root cause investigation before fixes
+- `codebase-pilot:debugging` — Root cause investigation before fixes
 - `codebase-pilot:subagent-driven-development` — Fresh subagent per task with two-stage review
 - `codebase-pilot:dispatching-parallel-agents` — Dispatch independent agents concurrently
 - `codebase-pilot:finishing-a-development-branch` — Complete dev branch: verify, PR, merge

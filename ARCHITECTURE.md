@@ -48,7 +48,7 @@ plugin/
 | `writing-plans` | 2 — integrated | References agents.json agent boundaries |
 | `executing-plans` | 1 — rebranded | — |
 | `test-driven-development` | 2 — integrated | Uses impact-analysis for test scope |
-| `systematic-debugging` | 2 — integrated | Uses impact-analysis for blast radius |
+| `debugging` | 2 — integrated | Uses impact-analysis for blast radius |
 | `subagent-driven-development` | 3 — full original | Reads agents.json, uses pack --agent |
 | `dispatching-parallel-agents` | 2 — integrated | Reads agents.json patterns |
 | `finishing-a-development-branch` | 1 — rebranded | — |

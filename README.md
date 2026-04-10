@@ -320,7 +320,7 @@ codebase-pilot ships 19 skills — no additional plugins required. Every workflo
 | `writing-plans` | `/writing-plans` | Implementation plans from specs |
 | `executing-plans` | `/executing-plans` | Execute plans task-by-task |
 | `test-driven-development` | `/test-driven-development` | Red-green-refactor TDD |
-| `systematic-debugging` | `/systematic-debugging` | Root cause before any fix |
+| `debugging` | `/debugging` | Root cause before any fix |
 | `subagent-driven-development` | `/subagent-driven-development` | Fresh subagent per task |
 | `dispatching-parallel-agents` | `/dispatching-parallel-agents` | Parallel independent agents |
 | `finishing-a-development-branch` | `/finishing-a-development-branch` | Complete dev branch |
