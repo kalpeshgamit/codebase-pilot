@@ -27,7 +27,7 @@ codebase-pilot skills override default system prompt behavior, but **user instru
 
 **In Claude Code:** Use the `Skill` tool. Invoke with `codebase-pilot:<skill-name>`.
 
-Example: `Skill("codebase-pilot:brainstorming")`
+Example: `Skill("codebase-pilot:thinking")`
 
 ## Available Skills
 
@@ -40,7 +40,7 @@ Example: `Skill("codebase-pilot:brainstorming")`
 
 ### Workflow Skills
 - `codebase-pilot:using-codebase-pilot` — This skill (invoke at session start)
-- `codebase-pilot:brainstorming` — Turn ideas into designs and specs
+- `codebase-pilot:thinking` — Turn ideas into designs and specs
 - `codebase-pilot:writing-plans` — Write implementation plans from specs
 - `codebase-pilot:executing-plans` — Execute a written plan task-by-task
 - `codebase-pilot:test-driven-development` — TDD: red-green-refactor cycle
@@ -80,10 +80,10 @@ digraph skill_flow {
 
 When multiple skills could apply, use this order:
 
-1. **Process skills first** (brainstorming, systematic-debugging) — determine HOW to approach the task
+1. **Process skills first** (thinking, systematic-debugging) — determine HOW to approach the task
 2. **Implementation skills second** (test-driven-development, executing-plans) — guide execution
 
-"Let's build X" → brainstorming first, then writing-plans.
+"Let's build X" → thinking first, then writing-plans.
 "Fix this bug" → systematic-debugging first, then test-driven-development.
 
 ## Red Flags — STOP, you are rationalizing
@@ -104,7 +104,7 @@ When multiple skills could apply, use this order:
 
 **Rigid** (test-driven-development, systematic-debugging): Follow exactly. Do not adapt away discipline.
 
-**Flexible** (brainstorming, writing-plans): Adapt principles to context.
+**Flexible** (thinking, writing-plans): Adapt principles to context.
 
 The skill itself tells you which type it is.
 

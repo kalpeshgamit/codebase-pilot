@@ -44,7 +44,7 @@ plugin/
 | Skill | Tier | codebase-pilot Integration |
 |-------|------|---------------------------|
 | `using-codebase-pilot` | 3 — full original | Session start, full skill directory |
-| `brainstorming` | 2 — integrated | Uses pack-context for project context load |
+| `thinking` | 2 — integrated | Uses pack-context for project context load |
 | `writing-plans` | 2 — integrated | References agents.json agent boundaries |
 | `executing-plans` | 1 — rebranded | — |
 | `test-driven-development` | 2 — integrated | Uses impact-analysis for test scope |

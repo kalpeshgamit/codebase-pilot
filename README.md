@@ -316,7 +316,7 @@ codebase-pilot ships 19 skills — no additional plugins required. Every workflo
 | Skill | Trigger | What it does |
 |-------|---------|-------------|
 | `using-codebase-pilot` | auto on session start | How to use all skills |
-| `brainstorming` | `/brainstorming` | Turn ideas into designs and specs |
+| `thinking` | `/thinking` | Turn ideas into designs and specs |
 | `writing-plans` | `/writing-plans` | Implementation plans from specs |
 | `executing-plans` | `/executing-plans` | Execute plans task-by-task |
 | `test-driven-development` | `/test-driven-development` | Red-green-refactor TDD |

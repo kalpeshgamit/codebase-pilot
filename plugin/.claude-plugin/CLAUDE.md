@@ -13,7 +13,7 @@ The codebase-pilot context engine optimizes token usage for large codebases.
 
 ### Workflow Skills
 - `/using-codebase-pilot` — Session start: how to use all codebase-pilot skills
-- `/brainstorming` — Turn ideas into designs and specs through collaborative dialogue
+- `/thinking` — Turn ideas into designs and specs through collaborative dialogue
 - `/writing-plans` — Write comprehensive implementation plans from specs
 - `/executing-plans` — Execute a written plan task-by-task with review checkpoints
 - `/test-driven-development` — TDD: write failing test first, red-green-refactor cycle
