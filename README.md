@@ -299,6 +299,39 @@ codebase-pilot eject                                     # remove dependency
 
 ---
 
+## Built-in Skills
+
+codebase-pilot ships 19 skills — no additional plugins required. Every workflow is covered out of the box.
+
+### Context Tools
+| Skill | Trigger | What it does |
+|-------|---------|-------------|
+| `pilot-check` | `/pilot-check` | Full health check (pack + secrets + git compare) |
+| `pack-context` | `/pack-context` | Compress codebase for LLM context window |
+| `scan-secrets` | `/scan-secrets` | 179-pattern security scan |
+| `impact-analysis` | `/impact-analysis` | Blast radius of file changes |
+| `token-budget` | `/token-budget` | Token counts per file, context planning |
+
+### Workflow Skills
+| Skill | Trigger | What it does |
+|-------|---------|-------------|
+| `using-codebase-pilot` | auto on session start | How to use all skills |
+| `brainstorming` | `/brainstorming` | Turn ideas into designs and specs |
+| `writing-plans` | `/writing-plans` | Implementation plans from specs |
+| `executing-plans` | `/executing-plans` | Execute plans task-by-task |
+| `test-driven-development` | `/test-driven-development` | Red-green-refactor TDD |
+| `systematic-debugging` | `/systematic-debugging` | Root cause before any fix |
+| `subagent-driven-development` | `/subagent-driven-development` | Fresh subagent per task |
+| `dispatching-parallel-agents` | `/dispatching-parallel-agents` | Parallel independent agents |
+| `finishing-a-development-branch` | `/finishing-a-development-branch` | Complete dev branch |
+| `requesting-code-review` | `/requesting-code-review` | Request code review |
+| `receiving-code-review` | `/receiving-code-review` | Handle review feedback |
+| `verification-before-completion` | `/verification-before-completion` | Pre-completion checklist |
+| `using-git-worktrees` | `/using-git-worktrees` | Git worktree management |
+| `writing-skills` | `/writing-skills` | Create new skills |
+
+---
+
 ## Blast Radius
 
 Trace the impact of any file change across your codebase:
