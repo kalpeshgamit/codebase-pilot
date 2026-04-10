@@ -9,6 +9,8 @@ import { formatMarkdown } from './formatter-md.js';
 import { scanForSecrets, isEnvFile } from '../security/scanner.js';
 import { compressCode } from '../compress/regex-compress.js';
 import { buildImportGraph, getReverseDependencies } from '../intelligence/imports.js';
+import { selectFilesForTask } from '../intelligence/task-selector.js';
+import type { ScoredFile } from '../intelligence/task-selector.js';
 import type { AgentsConfig } from '../types.js';
 
 export interface PackOptions {
@@ -19,6 +21,8 @@ export interface PackOptions {
   noSecurity: boolean;
   affectedOnly?: string[];  // If set, only pack these relative paths
   pruneTarget?: string;     // If set, only pack files reachable from this file
+  budget?: number;          // If set, cap total tokens at this limit (prioritize by centrality)
+  task?: string;            // If set, select only files relevant to this task description
 }
 
 export interface PackResult {
@@ -28,6 +32,10 @@ export interface PackResult {
   rawTokens: number;
   skippedFiles: Array<{ file: string; reason: string }>;
   compressionRatio?: number;
+  taskBm25Count?: number;
+  taskImportCount?: number;
+  totalFileCount?: number;
+  taskScores?: ScoredFile[];
 }
 
 export function packProject(options: PackOptions): PackResult {
@@ -85,6 +93,51 @@ export function packProject(options: PackOptions): PackResult {
     files = files.filter(f => reachable.has(f.relativePath));
   }
 
+  // --task: select only files relevant to the task description
+  const totalFileCount = files.length;
+  let taskScores: ScoredFile[] | undefined;
+  let taskBm25Count = 0;
+  let taskImportCount = 0;
+
+  if (options.task && options.task.trim().length > 0) {
+    try {
+      const selected = selectFilesForTask(root, options.task);
+      if (selected.length === 0) {
+        console.log(`  Warning: no files matched task "${options.task}" — packing all files`);
+      } else {
+        taskScores = selected;
+        const selectedSet = new Set(selected.map(f => f.relativePath));
+        files = files.filter(f => selectedSet.has(f.relativePath));
+        taskBm25Count = selected.filter(f => f.reason === 'bm25' || f.reason === 'symbol').length;
+        taskImportCount = selected.filter(f => f.reason === 'import').length;
+      }
+    } catch (err) {
+      console.log(`  Warning: task selection failed (${(err as Error).message}) — packing all files`);
+    }
+  }
+
+  // --budget: cap total tokens, prioritize files by import graph centrality
+  if (options.budget && options.budget > 0) {
+    const graph = buildImportGraph(root);
+    // Score = number of reverse dependencies (how many files import this one)
+    const reverseGraph = getReverseDependencies(graph);
+    const scored = files.map(f => ({
+      ...f,
+      score: (reverseGraph.get(f.relativePath)?.size ?? 0) * 1000 + (1 / (f.tokens + 1)),
+    }));
+    scored.sort((a, b) => b.score - a.score);
+
+    let budget = options.budget;
+    const withinBudget: typeof scored = [];
+    for (const f of scored) {
+      if (f.tokens <= budget) {
+        withinBudget.push(f);
+        budget -= f.tokens;
+      }
+    }
+    files = withinBudget;
+  }
+
   // Security scan
   if (!options.noSecurity) {
     files = files.filter(file => {
@@ -134,6 +187,10 @@ export function packProject(options: PackOptions): PackResult {
     compressionRatio: options.compress
       ? Math.round((1 - totalTokens / originalTokens) * 100)
       : undefined,
+    taskBm25Count: taskBm25Count || undefined,
+    taskImportCount: taskImportCount || undefined,
+    totalFileCount: options.task ? totalFileCount : undefined,
+    taskScores,
   };
 }
 

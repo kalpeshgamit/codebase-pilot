@@ -82,6 +82,8 @@ program
   .option('--dry-run', 'Preview what would be packed without writing output', false)
   .option('--affected', 'Pack only files changed since last pack (incremental)', false)
   .option('--prune <file>', 'Pack only files reachable from target file via imports')
+  .option('--budget <tokens>', 'Cap total tokens — pack most-imported files first')
+  .option('--task <description>', 'Pack only files relevant to this task description')
   .action(packCommand);
 
 program
@@ -91,6 +93,7 @@ program
   .option('-s, --sort <type>', 'Sort by: size or name', 'size')
   .option('-l, --limit <n>', 'Show top N files', '20')
   .option('--agent <name>', 'Count tokens for specific agent context')
+  .option('--fix', 'Show actionable suggestions to reduce token usage', false)
   .action(tokensCommand);
 
 program

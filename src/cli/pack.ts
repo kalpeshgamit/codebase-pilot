@@ -16,6 +16,8 @@ interface PackCommandOptions {
   dryRun: boolean;
   affected: boolean;
   prune?: string;
+  budget?: string;
+  task?: string;
 }
 
 export async function packCommand(options: PackCommandOptions): Promise<void> {
@@ -77,6 +79,12 @@ export async function packCommand(options: PackCommandOptions): Promise<void> {
     const packStart = Date.now();
     const git = getGitContext(root);
 
+    const budget = options.budget ? parseInt(options.budget, 10) : undefined;
+    if (budget && budget > 0) {
+      console.log(`  Budget: ${formatTokenCount(budget)} tokens max`);
+      console.log('');
+    }
+
     const result = packProject({
       dir: root,
       format,
@@ -85,7 +93,20 @@ export async function packCommand(options: PackCommandOptions): Promise<void> {
       noSecurity: !options.security,
       affectedOnly: affectedFiles,
       pruneTarget: options.prune,
+      budget,
+      task: options.task,
     });
+
+    // Task selection summary
+    if (options.task) {
+      const bm25Count = result.taskBm25Count ?? 0;
+      const importCount = result.taskImportCount ?? 0;
+      const total = bm25Count + importCount;
+      const from = result.totalFileCount ?? 0;
+      console.log(`  Task:     "${options.task}"`);
+      console.log(`  Selected: ${total} files (${bm25Count} BM25 + ${importCount} imports) from ${from}`);
+      console.log('');
+    }
 
     // Print security results
     if (result.skippedFiles.length > 0) {
@@ -111,6 +132,16 @@ export async function packCommand(options: PackCommandOptions): Promise<void> {
       }
       console.log(`  Format:   ${format.toUpperCase()}`);
       console.log(`  Output:   ${outputPath} (not written)`);
+
+      // Show selected files with scores when --task is used
+      if (options.task && result.taskScores && result.taskScores.length > 0) {
+        console.log('');
+        console.log('  Selected files:');
+        for (const f of result.taskScores.slice(0, 15)) {
+          const reasonLabel = f.reason === 'import' ? '  \x1b[90m(import)\x1b[0m' : '';
+          console.log(`    score=${f.score.toFixed(2)}  ${f.relativePath}${reasonLabel}`);
+        }
+      }
 
       // Show top files by tokens
       if (result.fileCount > 0) {
