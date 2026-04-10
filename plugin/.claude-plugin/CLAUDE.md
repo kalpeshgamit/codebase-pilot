@@ -3,11 +3,29 @@
 The codebase-pilot context engine optimizes token usage for large codebases.
 
 ## Available Skills
-- `/pilot-check` — Full health check in one pass (chains all below, saves ~75% tokens)
+
+### Context & Tooling
+- `/pilot-check` — Full health check (chains pack + secrets + compare, saves ~75% tokens)
 - `/pack-context` — Pack codebase into AI-friendly format with compression
 - `/impact-analysis` — Analyze blast radius of file changes
 - `/scan-secrets` — Scan for leaked secrets and credentials
 - `/token-budget` — Check token counts and plan context budget
+
+### Workflow Skills
+- `/using-codebase-pilot` — Session start: how to use all codebase-pilot skills
+- `/brainstorming` — Turn ideas into designs and specs through collaborative dialogue
+- `/writing-plans` — Write comprehensive implementation plans from specs
+- `/executing-plans` — Execute a written plan task-by-task with review checkpoints
+- `/test-driven-development` — TDD: write failing test first, red-green-refactor cycle
+- `/systematic-debugging` — Root cause investigation before any fix attempt
+- `/subagent-driven-development` — Fresh subagent per task with two-stage review
+- `/dispatching-parallel-agents` — Dispatch multiple independent agents concurrently
+- `/finishing-a-development-branch` — Complete dev branch: verify, PR, merge
+- `/requesting-code-review` — Request code review with proper context
+- `/receiving-code-review` — Handle review feedback systematically
+- `/verification-before-completion` — Pre-completion quality checklist
+- `/using-git-worktrees` — Manage git worktrees for parallel development
+- `/writing-skills` — Create new skills following established patterns
 
 ## Auto Behavior
 - **SessionStart**: Automatically runs chained health check (pack + secrets + compare)
