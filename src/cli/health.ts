@@ -21,7 +21,8 @@ export async function healthCommand(options: HealthOptions): Promise<void> {
   if (!existsSync(agentsPath)) {
     console.log('  ✗ No agents.json found. Run "codebase-pilot init" first.');
     console.log('');
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   let config: AgentsConfig;
@@ -30,7 +31,8 @@ export async function healthCommand(options: HealthOptions): Promise<void> {
   } catch {
     console.log('  ✗ Invalid agents.json. Run "codebase-pilot init" to regenerate.');
     console.log('');
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   const results: HealthCheckResult[] = [];

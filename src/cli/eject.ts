@@ -54,6 +54,40 @@ export async function ejectCommand(options: EjectOptions): Promise<void> {
     console.log('    ✓ .gitignore — cleaned up codebase-pilot entries');
   }
 
+  // Remove codebase-pilot MCP server from .claude/mcp.json
+  const mcpConfigPath = join(root, '.claude', 'mcp.json');
+  if (existsSync(mcpConfigPath)) {
+    try {
+      const mcpConfig = JSON.parse(readFileSync(mcpConfigPath, 'utf8')) as Record<string, unknown>;
+      const servers = (mcpConfig.mcpServers || {}) as Record<string, unknown>;
+      if (servers['codebase-pilot']) {
+        delete servers['codebase-pilot'];
+        mcpConfig.mcpServers = servers;
+        writeFileSync(mcpConfigPath, JSON.stringify(mcpConfig, null, 2) + '\n', 'utf8');
+        console.log('    ✓ .claude/mcp.json — removed codebase-pilot MCP server');
+      }
+    } catch { /* ignore */ }
+  }
+
+  // Remove codebase-pilot hook from .claude/settings.json
+  const settingsPath = join(root, '.claude', 'settings.json');
+  if (existsSync(settingsPath)) {
+    try {
+      const settings = JSON.parse(readFileSync(settingsPath, 'utf8')) as Record<string, unknown>;
+      const hooks = (settings.hooks || {}) as Record<string, unknown[]>;
+      if (hooks.UserPromptSubmit) {
+        hooks.UserPromptSubmit = (hooks.UserPromptSubmit as Array<Record<string, unknown>>).filter(entry => {
+          if (!Array.isArray(entry.hooks)) return true;
+          const hasOurHook = (entry.hooks as Array<{ command?: string }>).some(h => h.command?.includes('codebase-pilot-log-prompt'));
+          return !hasOurHook;
+        });
+        settings.hooks = hooks;
+        writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf8');
+        console.log('    ✓ .claude/settings.json — removed codebase-pilot prompt hook');
+      }
+    } catch { /* ignore */ }
+  }
+
   console.log('');
   console.log('  Ejected! All files are yours. codebase-pilot is no longer needed.');
   console.log('  You can uninstall: npm rm -g codebase-pilot');

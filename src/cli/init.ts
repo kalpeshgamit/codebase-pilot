@@ -41,6 +41,14 @@ export async function initCommand(options: InitOptions): Promise<void> {
     console.log('    - .claude/commands/dispatch.md');
     console.log('    - .claude/commands/healthcheck.md');
     console.log('    - .gitignore (update)');
+    console.log('    - .git/hooks/pre-commit (secret scan hook)');
+    console.log('    - .claude/mcp.json (MCP server config)');
+    console.log('    - .claude/settings.json (prompt tracking hook)');
+    console.log('');
+
+    // Still show Context7 hints in dry-run — helps developer know what docs are available
+    const primaryLang = scan.languages[0]?.name ?? null;
+    printContext7Hints(scan.framework ?? null, primaryLang);
     console.log('');
     return;
   }
@@ -52,6 +60,14 @@ export async function initCommand(options: InitOptions): Promise<void> {
 
   const claudeignoreResult = generateClaudeignore(root, scan);
   console.log(`    ${claudeignoreResult.created ? '✓' : '~'} .claudeignore${claudeignoreResult.merged ? ' (merged with existing)' : ''}`);
+  if (claudeignoreResult.suggestions.length > 0) {
+    for (const s of claudeignoreResult.suggestions) {
+      console.log(`    \x1b[33m⚠\x1b[0m  ${s.label} detected — consider adding to .claudeignore:`);
+      for (const p of s.missing) {
+        console.log(`         ${p}`);
+      }
+    }
+  }
 
   const agents = generateAgents(scan);
   const agentsResult = generateAgentsJson(root, agents);
@@ -178,6 +194,10 @@ fi
     }
   } catch { /* ignore — hook setup is optional */ }
 
+  // Context7 integration hints (Issue #7)
+  const primaryLang = scan.languages[0]?.name ?? null;
+  printContext7Hints(scan.framework ?? null, primaryLang);
+
   console.log('');
   console.log('  Done! Start Claude Code and try:');
   console.log('    /healthcheck           — verify agent setup');
@@ -185,4 +205,55 @@ fi
   console.log('    codebase-pilot pack    — pack codebase for AI');
   console.log('    codebase-pilot impact  — blast radius analysis');
   console.log('');
+}
+
+// Issue #7: Context7 library IDs for detected frameworks
+const CONTEXT7_IDS: Record<string, string> = {
+  'Next.js':      '/vercel/next.js',
+  'Nuxt':         '/nuxt/nuxt',
+  'SvelteKit':    '/sveltejs/kit',
+  'Vite':         '/vitejs/vite',
+  'React':        '/facebook/react',
+  'Vue':          '/vuejs/core',
+  'Angular':      '/angular/angular',
+  'Astro':        '/withastro/astro',
+  'Django':       '/django/django',
+  'FastAPI':      '/tiangolo/fastapi',
+  'Flask':        '/pallets/flask',
+  'Rails':        '/rails/rails',
+  'Laravel':      '/laravel/laravel',
+  'Spring Boot':  '/spring-projects/spring-boot',
+  'Gin':          '/gin-gonic/gin',
+  'Echo':         '/labstack/echo',
+  'Axum':         '/tokio-rs/axum',
+  'Actix':        '/actix/actix-web',
+  'Express':      '/expressjs/express',
+  'Fastify':      '/fastify/fastify',
+  'NestJS':       '/nestjs/nest',
+};
+
+const CONTEXT7_LANG_IDS: Record<string, string> = {
+  'TypeScript': '/microsoft/typescript',
+  'Python':     '/python/cpython',
+  'Go':         '/golang/go',
+  'Rust':       '/rust-lang/rust',
+};
+
+function printContext7Hints(framework: string | null, language: string | null): void {
+  const hints: string[] = [];
+
+  if (framework && CONTEXT7_IDS[framework]) {
+    hints.push(`${framework.padEnd(14)} → use-mcp-tool context7 resolve-library-id "${framework}"   # ID: ${CONTEXT7_IDS[framework]}`);
+  }
+  if (language && CONTEXT7_LANG_IDS[language] && (!framework || !CONTEXT7_IDS[framework])) {
+    hints.push(`${language.padEnd(14)} → use-mcp-tool context7 resolve-library-id "${language}"   # ID: ${CONTEXT7_LANG_IDS[language]}`);
+  }
+
+  if (hints.length === 0) return;
+
+  console.log('');
+  console.log('  Context7 docs (install: npx -y @upstash/context7-mcp@latest):');
+  for (const h of hints) {
+    console.log(`    \x1b[36m◆\x1b[0m  ${h}`);
+  }
 }

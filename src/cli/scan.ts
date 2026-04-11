@@ -5,6 +5,7 @@ import { detect, printScan } from '../scanner/detector.js';
 import { generateAgents } from '../agents/generator.js';
 import { generateAgentsJson } from '../generators/agents-json.js';
 import { generateClaudeMd } from '../generators/claude-md.js';
+import { generateClaudeignore } from '../generators/claudeignore.js';
 
 interface ScanOptions {
   dir: string;
@@ -33,6 +34,7 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
 
   generateAgentsJson(root, agents);
   generateClaudeMd(root, scan);
+  const claudeignoreResult = generateClaudeignore(root, scan);
 
   console.log('');
   if (newAgentCount !== oldAgentCount) {
@@ -45,5 +47,6 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
   printScan(scan);
   console.log('  ✓ agents.json updated');
   console.log('  ✓ CLAUDE.md updated');
+  console.log(`  ${claudeignoreResult.created ? '✓' : '~'} .claudeignore${claudeignoreResult.merged ? ' (merged)' : ''}`);
   console.log('');
 }

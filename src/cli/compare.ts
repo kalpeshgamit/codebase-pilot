@@ -9,21 +9,6 @@ interface CompareOptions {
   base?: string;
 }
 
-function getGitDiff(root: string, base: string): string[] {
-  try {
-    // Read .git/HEAD for current branch, then use merge-base via file reads
-    // Fallback: list all tracked files and compare
-    const head = readFileSync(join(root, '.git', 'HEAD'), 'utf8').trim();
-    const branch = head.startsWith('ref: refs/heads/') ? head.slice(16) : 'HEAD';
-
-    // Try to read diff using reflog — compare current vs base
-    // Since we avoid child_process, we compare file hashes instead
-    return [];
-  } catch {
-    return [];
-  }
-}
-
 export async function compareCommand(options: CompareOptions): Promise<void> {
   const root = resolve(options.dir);
   const project = basename(root);
