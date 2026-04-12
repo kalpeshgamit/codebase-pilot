@@ -193,11 +193,17 @@ export function packProject(options: PackOptions): PackResult {
         return false;
       }
       const secrets = scanForSecrets(file.content, file.relativePath);
-      if (secrets.length > 0) {
-        const detail = secrets.map(s => `${s.pattern} (line ${s.line})`).join(', ');
+      if (secrets.length === 0) return true;
+
+      // Separate real secrets from known-safe (test fixtures, integration guides, examples)
+      const realSecrets = secrets.filter(s => !s.knownSafe);
+      if (realSecrets.length > 0) {
+        // Real secrets — exclude file from pack
+        const detail = realSecrets.map(s => `${s.pattern} (line ${s.line})`).join(', ');
         skippedFiles.push({ file: file.relativePath, reason: detail });
         return false;
       }
+      // All findings are in test/example paths — include file but note it
       return true;
     });
   }

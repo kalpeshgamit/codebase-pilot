@@ -26,7 +26,7 @@ export interface DatabaseInfo {
 export interface PackageInfo {
   name: string;
   path: string;
-  type: 'api' | 'web' | 'cli' | 'lib' | 'plugin' | 'database' | 'unknown';
+  type: 'api' | 'web' | 'cli' | 'lib' | 'plugin' | 'database' | 'registry' | 'unknown';
   language: string;
   entryPoint: string | null;
   fileCount: number;

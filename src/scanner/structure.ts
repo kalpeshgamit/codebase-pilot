@@ -98,11 +98,36 @@ function discoverPackages(root: string, languages: LanguageInfo[]): PackageInfo[
   return packages;
 }
 
+/**
+ * Count immediate children of a directory that look like independent packages
+ * (have their own src/ or package.json). Used for registry detection.
+ */
+function countSubPackages(dir: string): number {
+  try {
+    return readdirSync(dir).filter(child => {
+      if (child.startsWith('.') || SKIP_DIRS.has(child)) return false;
+      const childPath = join(dir, child);
+      try {
+        return statSync(childPath).isDirectory() &&
+          (existsSync(join(childPath, 'package.json')) || existsSync(join(childPath, 'src')));
+      } catch { return false; }
+    }).length;
+  } catch { return 0; }
+}
+
 function inferPackageType(
   pkgPath: string,
   _root: string,
 ): PackageInfo['type'] {
   const name = basename(pkgPath).toLowerCase();
+
+  // 0. Registry detection — a directory of many independent sub-packages, not a package itself.
+  //    Must be checked before name-based inference so e.g. a "plugins/" dir full of sub-packages
+  //    is not misclassified as a single 'plugin' package.
+  //    Only applies when the directory has no own package.json or src/ — i.e. it's a container.
+  if (!existsSync(join(pkgPath, 'package.json')) && !existsSync(join(pkgPath, 'src'))) {
+    if (countSubPackages(pkgPath) >= 5) return 'registry';
+  }
 
   // 1. Check bin field in package.json → CLI
   const pkg = readPkgJsonSafe(pkgPath);

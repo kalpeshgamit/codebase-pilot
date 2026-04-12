@@ -386,6 +386,19 @@ function mapPackageToAgent(
         dependsOn: [],
       };
     }
+    case 'registry': {
+      // A registry is a collection of independent sub-packages (e.g. a plugins/ directory).
+      // Context points to the registry root — .claudeignore trims templates/specs/SKILL.md.
+      // Task description guides agents to use targeted dispatch per sub-package.
+      return {
+        name: `${name}-registry-agent`,
+        model: 'haiku',
+        context: [toPosix(path === '.' ? './' : path + '/')],
+        task: `Sub-package registry in ${path} — ${fileCount} files across sub-packages. Work on individual sub-packages via targeted dispatch.`,
+        layer: 2,
+        dependsOn: [],
+      };
+    }
     default:
       if (fileCount > 0) {
         const srcPath = resolveSourcePath(root, path);

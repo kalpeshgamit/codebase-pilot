@@ -1,9 +1,22 @@
-import { resolve, basename } from 'node:path';
-import { writeFileSync } from 'node:fs';
+import { resolve, basename, join } from 'node:path';
+import { writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { packProject } from '../packer/index.js';
 import { formatTokenCount, estimateCost } from '../packer/token-counter.js';
 import { logPackRun, getGitContext } from '../packer/usage-logger.js';
 import { detectChanges } from '../intelligence/incremental.js';
+import type { AgentsConfig, AgentDefinition } from '../types.js';
+
+/** List work-agent names (layer 1–3) from agents.json for high-token suggestions. */
+function listWorkAgents(root: string): string[] {
+  try {
+    const agentsPath = join(root, '.codebase-pilot', 'agents.json');
+    if (!existsSync(agentsPath)) return [];
+    const config: AgentsConfig = JSON.parse(readFileSync(agentsPath, 'utf8'));
+    return Object.values(config.agents)
+      .filter((a: AgentDefinition) => a.layer >= 1 && a.layer <= 3)
+      .map((a: AgentDefinition) => a.name);
+  } catch { return []; }
+}
 
 interface PackCommandOptions {
   dir: string;
@@ -226,6 +239,18 @@ export async function packCommand(options: PackCommandOptions): Promise<void> {
       console.log(`  Tokens:   ~${formatTokenCount(result.totalTokens)} (estimated)`);
       console.log(`  Cost:     ~${estimateCost(result.totalTokens)} per prompt`);
     }
+
+    // High-token warning — suggest agent-scoped packing when cost exceeds $1/prompt
+    if (result.totalTokens > 500_000 && !options.agent) {
+      console.log('');
+      console.log(`  \x1b[33m⚠  Large context\x1b[0m — consider agent-scoped packing to reduce by 80–90%:`);
+      console.log(`     codebase-pilot pack --compress --agent <agent-name>`);
+      const agentNames = listWorkAgents(root);
+      if (agentNames.length > 0) {
+        console.log(`     Available: ${agentNames.slice(0, 5).join(', ')}${agentNames.length > 5 ? ` +${agentNames.length - 5} more` : ''}`);
+      }
+    }
+
     console.log(`  Format:   ${format.toUpperCase()}`);
     console.log(`  Output:   ${outputPath}`);
     console.log('');

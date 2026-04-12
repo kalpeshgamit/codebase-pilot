@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { scanForSecrets, isEnvFile } from '../../src/security/scanner.js';
+import { scanForSecrets, isEnvFile, isKnownSafePath } from '../../src/security/scanner.js';
 import { SECRET_PATTERNS } from '../../src/security/patterns.js';
 
 describe('pattern count', () => {
@@ -302,5 +302,81 @@ describe('isEnvFile', () => {
     expect(isEnvFile('.env.local')).toBe(true);
     expect(isEnvFile('.env.production')).toBe(true);
     expect(isEnvFile('src/index.ts')).toBe(false);
+  });
+});
+
+describe('isKnownSafePath', () => {
+  it('flags __tests__ paths as safe', () => {
+    expect(isKnownSafePath('packages/core/src/__tests__/helpers/auth.ts')).toBe(true);
+    expect(isKnownSafePath('packages/core/src/__tests__/integration/portal-auth.test.ts')).toBe(true);
+  });
+
+  it('flags test helper paths as safe', () => {
+    expect(isKnownSafePath('packages/core/src/test-helpers/setup.ts')).toBe(true);
+    expect(isKnownSafePath('packages/core/src/test_utils/mocks.ts')).toBe(true);
+  });
+
+  it('flags mock and fixture paths as safe', () => {
+    expect(isKnownSafePath('src/__tests__/mocks/handlers.ts')).toBe(true);
+    expect(isKnownSafePath('tests/fixtures/users.json')).toBe(true);
+  });
+
+  it('flags integration guide files as safe', () => {
+    expect(isKnownSafePath('packages/plugins/stripe/src/specs/integration-guide.ts')).toBe(true);
+    expect(isKnownSafePath('packages/plugins/openai/src/specs/integration-guide.ts')).toBe(true);
+  });
+
+  it('flags seed data and reference files as safe', () => {
+    expect(isKnownSafePath('packages/plugins/nic-admin/src/specs/seed-data.ts')).toBe(true);
+    expect(isKnownSafePath('packages/plugins/nic-admin/src/specs/reference-code.ts')).toBe(true);
+  });
+
+  it('flags template and snippet dirs as safe', () => {
+    expect(isKnownSafePath('packages/plugins/nic-admin/templates/express/src/routes/email.ts')).toBe(true);
+    expect(isKnownSafePath('packages/plugins/test-hello-world/snippets/go-gin/config.go')).toBe(true);
+  });
+
+  it('flags .test.ts files as safe', () => {
+    expect(isKnownSafePath('src/auth.test.ts')).toBe(true);
+    expect(isKnownSafePath('src/auth.spec.ts')).toBe(true);
+  });
+
+  it('does NOT flag production source files as safe', () => {
+    expect(isKnownSafePath('src/api/settings.controller.ts')).toBe(false);
+    expect(isKnownSafePath('docker/docker-compose.prod.yml')).toBe(false);
+    expect(isKnownSafePath('packages/core/src/server.ts')).toBe(false);
+  });
+});
+
+describe('scanForSecrets — knownSafe flag', () => {
+  const credential = 'password = "super_secret_123"';
+
+  it('sets knownSafe=false for production source files', () => {
+    const results = scanForSecrets(credential, 'src/config.ts');
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].knownSafe).toBe(false);
+  });
+
+  it('sets knownSafe=true for test helper files', () => {
+    const results = scanForSecrets(credential, 'packages/core/src/__tests__/helpers/auth.ts');
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].knownSafe).toBe(true);
+  });
+
+  it('sets knownSafe=true for integration guide files', () => {
+    const results = scanForSecrets(credential, 'packages/plugins/stripe/src/specs/integration-guide.ts');
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].knownSafe).toBe(true);
+  });
+
+  it('sets knownSafe=true for template files', () => {
+    const results = scanForSecrets(credential, 'packages/plugins/nic-admin/templates/express/routes.ts');
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].knownSafe).toBe(true);
+  });
+
+  it('clean files return empty results regardless of path', () => {
+    const clean = 'export function hello() { return "world"; }';
+    expect(scanForSecrets(clean, 'src/__tests__/helpers/util.ts')).toEqual([]);
   });
 });
