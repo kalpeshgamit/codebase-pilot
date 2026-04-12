@@ -108,6 +108,19 @@ __snapshots__/
 .classpath
 .settings/
 
+# ORM migration snapshots (schema history — not source code)
+drizzle/meta/
+prisma/migrations/
+alembic/versions/
+db/migrate/
+db/schema.rb
+
+# Plugin / SDK template files (scaffolding examples — not live source)
+**/templates/
+**/snippets/
+**/src/specs/
+**/SKILL.md
+
 # codebase-pilot index
 .codebase-pilot/
 `;
@@ -153,6 +166,10 @@ const FRAMEWORK_PATTERNS: Record<string, { patterns: string[]; label: string }> 
   'Spring Boot': {
     label: 'Spring Boot',
     patterns: ['target/', '*.class', '*.jar', '*.war'],
+  },
+  'Drizzle': {
+    label: 'Drizzle ORM',
+    patterns: ['drizzle/meta/', '*.sql'],
   },
   'Gin': {
     label: 'Gin / Go',
