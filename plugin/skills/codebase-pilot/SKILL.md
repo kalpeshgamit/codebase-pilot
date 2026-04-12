@@ -1,5 +1,5 @@
 ---
-name: using-codebase-pilot
+name: codebase-pilot
 description: Use when starting any conversation - establishes how to find and use codebase-pilot skills, requiring Skill tool invocation before ANY response including clarifying questions
 ---
 
@@ -39,14 +39,14 @@ Example: `Skill("codebase-pilot:thinking")`
 - `codebase-pilot:token-budget` — Token count per file, context planning
 
 ### Workflow Skills
-- `codebase-pilot:using-codebase-pilot` — This skill (invoke at session start)
+- `codebase-pilot:codebase-pilot` — This skill (invoke at session start)
 - `codebase-pilot:thinking` — Turn ideas into designs and specs
 - `codebase-pilot:writing-plans` — Write implementation plans from specs
 - `codebase-pilot:executing-plans` — Execute a written plan task-by-task
 - `codebase-pilot:test-driven-development` — TDD: red-green-refactor cycle
 - `codebase-pilot:debugging` — Root cause investigation before fixes
 - `codebase-pilot:subagent-driven-development` — Fresh subagent per task with two-stage review
-- `codebase-pilot:dispatching-parallel-agents` — Dispatch independent agents concurrently
+- `codebase-pilot:sync-agents` — Dispatch independent agents concurrently
 - `codebase-pilot:finishing-a-development-branch` — Complete dev branch: verify, PR, merge
 - `codebase-pilot:requesting-code-review` — Request code review with proper context
 - `codebase-pilot:receiving-code-review` — Handle review feedback systematically
@@ -80,11 +80,11 @@ digraph skill_flow {
 
 When multiple skills could apply, use this order:
 
-1. **Process skills first** (thinking, systematic-debugging) — determine HOW to approach the task
+1. **Process skills first** (thinking, debugging) — determine HOW to approach the task
 2. **Implementation skills second** (test-driven-development, executing-plans) — guide execution
 
 "Let's build X" → thinking first, then writing-plans.
-"Fix this bug" → systematic-debugging first, then test-driven-development.
+"Fix this bug" → debugging first, then test-driven-development.
 
 ## Red Flags — STOP, you are rationalizing
 
@@ -102,7 +102,7 @@ When multiple skills could apply, use this order:
 
 ## Skill Types
 
-**Rigid** (test-driven-development, systematic-debugging): Follow exactly. Do not adapt away discipline.
+**Rigid** (test-driven-development, debugging): Follow exactly. Do not adapt away discipline.
 
 **Flexible** (thinking, writing-plans): Adapt principles to context.
 

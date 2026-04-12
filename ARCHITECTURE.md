@@ -43,14 +43,14 @@ plugin/
 
 | Skill | Tier | codebase-pilot Integration |
 |-------|------|---------------------------|
-| `using-codebase-pilot` | 3 — full original | Session start, full skill directory |
+| `codebase-pilot` | 3 — full original | Session start, full skill directory |
 | `thinking` | 2 — integrated | Uses pack-context for project context load |
 | `writing-plans` | 2 — integrated | References agents.json agent boundaries |
 | `executing-plans` | 1 — rebranded | — |
 | `test-driven-development` | 2 — integrated | Uses impact-analysis for test scope |
 | `debugging` | 2 — integrated | Uses impact-analysis for blast radius |
 | `subagent-driven-development` | 3 — full original | Reads agents.json, uses pack --agent |
-| `dispatching-parallel-agents` | 2 — integrated | Reads agents.json patterns |
+| `sync-agents` | 2 — integrated | Reads agents.json patterns |
 | `finishing-a-development-branch` | 1 — rebranded | — |
 | `requesting-code-review` | 1 — rebranded | — |
 | `receiving-code-review` | 1 — rebranded | — |

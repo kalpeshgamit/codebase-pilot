@@ -3,1198 +3,9 @@
 // NOTE: All user-provided strings are escaped via esc() before interpolation
 // to prevent XSS. The search live-update uses textContent-safe patterns.
 
-import { basename, dirname, resolve } from 'node:path';
-import { readFileSync, existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { basename } from 'node:path';
+import { layout, T } from './kit.js';
 
-// Read version from package.json (works from both src/ui/ and dist/)
-const __pages_dir = dirname(fileURLToPath(import.meta.url));
-let PKG_VERSION = '0.3.5';
-for (const rel of ['..', '../..']) {
-  try {
-    const p = resolve(__pages_dir, rel, 'package.json');
-    if (!existsSync(p)) continue;
-    const raw = readFileSync(p, 'utf8');
-    if (raw.includes('"codebase-pilot')) { PKG_VERSION = JSON.parse(raw).version; break; }
-  } catch { /* try next */ }
-}
-
-// Inline logo as data URI — works regardless of install method (npm global, local, dev)
-let LOGO_DATA_URI = '';
-for (const rel of ['..', '../..']) {
-  try {
-    const logoPath = resolve(__pages_dir, rel, 'dist', 'logo.png');
-    const docsPath = resolve(__pages_dir, rel, 'docs', 'logo-05-dark.png');
-    const p = existsSync(logoPath) ? logoPath : existsSync(docsPath) ? docsPath : '';
-    if (p) { LOGO_DATA_URI = `data:image/png;base64,${readFileSync(p).toString('base64')}`; break; }
-  } catch { /* try next */ }
-}
-
-// ---------------------------------------------------------------------------
-// Theme tokens
-// ---------------------------------------------------------------------------
-
-const T = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surfaceHover: '#1c2129',
-  border: '#30363d',
-  text: '#e6edf3',
-  textMuted: '#8b949e',
-  accent: '#58a6ff',
-  success: '#3fb950',
-  warning: '#d29922',
-  danger: '#f85149',
-  font: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-  mono: "ui-monospace, 'SF Mono', 'Cascadia Code', 'Fira Code', monospace",
-} as const;
-
-// ---------------------------------------------------------------------------
-// Shared layout
-// ---------------------------------------------------------------------------
-
-function layout(title: string, activePage: string, body: string, port: number, headExtra = ''): string {
-  const nav = [
-    { href: '/', label: 'Dashboard', icon: 'layout-dashboard', color: '#3fb950', lightColor: '#16a34a', gradient: 'linear-gradient(135deg, #3fb950, #2ea043)', lightGradient: 'linear-gradient(135deg, #16a34a, #15803d)' },
-    { href: '/projects', label: 'Projects', icon: 'folder-kanban', color: '#58a6ff', lightColor: '#2563eb', gradient: 'linear-gradient(135deg, #58a6ff, #388bfd)', lightGradient: 'linear-gradient(135deg, #2563eb, #1d4ed8)' },
-    { href: '/prompts', label: 'Prompts', icon: 'history', color: '#ff6800', lightColor: '#c2410c', gradient: 'linear-gradient(135deg, #ff6800, #e85d04)', lightGradient: 'linear-gradient(135deg, #c2410c, #9a3412)' },
-    { href: '/graph', label: 'Graph', icon: 'git-branch', color: '#a78bfa', lightColor: '#7c3aed', gradient: 'linear-gradient(135deg, #a78bfa, #8b5cf6)', lightGradient: 'linear-gradient(135deg, #7c3aed, #6d28d9)' },
-    { href: '/search', label: 'Search', icon: 'search', color: '#f0c000', lightColor: '#a16207', gradient: 'linear-gradient(135deg, #f0c000, #d29922)', lightGradient: 'linear-gradient(135deg, #a16207, #854d0e)' },
-    { href: '/agents', label: 'Agents', icon: 'bot', color: '#f778ba', lightColor: '#be185d', gradient: 'linear-gradient(135deg, #f778ba, #db61a2)', lightGradient: 'linear-gradient(135deg, #be185d, #9d174d)' },
-    { href: '/files', label: 'Files', icon: 'file-code-2', color: '#79c0ff', lightColor: '#0369a1', gradient: 'linear-gradient(135deg, #79c0ff, #58a6ff)', lightGradient: 'linear-gradient(135deg, #0369a1, #075985)' },
-    { href: '/security', label: 'Security', icon: 'shield-check', color: '#f85149', lightColor: '#dc2626', gradient: 'linear-gradient(135deg, #f85149, #da3633)', lightGradient: 'linear-gradient(135deg, #dc2626, #b91c1c)' },
-  ];
-
-  const activeNavColor = nav.find(n => n.href === activePage)?.color || '#3fb950';
-
-  const navItems = nav
-    .map(n => {
-      const isActive = n.href === activePage;
-      const cls = isActive ? ' class="active"' : '';
-      const activeStyle = isActive ? ` style="border-left:3px solid ${n.color};background:${n.color}15;"` : '';
-      // Use data attributes for both dark and light colors — JS applies the right one
-      const iconStyle = ` style="color:var(--nav-color-${n.label.toLowerCase()})${isActive ? '' : ';opacity:0.65'}"`;
-      const labelStyle = isActive
-        ? ` style="background:var(--nav-gradient-${n.label.toLowerCase()});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:700;"`
-        : ` style="color:var(--nav-color-${n.label.toLowerCase()});opacity:0.65"`;
-      return `<a href="${n.href}"${cls}${activeStyle} data-color="${n.color}" data-light-color="${n.lightColor}"><i data-lucide="${n.icon}" class="nav-icon"${iconStyle}></i><span${labelStyle}>${n.label}</span></a>`;
-    })
-    .join('\n        ');
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-<title>${title} - codebase-pilot</title>
-<style>
-  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
-
-  :root {
-    --bg: #141824;
-    --surface: #1a1e2e;
-    --surface-hover: #222738;
-    --border: #2a2f42;
-    --glass: rgba(26, 30, 46, 0.85);
-    --glass-border: rgba(255, 255, 255, 0.05);
-    --nav-color-dashboard: #3fb950;
-    --nav-color-projects: #58a6ff;
-    --nav-color-prompts: #ff6800;
-    --nav-color-graph: #a78bfa;
-    --nav-color-search: #f0c000;
-    --nav-color-agents: #f778ba;
-    --nav-color-files: #79c0ff;
-    --nav-color-security: #f85149;
-    --nav-gradient-dashboard: linear-gradient(135deg, #3fb950, #2ea043);
-    --nav-gradient-projects: linear-gradient(135deg, #58a6ff, #388bfd);
-    --nav-gradient-prompts: linear-gradient(135deg, #ff6800, #e85d04);
-    --nav-gradient-graph: linear-gradient(135deg, #a78bfa, #8b5cf6);
-    --nav-gradient-search: linear-gradient(135deg, #f0c000, #d29922);
-    --nav-gradient-agents: linear-gradient(135deg, #f778ba, #db61a2);
-    --nav-gradient-files: linear-gradient(135deg, #79c0ff, #58a6ff);
-    --nav-gradient-security: linear-gradient(135deg, #f85149, #da3633);
-    --text: #e6edf3;
-    --text-muted: #8b949e;
-    --text-dim: #484f58;
-    --accent: #3fb950;
-    --success: #3fb950;
-    --warning: #d29922;
-    --danger: #f85149;
-    --purple: #a78bfa;
-    --blue: #58a6ff;
-  }
-
-  body.light {
-    --bg: #f8fafb;
-    --surface: #ffffff;
-    --surface-hover: #f0f4f8;
-    --border: #d8dee4;
-    --glass: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(0, 0, 0, 0.06);
-    --nav-color-dashboard: #16a34a;
-    --nav-color-projects: #2563eb;
-    --nav-color-prompts: #c2410c;
-    --nav-color-graph: #7c3aed;
-    --nav-color-search: #a16207;
-    --nav-color-agents: #be185d;
-    --nav-color-files: #0369a1;
-    --nav-color-security: #dc2626;
-    --nav-gradient-dashboard: linear-gradient(135deg, #16a34a, #15803d);
-    --nav-gradient-projects: linear-gradient(135deg, #2563eb, #1d4ed8);
-    --nav-gradient-prompts: linear-gradient(135deg, #c2410c, #9a3412);
-    --nav-gradient-graph: linear-gradient(135deg, #7c3aed, #6d28d9);
-    --nav-gradient-search: linear-gradient(135deg, #a16207, #854d0e);
-    --nav-gradient-agents: linear-gradient(135deg, #be185d, #9d174d);
-    --nav-gradient-files: linear-gradient(135deg, #0369a1, #075985);
-    --nav-gradient-security: linear-gradient(135deg, #dc2626, #b91c1c);
-    --text: #1a1a2e;
-    --text-muted: #4a5568;
-    --text-dim: #718096;
-    --accent: #16a34a;
-    --success: #16a34a;
-    --warning: #ca8a04;
-    --danger: #dc2626;
-    --purple: #7c3aed;
-    --blue: #2563eb;
-  }
-
-  html { scroll-behavior: smooth; }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateX(-10px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-
-  @keyframes slideCard {
-    from { opacity: 0; transform: translateY(16px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-
-  @keyframes subtlePulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-  }
-
-  @keyframes barGrow {
-    from { width: 0; }
-  }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: ${T.font};
-    font-size: 14px;
-    line-height: 1.5;
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-  }
-
-  a { color: var(--accent); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-
-  /* Sidebar */
-  .sidebar {
-    width: 220px;
-    height: 100vh;
-    background: var(--bg);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    z-index: 50;
-  }
-
-  @keyframes exhaust {
-    0% { opacity: 0.8; transform: translateY(0) scale(1); }
-    50% { opacity: 0.4; transform: translateY(8px) scale(1.2); }
-    100% { opacity: 0; transform: translateY(18px) scale(0.6); }
-  }
-
-  @keyframes exhaustGlow {
-    0% { box-shadow: 0 0 8px rgba(63,185,80,0.6), 0 0 16px rgba(63,185,80,0.3); }
-    50% { box-shadow: 0 0 12px rgba(255,140,0,0.7), 0 0 24px rgba(255,100,0,0.4); }
-    100% { box-shadow: 0 0 6px rgba(63,185,80,0.5), 0 0 12px rgba(63,185,80,0.2); }
-  }
-
-  @keyframes jetHover {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-3px); }
-  }
-
-
-  .sidebar-brand {
-    padding: 16px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .jet-wrapper {
-    position: relative;
-    display: inline-block;
-  }
-
-
-  .sidebar-brand img {
-    width: 200px;
-    height: auto;
-    margin-bottom: 6px;
-    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    animation: jetHover 3s ease-in-out infinite;
-  }
-
-  .sidebar-brand:hover img {
-    filter: drop-shadow(0 0 16px rgba(63,185,80,0.5)) drop-shadow(0 0 32px rgba(88,166,255,0.3)) drop-shadow(0 0 48px rgba(167,139,250,0.2));
-    animation: jetHover 1.5s ease-in-out infinite;
-    transform: scale(1.02);
-  }
-
-  body.light .sidebar-brand:hover img {
-    filter: drop-shadow(0 0 12px rgba(22,163,74,0.4)) drop-shadow(0 0 24px rgba(37,99,235,0.2)) drop-shadow(0 0 36px rgba(124,58,237,0.15));
-  }
-
-  /* Tooltip */
-  .stat-tooltip {
-    position: fixed;
-    z-index: 9999;
-    background: rgba(13,17,23,0.97);
-    border: 1px solid rgba(63,185,80,0.35);
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-size: 12px;
-    color: var(--text);
-    max-width: 260px;
-    pointer-events: none;
-    opacity: 0;
-    transform: translateY(4px);
-    transition: opacity 0.15s ease, transform 0.15s ease;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    line-height: 1.6;
-  }
-
-  body.light .stat-tooltip {
-    background: rgba(255,255,255,0.98);
-    border-color: rgba(22,163,74,0.3);
-    color: #1a1a2e;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-  }
-
-  .stat-tooltip.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  .stat-tooltip strong {
-    display: block;
-    margin-bottom: 4px;
-    color: var(--accent);
-    font-size: 13px;
-  }
-
-  .stat-tooltip .tip-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 2px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-  }
-
-  body.light .stat-tooltip .tip-row {
-    border-bottom-color: rgba(0,0,0,0.06);
-  }
-
-  .stat-tooltip .tip-row:last-child { border-bottom: none; }
-  .stat-tooltip .tip-key { color: var(--text-muted); }
-  .stat-tooltip .tip-val { font-weight: 600; font-family: ${T.mono}; }
-
-  .sidebar-brand:hover .jet-exhaust span {
-    animation-duration: 0.3s;
-    width: 6px;
-    height: 6px;
-  }
-
-  .brand-text {
-    font-family: 'Space Grotesk', system-ui, sans-serif;
-    font-size: 17px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    background: linear-gradient(90deg, var(--accent), #58a6ff, #a78bfa, var(--accent));
-    background-size: 300% 100%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: brandShimmer 6s ease-in-out infinite;
-  }
-
-  @keyframes brandShimmer {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-
-  .sidebar-brand:hover .brand-text {
-    animation-duration: 2s;
-  }
-
-
-  body.light .brand-text {
-    background: linear-gradient(90deg, #16a34a, #2563eb, #7c3aed, #16a34a);
-    background-size: 300% 100%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: brandShimmer 6s ease-in-out infinite;
-  }
-
-  .sidebar-brand .brand-meta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 10px;
-    color: var(--text-muted);
-  }
-
-  .sidebar nav {
-    flex: 1;
-    padding: 12px 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .sidebar nav a {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
-    border-radius: 8px;
-    color: var(--text-muted);
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    text-decoration: none;
-    letter-spacing: 0.01em;
-  }
-
-  .sidebar nav a:hover {
-    background: var(--surface-hover);
-    color: var(--text);
-    text-decoration: none;
-  }
-  .sidebar nav a.active {
-    font-weight: 600;
-    padding-left: 11px;
-  }
-
-  .sidebar nav .nav-icon {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-    stroke: currentColor;
-    fill: none;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .sidebar-footer {
-    padding: 12px 16px;
-    border-top: 1px solid var(--border);
-    font-size: 11px;
-    color: var(--text-muted);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .theme-toggle {
-    background: rgba(48, 54, 61, 0.5);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 4px 8px;
-    cursor: pointer;
-    color: var(--text-muted);
-    font-size: 14px;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-  }
-
-  .theme-toggle:hover {
-    background: rgba(63, 185, 80, 0.15);
-    color: var(--accent);
-    border-color: rgba(63, 185, 80, 0.3);
-  }
-
-  /* Light theme */
-  body.light {
-    --bg: #ffffff;
-    --surface: #f6f8fa;
-    --surface-hover: #eef1f4;
-    --border: #d0d7de;
-    --text: #1f2328;
-    --text-muted: #656d76;
-    --accent: #0969da;
-    --success: #1a7f37;
-    --warning: #9a6700;
-    --danger: #cf222e;
-  }
-
-  /* Light mode specific overrides (CSS vars handle most, these handle rgba/special cases) */
-  body.light .sidebar { background: #ffffff; box-shadow: 2px 0 8px rgba(0,0,0,0.04); }
-  body.light .sidebar-brand img { filter: drop-shadow(0 2px 8px rgba(0,0,0,0.12)); }
-  body.light .sidebar nav a:hover { background: #e8f5e9; }
-  body.light .sidebar nav a.active { background: #e8f5e9; color: #16a34a; border-color: #16a34a; }
-  body.light .card-value { color: #1a1a2e; }
-  body.light .sidebar { background: #ffffff; box-shadow: 1px 0 4px rgba(0,0,0,0.04); }
-  body.light thead th { background: #f8fafb; }
-  body.light .badge-blue { background: #e8f5e9; color: #16a34a; }
-  body.light .badge-green { background: #e8f5e9; color: #16a34a; border-color: #a7f3d0; }
-  body.light .badge-yellow { background: #fef9c3; color: #a16207; }
-  body.light .badge-red { background: #fee2e2; color: #dc2626; }
-  body.light .search-box { background: #ffffff; color: var(--text); border-color: #d8dee4; }
-  body.light .search-box:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
-  body.light .search-result { background: #ffffff; border-color: #e2e8f0; }
-  body.light a { color: #16a34a; }
-  body.light .savings-bar-track { background: #e2e8f0; }
-  body.light .bar-bg { background: #e2e8f0; }
-  body.light .page-title { color: #1a1a2e; }
-  body.light .section-title { color: #1a1a2e; }
-
-  /* Main content */
-  .main {
-    flex: 1;
-    margin-left: 220px;
-    padding: 28px 36px;
-    height: 100vh;
-    overflow-y: auto;
-    animation: fadeIn 0.3s ease both;
-    background: var(--bg);
-    position: relative;
-  }
-
-  /* Animated gradient mesh — uses active page color */
-  .main::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 100%;
-    min-height: 100vh;
-    pointer-events: none;
-    z-index: 0;
-    opacity: 0.04;
-    background:
-      radial-gradient(ellipse 500px 350px at 30% 20%, var(--page-color, #3fb950), transparent),
-      radial-gradient(ellipse 400px 350px at 70% 70%, var(--page-color, #3fb950), transparent);
-    animation: meshFloat 20s ease-in-out infinite alternate;
-  }
-  body.light .main::before { opacity: 0.03; }
-
-  @keyframes meshFloat {
-    0% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(20px, -15px) scale(1.02); }
-    66% { transform: translate(-15px, 10px) scale(0.98); }
-    100% { transform: translate(10px, 5px) scale(1.01); }
-  }
-
-  .main > * { position: relative; z-index: 1; }
-
-  /* Responsive */
-  @media (max-width: 768px) {
-    .sidebar { width: 60px; }
-    .sidebar nav a span:not(.nav-icon) { display: none; }
-    .sidebar-brand span:not(.plane) { display: none; }
-    .sidebar-footer { display: none; }
-    .main { margin-left: 60px; padding: 20px 16px; }
-    .cards { grid-template-columns: 1fr 1fr; }
-  }
-
-  .page-title {
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 24px;
-    letter-spacing: -0.01em;
-    color: var(--text);
-    animation: fadeIn 0.3s ease both;
-  }
-
-  /* Cards */
-  .cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
-    margin-bottom: 28px;
-  }
-
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    animation: slideCard 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
-    position: relative;
-    overflow: hidden;
-  }
-
-  /* Subtle top highlight line */
-  .card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
-  }
-
-  .card:nth-child(1) { animation-delay: 0.05s; }
-  .card:nth-child(2) { animation-delay: 0.1s; }
-  .card:nth-child(3) { animation-delay: 0.15s; }
-  .card:nth-child(4) { animation-delay: 0.2s; }
-  .card:nth-child(5) { animation-delay: 0.25s; }
-
-  .card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(63, 185, 80, 0.35);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(63, 185, 80, 0.1);
-  }
-
-  body.light .card {
-    background: #ffffff;
-    border-color: #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-  }
-  body.light .card::before { background: linear-gradient(90deg, transparent, rgba(0,0,0,0.03), transparent); }
-  body.light .card:hover { transform: translateY(-2px); border-color: rgba(22,163,74,0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
-
-  .card-label {
-    font-size: 12px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
-  }
-
-  .card-value {
-    font-size: 2.2rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    color: var(--text);
-    font-family: ${T.mono};
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    width: 100%;
-  }
-
-  .card-value.lg { font-size: 1.6rem; }
-  .card-value.xl { font-size: 1.25rem; letter-spacing: -0.01em; }
-
-  .card-sub {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-top: 4px;
-  }
-
-  /* Tables */
-  .table-wrap {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    margin-bottom: 24px;
-    animation: fadeIn 0.5s ease both;
-    animation-delay: 0.2s;
-  }
-
-  body.light .table-wrap {
-    background: #ffffff;
-    border-color: #e2e8f0;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-  }
-
-  .table-wrap h3 {
-    padding: 14px 20px;
-    font-size: 14px;
-    font-weight: 600;
-    border-bottom: 1px solid var(--border);
-    color: var(--text);
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  thead th {
-    text-align: left;
-    padding: 10px 16px;
-    font-size: 12px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    user-select: none;
-    white-space: nowrap;
-  }
-
-  thead th:hover { color: var(--text); }
-
-  tbody td {
-    padding: 10px 16px;
-    font-size: 13px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  tbody tr:last-child td { border-bottom: none; }
-
-  tbody tr:hover { background: var(--surface-hover); }
-
-  .mono { font-family: ${T.mono}; font-size: 12px; }
-
-  /* Bar */
-  .bar-bg {
-    height: 6px;
-    background: var(--border);
-    border-radius: 3px;
-    overflow: hidden;
-    min-width: 80px;
-  }
-
-  .bar-fill {
-    height: 100%;
-    border-radius: 3px;
-    background: linear-gradient(90deg, var(--accent), #2ea043);
-    animation: barGrow 0.8s ease both;
-  }
-
-  /* Badge */
-  .badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 500;
-  }
-
-  .badge-blue { background: rgba(63,185,80,0.12); color: var(--accent); }
-  .badge-green { background: rgba(63,185,80,0.15); color: var(--success); border: 1px solid rgba(63,185,80,0.25); }
-  .badge-yellow { background: rgba(210,153,34,0.15); color: var(--warning); }
-  .badge-red { background: rgba(248,81,73,0.15); color: var(--danger); }
-
-  /* Savings chart */
-  .savings-chart {
-    display: flex;
-    gap: 24px;
-    margin-bottom: 28px;
-  }
-
-  .savings-bar {
-    flex: 1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px 20px;
-  }
-
-  .savings-bar-label {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-bottom: 8px;
-  }
-
-  .savings-bar-track {
-    height: 24px;
-    background: var(--border);
-    border-radius: 4px;
-    overflow: hidden;
-    display: flex;
-  }
-
-  .savings-bar-used {
-    height: 100%;
-    background: #ff6800;
-  }
-
-  .savings-bar-saved {
-    height: 100%;
-    background: var(--success);
-  }
-
-  body.light .savings-bar-used { background: #ff6800; }
-  body.light .savings-bar-saved { background: #16a34a; }
-
-  .savings-bar-legend {
-    display: flex;
-    gap: 16px;
-    margin-top: 8px;
-    font-size: 11px;
-    color: var(--text-muted);
-  }
-
-  .savings-bar-legend span::before {
-    content: '';
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 2px;
-    margin-right: 4px;
-    vertical-align: middle;
-  }
-
-  .legend-used::before { background: #ff6800 !important; }
-  .legend-saved::before { background: var(--success) !important; }
-
-  /* Section */
-  .section {
-    margin-bottom: 28px;
-  }
-
-  .section-title {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 12px;
-    color: var(--text);
-  }
-
-  /* Search */
-  .search-box {
-    width: 100%;
-    max-width: 600px;
-    padding: 12px 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-size: 15px;
-    font-family: ${T.font};
-    outline: none;
-    transition: border-color 0.2s;
-    margin-bottom: 20px;
-  }
-
-  .search-box:focus { border-color: var(--accent); }
-  .search-box::placeholder { color: var(--text-muted); }
-
-  .search-result {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px 20px;
-    margin-bottom: 8px;
-    transition: border-color 0.2s;
-  }
-
-  .search-result:hover { border-color: var(--accent); }
-
-  .search-result-path {
-    font-family: ${T.mono};
-    font-size: 13px;
-    color: var(--accent);
-    margin-bottom: 4px;
-  }
-
-  .search-result-snippet {
-    font-family: ${T.mono};
-    font-size: 12px;
-    color: var(--text-muted);
-    white-space: pre-wrap;
-    word-break: break-all;
-  }
-
-  .search-result-snippet mark {
-    background: rgba(210, 153, 34, 0.3);
-    color: var(--warning);
-    border-radius: 2px;
-    padding: 0 2px;
-  }
-
-  .search-result-meta {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 4px;
-    display: flex;
-    gap: 16px;
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 48px 24px;
-    color: var(--text-muted);
-    font-size: 14px;
-  }
-
-  /* Agents */
-  .agent-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 12px;
-  }
-
-  .agent-card-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 10px;
-  }
-
-  .agent-card-name {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text);
-  }
-
-  .agent-card-task {
-    font-size: 13px;
-    color: var(--text-muted);
-    margin-bottom: 10px;
-  }
-
-  .agent-card-details {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    font-size: 12px;
-  }
-
-  .agent-context {
-    font-family: ${T.mono};
-    font-size: 11px;
-    background: rgba(88,166,255,0.08);
-    padding: 2px 8px;
-    border-radius: 4px;
-    color: var(--accent);
-  }
-
-  /* Layer diagram */
-  .layer-diagram {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 24px;
-    margin-bottom: 24px;
-  }
-
-  .layer-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-
-  .layer-label {
-    width: 60px;
-    font-size: 12px;
-    color: var(--text-muted);
-    text-align: right;
-    flex-shrink: 0;
-  }
-
-  .layer-items {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .layer-item {
-    padding: 4px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
-  }
-
-  /* Impact */
-  .risk-meter {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-
-  .risk-meter-bar {
-    flex: 1;
-    max-width: 300px;
-    height: 12px;
-    background: var(--border);
-    border-radius: 6px;
-    overflow: hidden;
-  }
-
-  .risk-meter-fill {
-    height: 100%;
-    border-radius: 6px;
-    transition: width 0.3s;
-  }
-
-  .info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-
-  /* Responsive */
-  @media (max-width: 768px) {
-    .sidebar { display: none; }
-    .main { margin-left: 0; padding: 16px; }
-    .cards { grid-template-columns: 1fr 1fr; }
-    .savings-chart { flex-direction: column; }
-  }
-</style>
-<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-${headExtra}
-<script>
-// CoPilot WebSocket client — wraps native WS to provide EventEmitter-style API
-// Drop-in for the old EventSource('/api/events') usage
-window.CpSocket = (function() {
-  var handlers = {};
-  var ws;
-  var reconnectDelay = 1000;
-  function connect() {
-    var proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    ws = new WebSocket(proto + '://' + location.host);
-    ws.onopen = function() {
-      reconnectDelay = 1000;
-    };
-    ws.onmessage = function(e) {
-      try {
-        var msg = JSON.parse(e.data);
-        var fns = handlers[msg.event] || [];
-        for (var i = 0; i < fns.length; i++) fns[i]({ data: JSON.stringify(msg.data) });
-        // also fire wildcard listeners
-        var all = handlers['*'] || [];
-        for (var j = 0; j < all.length; j++) all[j](msg);
-      } catch(err) {}
-    };
-    ws.onerror = function() {};
-    ws.onclose = function() {
-      // Auto-reconnect with backoff
-      setTimeout(connect, Math.min(reconnectDelay, 30000));
-      reconnectDelay = Math.min(reconnectDelay * 2, 30000);
-      var fns = handlers['_close'] || [];
-      for (var i = 0; i < fns.length; i++) fns[i]();
-    };
-  }
-  connect();
-  return {
-    addEventListener: function(event, fn) {
-      if (!handlers[event]) handlers[event] = [];
-      handlers[event].push(fn);
-    },
-    on: function(event, fn) { this.addEventListener(event, fn); },
-    get onerror() { return null; },
-    set onerror(fn) { handlers['_close'] = handlers['_close'] || []; handlers['_close'].push(fn); }
-  };
-})();
-</script>
-</head>
-<body>
-  <aside class="sidebar">
-    <div class="sidebar-brand">
-      <div class="jet-wrapper">
-        <img src="${LOGO_DATA_URI || '/static/logo.png'}" alt="codebase-pilot" onerror="this.style.display='none'" />
-      </div>
-      <div class="brand-text" style="margin-top:-6px;text-align:center;">Codebase Pilot</div>
-    </div>
-    <nav>
-      ${navItems}
-    </nav>
-    <div class="sidebar-footer" style="flex-direction:column;gap:8px;">
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <a href="https://github.com/kalpeshgamit/codebase-pilot" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;text-decoration:none;"><i data-lucide="github" style="width:11px;height:11px;"></i>GitHub</a>
-        <a href="https://www.npmjs.com/package/codebase-pilot-cli" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;text-decoration:none;"><i data-lucide="package" style="width:11px;height:11px;"></i>npm v${PKG_VERSION}</a>
-        <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;background:rgba(63,185,80,0.12);color:var(--accent);font-size:10px;font-weight:600;"><i data-lucide="hexagon" style="width:11px;height:11px;"></i>Node &ge;18</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
-        <span>localhost:${port}</span>
-        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
-          <i data-lucide="moon" class="theme-icon-dark" style="width:14px;height:14px;"></i>
-          <i data-lucide="sun" class="theme-icon-light" style="width:14px;height:14px;display:none;"></i>
-        </button>
-      </div>
-    </div>
-  </aside>
-  <main class="main" style="--page-color:${activeNavColor}">
-    ${body}
-  </main>
-<script>
-function toggleTheme() {
-  var isLight = document.body.classList.toggle('light');
-  localStorage.setItem('cp-theme', isLight ? 'light' : 'dark');
-  document.querySelectorAll('.theme-icon-dark').forEach(function(el) { el.style.display = isLight ? 'none' : ''; });
-  document.querySelectorAll('.theme-icon-light').forEach(function(el) { el.style.display = isLight ? '' : 'none'; });
-}
-(function() {
-  var saved = localStorage.getItem('cp-theme');
-  if (saved === 'light') {
-    document.body.classList.add('light');
-    document.querySelectorAll('.theme-icon-dark').forEach(function(el) { el.style.display = 'none'; });
-    document.querySelectorAll('.theme-icon-light').forEach(function(el) { el.style.display = ''; });
-  } else {
-    // Default is dark — ensure it's set
-    localStorage.setItem('cp-theme', 'dark');
-  }
-  // Initialize Lucide icons
-  if (window.lucide) lucide.createIcons();
-
-  // Nav item hover — brighten on hover, dim on idle
-  document.querySelectorAll('.sidebar nav a[data-color]').forEach(function(a) {
-    var darkColor = a.getAttribute('data-color');
-    var lightColor = a.getAttribute('data-light-color') || darkColor;
-    function getColor() { return document.body.classList.contains('light') ? lightColor : darkColor; }
-    a.addEventListener('mouseenter', function() {
-      if (!a.classList.contains('active')) {
-        var c = getColor();
-        a.style.borderLeft = '3px solid ' + c;
-        a.style.paddingLeft = '11px';
-        a.style.background = c + '12';
-        a.querySelector('.nav-icon').style.opacity = '1';
-        a.querySelector('span').style.opacity = '1';
-      }
-    });
-    a.addEventListener('mouseleave', function() {
-      if (!a.classList.contains('active')) {
-        a.style.borderLeft = '';
-        a.style.paddingLeft = '';
-        a.style.background = '';
-        a.querySelector('.nav-icon').style.opacity = '0.65';
-        a.querySelector('span').style.opacity = '0.65';
-      }
-    });
-  });
-
-  // Tooltip system
-  (function() {
-    var tip = document.createElement('div');
-    tip.className = 'stat-tooltip';
-    tip.id = 'stat-tip';
-    document.body.appendChild(tip);
-    var hideTimer;
-    document.querySelectorAll('[data-tip]').forEach(function(card) {
-      card.addEventListener('mouseenter', function(e) {
-        clearTimeout(hideTimer);
-        var raw = card.getAttribute('data-tip') || '';
-        try {
-          var obj = JSON.parse(raw);
-          tip.innerHTML = '';
-          if (obj.title) {
-            var t = document.createElement('strong');
-            t.textContent = obj.title;
-            tip.appendChild(t);
-          }
-          (obj.rows || []).forEach(function(row) {
-            var d = document.createElement('div');
-            d.className = 'tip-row';
-            d.innerHTML = '<span class="tip-key">' + row[0] + '</span><span class="tip-val">' + row[1] + '</span>';
-            tip.appendChild(d);
-          });
-          if (obj.note) {
-            var n = document.createElement('div');
-            n.style.cssText = 'margin-top:6px;font-size:11px;color:var(--text-muted);font-style:italic;';
-            n.textContent = obj.note;
-            tip.appendChild(n);
-          }
-        } catch(_) { tip.textContent = raw; }
-        tip.classList.add('visible');
-      });
-      card.addEventListener('mousemove', function(e) {
-        var me = e;
-        var x = me.clientX + 14;
-        var y = me.clientY - 10;
-        if (x + 280 > window.innerWidth) x = me.clientX - 280;
-        if (y + tip.offsetHeight + 10 > window.innerHeight) y = me.clientY - tip.offsetHeight - 10;
-        tip.style.left = x + 'px';
-        tip.style.top = y + 'px';
-      });
-      card.addEventListener('mouseleave', function() {
-        tip.classList.remove('visible');
-      });
-    });
-  })();
-
-  // Abbreviate large numbers: 9.9M, 15.1M, 130K etc.
-  function fmtShortJS(n) {
-    var safe = Number(n) || 0;
-    if (safe >= 1e9) return (safe / 1e9).toFixed(safe >= 1e10 ? 1 : 2).replace(/\\.?0+$/, '') + 'B';
-    if (safe >= 1e6) return (safe / 1e6).toFixed(safe >= 1e8 ? 1 : 2).replace(/\\.?0+$/, '') + 'M';
-    if (safe >= 1e4) return (safe / 1e3).toFixed(1).replace(/\\.?0+$/, '') + 'K';
-    return safe.toLocaleString('en-US');
-  }
-
-  // Auto-scale card values based on character length (abbreviated values are short, no scaling needed)
-  function scaleCardValue(el) {
-    el.classList.remove('lg', 'xl');
-    // Only scale if value is a plain long number (not abbreviated)
-    var txt = (el.textContent || '');
-    if (txt.endsWith('B') || txt.endsWith('M') || txt.endsWith('K')) return;
-    var len = txt.replace(/[^0-9]/g, '').length;
-    if (len >= 10) el.classList.add('xl');
-    else if (len >= 7) el.classList.add('lg');
-  }
-  document.querySelectorAll('.card-value').forEach(function(el) { scaleCardValue(el); });
-
-  // Animate numbers: count up from 0 to target value
-  document.querySelectorAll('.card-value').forEach(function(el) {
-    // Read the numeric value from title (full number) or text
-    var titleVal = el.querySelector('span[title]');
-    var rawText = titleVal ? titleVal.getAttribute('title').replace(/,/g, '') : (el.textContent || '').replace(/,/g, '');
-    var target = parseFloat(rawText);
-    if (isNaN(target) || target === 0) return;
-    var duration = 1200;
-    var start = performance.now();
-    el.textContent = '0';
-
-    function step(now) {
-      var progress = Math.min((now - start) / duration, 1);
-      // Ease out cubic
-      var ease = 1 - Math.pow(1 - progress, 3);
-      var current = Math.round(target * ease);
-      el.textContent = fmtShortJS(current);
-      if (progress < 1) requestAnimationFrame(step);
-      else {
-        var abbr = fmtShortJS(target);
-        var full = Math.round(target).toLocaleString('en-US');
-        if (abbr !== full) {
-          el.innerHTML = '<span title="' + full + '">' + abbr + '</span>';
-        } else {
-          el.textContent = abbr;
-        }
-        scaleCardValue(el);
-      }
-    }
-    requestAnimationFrame(step);
-  });
-})();
-
-</script>
-</body>
-</html>`;
-}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -1302,10 +113,10 @@ export function renderDashboard(data: DashboardData, port: number): string {
         <div class="card-label">Total Files</div>
         <div class="card-value" style="color:var(--blue);">${fmtShort(data.totalFiles)}</div>
       </div>
-      <div class="card" style="border-top:3px solid #ff6800;cursor:default;"
+      <div class="card" style="border-top:3px solid #FFB347;cursor:default;"
         data-tip='${JSON.stringify({title:"Total Tokens",rows:[["Raw tokens",fmtNum(data.totalTokens)],["After compress","~"+fmtNum(Math.round(data.totalTokens*0.3))+" (est.)"],["Savings est.","~70%"]],note:"Raw token count of all scanned files. Use --compress to reduce by ~70%."})}'>
         <div class="card-label">Total Tokens</div>
-        <div class="card-value" style="color:#ff6800;">${fmtShort(data.totalTokens)}</div>
+        <div class="card-value" style="color:#FFB347;">${fmtShort(data.totalTokens)}</div>
       </div>
       <div class="card" style="border-top:3px solid var(--purple);cursor:default;position:relative;overflow:hidden;"
         data-tip='${JSON.stringify({title:"Sessions Today",rows:[["Today",fmtNum(data.today.sessions)],["This week",fmtNum(data.week.sessions)],["This month",fmtNum(data.month.sessions)]],note:"Each \`pack\` run counts as one session."})}'>
@@ -1425,7 +236,7 @@ export function renderDashboard(data: DashboardData, port: number): string {
   }
 
   // Project info with language distribution bar
-  const langColors = ['var(--blue)', 'var(--success)', 'var(--purple)', '#ff6800', '#d29922', 'var(--accent)', '#f85149', '#bc8cff'];
+  const langColors = ['var(--accent)', '#D4722E', '#FFB347', '#F4A261', '#d29922', '#fcd5a8', 'var(--danger)', '#e8c4a0'];
   const langBar = data.languages.length > 0 ? `
     <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;margin-bottom:8px;">
       ${data.languages.filter(l => l.percentage > 0).map((l, i) =>
@@ -1452,10 +263,10 @@ export function renderDashboard(data: DashboardData, port: number): string {
 
   const sseScript = `
     <div id="live-badge" style="display:none;position:fixed;top:16px;right:24px;
-      background:rgba(63,185,80,0.15);color:var(--success);padding:4px 12px;
+      background:rgba(232,130,58,0.15);color:var(--success);padding:4px 12px;
       border-radius:20px;font-size:11px;font-weight:500;z-index:100;
       animation:fadeIn 0.3s ease;backdrop-filter:blur(8px);
-      border:1px solid rgba(63,185,80,0.3);">
+      border:1px solid rgba(232,130,58,0.3);">
       <span style="display:inline-block;width:6px;height:6px;background:var(--success);
         border-radius:50%;margin-right:6px;animation:pulse 2s infinite;"></span>Live
     </div>
@@ -1500,12 +311,12 @@ export function renderDashboard(data: DashboardData, port: number): string {
           if (!ap) {
             ap = document.createElement('div');
             ap.id = 'autopilot-status';
-            ap.style.cssText = 'position:fixed;top:16px;right:24px;background:rgba(13,17,23,0.97);border:1px solid rgba(63,185,80,0.35);border-radius:10px;padding:10px 16px;font-size:12px;z-index:9000;display:flex;align-items:center;gap:8px;backdrop-filter:blur(12px);max-width:340px;transition:opacity 0.3s;';
+            ap.style.cssText = 'position:fixed;top:16px;right:24px;background:rgba(13,17,23,0.97);border:1px solid rgba(232,130,58,0.35);border-radius:10px;padding:10px 16px;font-size:12px;z-index:9000;display:flex;align-items:center;gap:8px;backdrop-filter:blur(12px);max-width:340px;transition:opacity 0.3s;';
             document.body.appendChild(ap);
           }
           ap.style.opacity = '1';
           if (d.status === 'packing') {
-            ap.innerHTML = '<span style="width:8px;height:8px;background:#ff6800;border-radius:50%;display:inline-block;animation:pulse 1s infinite;flex-shrink:0;"></span><span><strong style="color:#ff6800;">Autopilot</strong> packing… <span style="color:var(--text-muted);">' + d.trigger + '</span></span>';
+            ap.innerHTML = '<span style="width:8px;height:8px;background:#FFB347;border-radius:50%;display:inline-block;animation:pulse 1s infinite;flex-shrink:0;"></span><span><strong style="color:#FFB347;">Autopilot</strong> packing… <span style="color:var(--text-muted);">' + d.trigger + '</span></span>';
           } else if (d.status === 'done') {
             var secWarn = d.secretCount > 0 ? ' <span style="color:#f85149;">⚠ ' + d.secretCount + ' secret' + (d.secretCount>1?'s':'') + '</span>' : '';
             var saveInfo = d.saved > 0 ? ' · <span style="color:var(--success);">saved ' + Number(d.saved).toLocaleString('en-US') + ' tokens (' + d.savePct + '%)</span>' : '';
@@ -1552,7 +363,7 @@ export function renderDashboard(data: DashboardData, port: number): string {
   // Welcome screen for first-time users (no pack history)
   const isFirstTime = data.recentRuns.length === 0 && data.today.sessions === 0;
   const welcomeHtml = isFirstTime ? `
-    <div style="background:linear-gradient(135deg, var(--surface) 0%, rgba(63,185,80,0.08) 100%);border:1px solid var(--border);border-radius:16px;padding:40px;text-align:center;margin-bottom:24px;">
+    <div style="background:linear-gradient(135deg, var(--surface) 0%, rgba(232,130,58,0.08) 100%);border:1px solid var(--border);border-radius:16px;padding:40px;text-align:center;margin-bottom:24px;">
       <div style="font-size:32px;margin-bottom:12px;">Welcome to Codebase Pilot</div>
       <div style="color:var(--text-muted);font-size:14px;margin-bottom:24px;max-width:500px;margin-left:auto;margin-right:auto;">
         Pack, compress, and optimize your codebase for AI. Save 60-90% tokens on every prompt.
@@ -1622,7 +433,7 @@ export function renderDashboard(data: DashboardData, port: number): string {
   if (data.week.sessions > 0) healthScore += 5; // active usage
   if (data.recentRuns.some(r => r.compressed)) healthScore += 5; // using compression
   healthScore = Math.min(healthScore, 100);
-  const healthColor = healthScore >= 80 ? 'var(--success)' : healthScore >= 60 ? '#ff6800' : '#f85149';
+  const healthColor = healthScore >= 80 ? 'var(--success)' : healthScore >= 60 ? '#FFB347' : '#f85149';
   const healthLabel = healthScore >= 80 ? 'Excellent' : healthScore >= 60 ? 'Good' : 'Needs Work';
 
   const healthHtml = !isFirstTime ? `
@@ -1662,8 +473,8 @@ export function renderDashboard(data: DashboardData, port: number): string {
           return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;" title="${esc(tooltip)}">
             <div style="width:100%;height:100px;display:flex;flex-direction:column;justify-content:flex-end;">
               ${total > 0 ? `<div style="width:100%;height:${heightPct}%;border-radius:4px 4px 2px 2px;overflow:hidden;display:flex;flex-direction:column;">
-                <div style="flex:${savedPct};background:var(--success);min-height:${savedPct > 0 ? '2px' : '0'};"></div>
-                <div style="flex:${usedPct};background:#ff6800;min-height:${usedPct > 0 ? '2px' : '0'};"></div>
+                <div style="flex:${savedPct};background:#E8823A;min-height:${savedPct > 0 ? '2px' : '0'};"></div>
+                <div style="flex:${usedPct};background:#4a4a55;min-height:${usedPct > 0 ? '2px' : '0'};"></div>
               </div>` : '<div style="width:100%;height:4px;background:var(--border);border-radius:2px;"></div>'}
             </div>
             <div style="font-size:9px;color:var(--text-dim);white-space:nowrap;">${esc(d.date)}</div>
@@ -1671,8 +482,8 @@ export function renderDashboard(data: DashboardData, port: number): string {
         }).join('')}
       </div>
       <div style="display:flex;gap:16px;margin-top:10px;font-size:10px;">
-        <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:var(--success);border-radius:2px;"></span> Saved</span>
-        <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#ff6800;border-radius:2px;"></span> Used</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#E8823A;border-radius:2px;"></span> Saved</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#4a4a55;border-radius:2px;"></span> Used</span>
       </div>
     </div>` : '';
 
@@ -1727,7 +538,7 @@ export function renderGraph(data: GraphPageData, port: number): string {
     .on('dblclick.zoom', null);
 
   var groupColors = {};
-  var palette = ['var(--accent)', 'var(--success)', 'var(--warning)', 'var(--danger)', '#bc8cff', '#f778ba', '#79c0ff', '#7ee787'];
+  var palette = ['var(--accent)', '#D4722E', '#FFB347', '#F4A261', 'var(--warning)', '#fcd5a8', 'var(--danger)', '#e8c4a0'];
   var ci = 0;
   data.nodes.forEach(function(n) {
     if (!groupColors[n.group]) groupColors[n.group] = palette[ci++ % palette.length];
@@ -1903,7 +714,7 @@ export function renderGraph(data: GraphPageData, port: number): string {
         <span style="color:var(--text-muted);">Directories</span> <strong style="color:var(--accent);">${new Set(data.nodes.map(n => n.group)).size}</strong>
       </div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;">
-        <span style="color:var(--text-muted);">Total tokens</span> <strong style="color:#ff6800;">${fmtShort(data.nodes.reduce((s, n) => s + n.tokens, 0))}</strong>
+        <span style="color:var(--text-muted);">Total tokens</span> <strong style="color:#FFB347;">${fmtShort(data.nodes.reduce((s, n) => s + n.tokens, 0))}</strong>
       </div>
     </div>
     <input type="text" id="graph-search" class="search-box" placeholder="Filter nodes..." style="margin-bottom:12px;">
@@ -2155,7 +966,7 @@ export function renderAgents(data: AgentsPageData, port: number): string {
   for (const a of data.agents) modelCounts[a.model] = (modelCounts[a.model] || 0) + 1;
   const modelCostMap: Record<string, { label: string; color: string; cost: string }> = {
     opus: { label: 'Opus', color: '#f85149', cost: '$$$$' },
-    sonnet: { label: 'Sonnet', color: '#ff6800', cost: '$$$' },
+    sonnet: { label: 'Sonnet', color: '#FFB347', cost: '$$$' },
     haiku: { label: 'Haiku', color: 'var(--success)', cost: '$' },
   };
 
@@ -2205,7 +1016,7 @@ export function renderFiles(data: FilesPageData, port: number): string {
     const pct = data.totalTokens > 0 ? ((f.tokens / data.totalTokens) * 100).toFixed(1) : '0.0';
     const barPct = ((f.tokens / maxTokens) * 100).toFixed(1);
     const sizeWarn = f.tokens > 10000 ? '<span style="color:#f85149;font-size:9px;margin-left:4px;" title="Large file — consider splitting">L</span>'
-      : f.tokens > 5000 ? '<span style="color:#ff6800;font-size:9px;margin-left:4px;" title="Medium-large file">M</span>'
+      : f.tokens > 5000 ? '<span style="color:#FFB347;font-size:9px;margin-left:4px;" title="Medium-large file">M</span>'
       : '';
     return `<tr>
       <td class="mono"><a href="/impact?file=${encodeURIComponent(f.relativePath)}">${esc(f.relativePath)}</a>${sizeWarn}</td>
@@ -2294,7 +1105,7 @@ export function renderFiles(data: FilesPageData, port: number): string {
   const fileSummary = (largeFiles > 0 || medFiles > 0) ? `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;gap:20px;font-size:12px;">
       ${largeFiles > 0 ? `<span><span style="color:#f85149;font-weight:700;">${largeFiles}</span> <span style="color:var(--text-muted);">large files (&gt;10K tokens)</span> <span style="color:#f85149;font-size:9px;">L</span></span>` : ''}
-      ${medFiles > 0 ? `<span><span style="color:#ff6800;font-weight:700;">${medFiles}</span> <span style="color:var(--text-muted);">medium files (&gt;5K tokens)</span> <span style="color:#ff6800;font-size:9px;">M</span></span>` : ''}
+      ${medFiles > 0 ? `<span><span style="color:#FFB347;font-weight:700;">${medFiles}</span> <span style="color:var(--text-muted);">medium files (&gt;5K tokens)</span> <span style="color:#FFB347;font-size:9px;">M</span></span>` : ''}
       <span><span style="color:var(--success);font-weight:700;">${sorted.length - largeFiles - medFiles}</span> <span style="color:var(--text-muted);">optimal (&lt;5K tokens)</span></span>
     </div>` : '';
 
@@ -2386,7 +1197,7 @@ export function renderImpact(data: ImpactPageData, port: number): string {
         <div style="background:var(--accent);color:var(--bg);padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;font-family:${T.mono};">${esc(data.file.split('/').pop() || data.file)}</div>
         ${data.directDependents.length > 0 ? `<span style="color:var(--text-dim);">affects</span>
         <div style="display:flex;gap:4px;flex-wrap:wrap;">
-          ${data.directDependents.slice(0, 5).map(f => `<span style="background:rgba(255,104,0,0.15);color:#ff6800;padding:3px 8px;border-radius:4px;font-size:10px;font-family:${T.mono};">${esc(f.split('/').pop() || f)}</span>`).join('')}
+          ${data.directDependents.slice(0, 5).map(f => `<span style="background:rgba(255,104,0,0.15);color:#FFB347;padding:3px 8px;border-radius:4px;font-size:10px;font-family:${T.mono};">${esc(f.split('/').pop() || f)}</span>`).join('')}
           ${data.directDependents.length > 5 ? `<span style="color:var(--text-dim);font-size:10px;">+${data.directDependents.length - 5} more</span>` : ''}
         </div>` : '<span style="color:var(--success);font-size:11px;">No dependents — isolated change</span>'}
         ${data.affectedTests.length > 0 ? `<span style="color:var(--text-dim);">tests</span>
@@ -2460,10 +1271,10 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
         <div class="card-label">Tokens Saved (All Time)</div>
         <div class="card-value" style="color:var(--success);">${fmtShort(data.allTime.tokensSaved)}</div>
       </div>
-      <div class="card" style="border-top:3px solid #ff6800;cursor:default;"
+      <div class="card" style="border-top:3px solid #FFB347;cursor:default;"
         data-tip='${JSON.stringify({title:"Tokens Used (All Time)",rows:[["Used",fmtNum(data.allTime.tokensUsed)],["This month",fmtNum(data.month.tokensUsed)],["This week",fmtNum(data.week.tokensUsed)],["Today",fmtNum(data.today.tokensUsed)]],note:"Tokens actually sent to AI context after packing and compression."})}'>
         <div class="card-label">Tokens Used (All Time)</div>
-        <div class="card-value" style="color:#ff6800;">${fmtShort(data.allTime.tokensUsed)}</div>
+        <div class="card-value" style="color:#FFB347;">${fmtShort(data.allTime.tokensUsed)}</div>
       </div>
       <div class="card" style="border-top:3px solid var(--accent);cursor:default;"
         data-tip='${JSON.stringify({title:"Overall Tokens (All Time)",rows:[["Total",fmtNum(allTimeTotal)],["Saved",fmtNum(data.allTime.tokensSaved)],["Used",fmtNum(data.allTime.tokensUsed)],["Efficiency",allTimeSavePct+"%"]],note:"Grand total of all token activity. Saved + Used = Overall."})}'>
@@ -2506,7 +1317,7 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
       const savePct = p.tokensSaved + p.tokensUsed > 0 ? Math.round((p.tokensSaved / (p.tokensSaved + p.tokensUsed)) * 100) : 0;
       const isActive = p.projectPath === data.currentProject;
       const activeTag = isActive ? ' <span class="badge badge-green">active</span>' : '';
-      const effColor = savePct >= 60 ? 'var(--success)' : savePct >= 30 ? '#ff6800' : 'var(--text-dim)';
+      const effColor = savePct >= 60 ? 'var(--success)' : savePct >= 30 ? '#FFB347' : 'var(--text-dim)';
       return `<tr>
         <td><strong>${esc(p.project)}</strong>${activeTag}</td>
         <td class="mono" style="font-size:11px;color:var(--text-muted)">${esc(p.projectPath)}</td>
@@ -2658,7 +1469,7 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
 
           // Show live toast
           var toast = document.createElement('div');
-          toast.style.cssText = 'position:fixed;bottom:20px;right:24px;background:rgba(63,185,80,0.15);color:var(--success);padding:10px 16px;border-radius:8px;font-size:12px;z-index:100;animation:fadeIn 0.3s ease;border:1px solid rgba(63,185,80,0.3);backdrop-filter:blur(12px);';
+          toast.style.cssText = 'position:fixed;bottom:20px;right:24px;background:rgba(232,130,58,0.15);color:var(--success);padding:10px 16px;border-radius:8px;font-size:12px;z-index:100;animation:fadeIn 0.3s ease;border:1px solid rgba(232,130,58,0.3);backdrop-filter:blur(12px);';
           var proj = d.projects && d.projects.length ? d.projects[d.projects.length-1] : null;
           toast.textContent = proj ? '⚡ ' + proj.project + ' ran a pack session' : '⚡ Projects updated';
           document.body.appendChild(toast);
@@ -2679,7 +1490,7 @@ export function renderProjects(data: ProjectsPageData, port: number): string {
     </script>`;
 
   const body = `
-    <h1 class="page-title">System-Wide Overview <span id="live-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--success);background:rgba(63,185,80,0.12);border:1px solid rgba(63,185,80,0.25);border-radius:20px;padding:2px 10px;vertical-align:middle;"><span style="width:6px;height:6px;background:var(--success);border-radius:50%;display:inline-block;animation:pulse 1.5s infinite;"></span>LIVE</span></h1>
+    <h1 class="page-title">System-Wide Overview <span id="live-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--success);background:rgba(232,130,58,0.12);border:1px solid rgba(232,130,58,0.25);border-radius:20px;padding:2px 10px;vertical-align:middle;"><span style="width:6px;height:6px;background:var(--success);border-radius:50%;display:inline-block;animation:pulse 1.5s infinite;"></span>LIVE</span></h1>
     ${cards}
     ${savingsChart}
     ${projectRows}
@@ -2732,10 +1543,10 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
         <div class="card-label">Total Sessions</div>
         <div class="card-value" id="pr-sessions" style="color:var(--purple);">${fmtShort(data.totalSessions)}</div>
       </div>
-      <div class="card" style="border-top:3px solid #ff6800;cursor:default;"
+      <div class="card" style="border-top:3px solid #FFB347;cursor:default;"
         data-tip='${JSON.stringify({title:"Total Tokens Used",rows:[["Sent to AI",fmtNum(data.totalUsed)],["After pack/compress",""]],note:"Sum of tokensPacked across all sessions."})}'>
         <div class="card-label">Total Tokens Used</div>
-        <div class="card-value" id="pr-used" style="color:#ff6800;">${fmtShort(data.totalUsed)}</div>
+        <div class="card-value" id="pr-used" style="color:#FFB347;">${fmtShort(data.totalUsed)}</div>
       </div>
       <div class="card" style="border-top:3px solid var(--success);cursor:default;"
         data-tip='${JSON.stringify({title:"Total Tokens Saved",rows:[["Saved",fmtNum(data.totalSaved)],["Save rate",avgSavePct+"%"]],note:"Raw tokens minus packed tokens. Higher = better efficiency."})}'>
@@ -2763,7 +1574,7 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
     const timeStr = d.toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
     const compress = r.compressed ? '<span class="badge badge-green">compressed</span>' : '';
     const agentBadge = r.agent ? `<span class="badge badge-blue">${esc(r.agent)}</span>` : '';
-    const savePctColor = savePct >= 60 ? 'var(--success)' : savePct >= 30 ? '#ff6800' : 'var(--text-muted)';
+    const savePctColor = savePct >= 60 ? 'var(--success)' : savePct >= 30 ? '#FFB347' : 'var(--text-muted)';
     const savedDisplay = saved > 0 ? fmtNum(saved) : '<span style="color:var(--text-muted)" title="Run with --compress to save tokens">—</span>';
     const pctDisplay = savePct > 0
       ? `<span style="color:${savePctColor};font-weight:600">${savePct}%</span>`
@@ -2775,7 +1586,7 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
       ? `<span style="font-size:10px;" title="${esc((r as any).commitHash || '')}">${esc(((r as any).commit || '').slice(0, 40))}${((r as any).commit || '').length > 40 ? '…' : ''}</span>`
       : '';
     const dirtyHtml = (r as any).dirty && (r as any).dirty > 0
-      ? ` <span style="color:#ff6800;font-size:9px;" title="${(r as any).dirty} uncommitted changes">+${(r as any).dirty}</span>`
+      ? ` <span style="color:#FFB347;font-size:9px;" title="${(r as any).dirty} uncommitted changes">+${(r as any).dirty}</span>`
       : '';
     const durationHtml = (r as any).duration
       ? `<span style="font-size:10px;color:var(--text-dim)">${((r as any).duration / 1000).toFixed(1)}s</span>`
@@ -2788,7 +1599,7 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
       <td style="font-size:11px;">${commitHtml}</td>
       <td>${esc(r.command)} ${compress}${agentBadge}</td>
       <td class="mono">${r.files}</td>
-      <td class="mono" style="color:#ff6800">${fmtNum(raw)}</td>
+      <td class="mono" style="color:#FFB347">${fmtNum(raw)}</td>
       <td class="mono" style="color:var(--accent)">${fmtNum(packed)}</td>
       <td class="mono">${savedDisplay}</td>
       <td class="mono">${pctDisplay}</td>
@@ -2799,13 +1610,13 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
   const tableHtml = `
     <div class="table-wrap" id="prompts-table-wrap">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <h3 style="margin:0;">All Prompt Sessions <span id="live-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--success);background:rgba(63,185,80,0.12);border:1px solid rgba(63,185,80,0.25);border-radius:20px;padding:2px 10px;margin-left:8px;"><span style="width:6px;height:6px;background:var(--success);border-radius:50%;display:inline-block;animation:pulse 1.5s infinite;"></span>LIVE</span></h3>
+        <h3 style="margin:0;">All Prompt Sessions <span id="live-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--success);background:rgba(232,130,58,0.12);border:1px solid rgba(232,130,58,0.25);border-radius:20px;padding:2px 10px;margin-left:8px;"><span style="width:6px;height:6px;background:var(--success);border-radius:50%;display:inline-block;animation:pulse 1.5s infinite;"></span>LIVE</span></h3>
         <div style="font-size:12px;color:var(--text-muted);">${fmtNum(data.runs.length)} sessions — newest first</div>
       </div>
       <table id="prompts-table">
         <thead><tr>
           <th>Time</th><th>Project</th><th>Branch</th><th>Last Commit</th><th>Command</th><th>Files</th>
-          <th style="color:#ff6800">Raw Tokens</th><th style="color:var(--accent)">Packed</th>
+          <th style="color:#FFB347">Raw Tokens</th><th style="color:var(--accent)">Packed</th>
           <th style="color:var(--success)">Saved</th><th>Save %</th><th>Duration</th>
         </tr></thead>
         <tbody id="prompts-tbody">${rows}</tbody>
@@ -2836,11 +1647,11 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
           var timeStr = d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
           var compress = r.compressed ? '<span class="badge badge-green">compressed</span>' : '';
           var agent = r.agent ? '<span class="badge badge-blue">' + escH(r.agent) + '</span>' : '';
-          var pctColor = pct >= 60 ? 'var(--success)' : pct >= 30 ? '#ff6800' : 'var(--text-muted)';
+          var pctColor = pct >= 60 ? 'var(--success)' : pct >= 30 ? '#FFB347' : 'var(--text-muted)';
           var savedDisp = saved > 0 ? saved.toLocaleString('en-US') : '<span style="color:var(--text-muted)">—</span>';
           var pctDisp = pct > 0 ? '<span style="color:'+pctColor+';font-weight:600">'+pct+'%</span>' : '<span style="color:var(--text-muted)">—</span>';
           var branchHtml = r.branch ? '<span class="badge" style="background:rgba(136,98,232,0.15);color:var(--purple);font-size:10px;">'+escH(r.branch)+'</span>' : '<span style="color:var(--text-dim)">—</span>';
-          var dirtyHtml = r.dirty && r.dirty > 0 ? ' <span style="color:#ff6800;font-size:9px;">+'+r.dirty+'</span>' : '';
+          var dirtyHtml = r.dirty && r.dirty > 0 ? ' <span style="color:#FFB347;font-size:9px;">+'+r.dirty+'</span>' : '';
           var commitHtml = r.commit ? '<span style="font-size:10px;" title="'+(r.commitHash||'')+'">'+escH((r.commit||'').slice(0,40))+(r.commit&&r.commit.length>40?'…':'')+'</span>' : '';
           var durHtml = r.duration ? '<span style="font-size:10px;color:var(--text-dim)">'+(r.duration/1000).toFixed(1)+'s</span>' : '';
           var tr = document.createElement('tr');
@@ -2853,7 +1664,7 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
             + '<td style="font-size:11px;">' + commitHtml + '</td>'
             + '<td>' + escH(r.command) + ' ' + compress + agent + '</td>'
             + '<td class="mono">' + r.files + '</td>'
-            + '<td class="mono" style="color:#ff6800">' + raw.toLocaleString('en-US') + '</td>'
+            + '<td class="mono" style="color:#FFB347">' + raw.toLocaleString('en-US') + '</td>'
             + '<td class="mono" style="color:var(--accent)">' + packed.toLocaleString('en-US') + '</td>'
             + '<td class="mono">' + savedDisp + '</td>'
             + '<td class="mono">' + pctDisp + '</td>'
@@ -2890,27 +1701,27 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
           var r = d.run;
           var saved = r.tokensRaw - r.tokensPacked;
           var pct = r.tokensRaw > 0 ? Math.round((saved / r.tokensRaw) * 100) : 0;
-          var pctColor = pct >= 60 ? 'var(--success)' : pct >= 30 ? '#ff6800' : 'var(--text-muted)';
+          var pctColor = pct >= 60 ? 'var(--success)' : pct >= 30 ? '#FFB347' : 'var(--text-muted)';
           var compress = r.compressed ? '<span class="badge badge-green">compressed</span>' : '';
           var agent = r.agent ? '<span class="badge badge-blue">' + r.agent + '</span>' : '';
           var timeStr = new Date(r.date).toLocaleString('en-GB', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
           var savedDisp = saved > 0 ? saved.toLocaleString('en-US') : '<span style="color:var(--text-muted)" title="Run with --compress to save tokens">—</span>';
           var pctDisp = pct > 0 ? '<span style="color:' + pctColor + ';font-weight:600">' + pct + '%</span>' : '<span style="color:var(--text-muted)" title="Run with --compress to save tokens">—</span>';
           var branchHtml = r.branch ? '<span class="badge" style="background:rgba(136,98,232,0.15);color:var(--purple);font-size:10px;">' + r.branch + '</span>' : '<span style="color:var(--text-dim)">—</span>';
-          var dirtyHtml = r.dirty && r.dirty > 0 ? ' <span style="color:#ff6800;font-size:9px;" title="' + r.dirty + ' uncommitted changes">+' + r.dirty + '</span>' : '';
+          var dirtyHtml = r.dirty && r.dirty > 0 ? ' <span style="color:#FFB347;font-size:9px;" title="' + r.dirty + ' uncommitted changes">+' + r.dirty + '</span>' : '';
           var commitHtml = r.commit ? '<span style="font-size:10px;" title="' + (r.commitHash||'') + '">' + (r.commit||'').slice(0,40) + (r.commit && r.commit.length>40?'…':'') + '</span>' : '';
           var durationHtml = r.duration ? '<span style="font-size:10px;color:var(--text-dim)">' + (r.duration/1000).toFixed(1) + 's</span>' : '';
           var tr = document.createElement('tr');
           tr.setAttribute('data-run', JSON.stringify(r));
           tr.setAttribute('onclick', 'openPromptDrawer(this)');
-          tr.style.cssText = 'cursor:pointer;animation:rowSlide 0.4s ease both;background:rgba(63,185,80,0.05);';
+          tr.style.cssText = 'cursor:pointer;animation:rowSlide 0.4s ease both;background:rgba(232,130,58,0.05);';
           tr.innerHTML = '<td class="mono" style="font-size:11px;color:var(--text-muted)">' + timeStr + '</td>'
             + '<td><strong>' + r.project + '</strong></td>'
             + '<td>' + branchHtml + dirtyHtml + '</td>'
             + '<td style="font-size:11px;">' + commitHtml + '</td>'
             + '<td>' + r.command + ' ' + compress + agent + '</td>'
             + '<td class="mono">' + r.files + '</td>'
-            + '<td class="mono" style="color:#ff6800">' + Number(r.tokensRaw).toLocaleString('en-US') + '</td>'
+            + '<td class="mono" style="color:#FFB347">' + Number(r.tokensRaw).toLocaleString('en-US') + '</td>'
             + '<td class="mono" style="color:var(--accent)">' + Number(r.tokensPacked).toLocaleString('en-US') + '</td>'
             + '<td class="mono">' + savedDisp + '</td>'
             + '<td class="mono">' + pctDisp + '</td>'
@@ -2948,7 +1759,7 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
 
           // Toast
           var toast = document.createElement('div');
-          toast.style.cssText = 'position:fixed;bottom:20px;right:24px;background:rgba(63,185,80,0.15);color:var(--success);padding:10px 16px;border-radius:8px;font-size:12px;z-index:100;border:1px solid rgba(63,185,80,0.3);backdrop-filter:blur(12px);animation:fadeIn 0.3s ease;';
+          toast.style.cssText = 'position:fixed;bottom:20px;right:24px;background:rgba(232,130,58,0.15);color:var(--success);padding:10px 16px;border-radius:8px;font-size:12px;z-index:100;border:1px solid rgba(232,130,58,0.3);backdrop-filter:blur(12px);animation:fadeIn 0.3s ease;';
           toast.textContent = '⚡ ' + r.project + ' — ' + pct + '% saved (' + saved.toLocaleString('en-US') + ' tokens)';
           document.body.appendChild(toast);
           setTimeout(function(){ toast.style.opacity='0'; toast.style.transition='opacity 0.4s'; }, 3500);
@@ -2964,16 +1775,16 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
         if (!progressRow) {
           progressRow = document.createElement('tr');
           progressRow.id = 'autopilot-progress-row';
-          progressRow.style.cssText = 'background:rgba(255,104,0,0.06);border-left:3px solid #ff6800;';
+          progressRow.style.cssText = 'background:rgba(255,104,0,0.06);border-left:3px solid #FFB347;';
           tbody.insertBefore(progressRow, tbody.firstChild);
         }
-        var bar = '<div style="height:3px;background:rgba(255,104,0,0.15);border-radius:2px;overflow:hidden;margin-top:4px;"><div style="height:100%;width:' + pct + '%;background:#ff6800;border-radius:2px;transition:width 0.4s ease;"></div></div>';
+        var bar = '<div style="height:3px;background:rgba(255,104,0,0.15);border-radius:2px;overflow:hidden;margin-top:4px;"><div style="height:100%;width:' + pct + '%;background:#FFB347;border-radius:2px;transition:width 0.4s ease;"></div></div>';
         progressRow.innerHTML = '<td colspan="12" style="padding:10px 14px;">'
           + '<div style="display:flex;align-items:center;gap:10px;">'
-          + '<span style="width:10px;height:10px;border:2px solid #ff6800;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin 0.8s linear infinite;flex-shrink:0;"></span>'
-          + '<span style="color:#ff6800;font-weight:600;">Autopilot</span>'
+          + '<span style="width:10px;height:10px;border:2px solid #FFB347;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin 0.8s linear infinite;flex-shrink:0;"></span>'
+          + '<span style="color:#FFB347;font-weight:600;">Autopilot</span>'
           + '<span style="color:var(--text-muted);">' + label + '</span>'
-          + '<span style="margin-left:auto;color:#ff6800;font-size:11px;font-weight:600;">' + pct + '%</span>'
+          + '<span style="margin-left:auto;color:#FFB347;font-size:11px;font-weight:600;">' + pct + '%</span>'
           + '</div>' + bar + '</td>';
       }
       function removeProgressRow() {
@@ -3051,7 +1862,7 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
         if (r.commit) html += '<div style="margin-bottom:6px;"><span style="color:var(--text-muted);font-size:11px;margin-right:8px;">Commit</span><span style="font-size:12px;">' + r.commit + '</span></div>';
         if (r.commitHash) html += '<div style="margin-bottom:6px;"><span style="color:var(--text-muted);font-size:11px;margin-right:8px;">Hash</span><code style="font-size:11px;background:var(--bg);padding:2px 6px;border-radius:4px;">' + r.commitHash + '</code></div>';
         if (r.dirty !== undefined) {
-          var dirtyColor = r.dirty > 0 ? '#ff6800' : 'var(--success)';
+          var dirtyColor = r.dirty > 0 ? '#FFB347' : 'var(--success)';
           html += '<div><span style="color:var(--text-muted);font-size:11px;margin-right:8px;">Working tree</span><span style="color:' + dirtyColor + ';font-size:12px;font-weight:600;">' + (r.dirty > 0 ? r.dirty + ' uncommitted changes' : 'clean') + '</span></div>';
         }
         html += '</div>';
@@ -3092,11 +1903,11 @@ export function renderPrompts(data: PromptsPageData, port: number): string {
         html += '<div style="background:var(--surface);border-radius:8px;padding:14px;border:1px solid var(--border);">';
         html += '<div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin-bottom:10px;letter-spacing:0.5px;">Savings Breakdown</div>';
         html += '<div style="height:20px;background:var(--bg);border-radius:4px;overflow:hidden;display:flex;">';
-        html += '<div style="width:' + usedPct + '%;background:#ff6800;"></div>';
+        html += '<div style="width:' + usedPct + '%;background:#FFB347;"></div>';
         html += '<div style="width:' + savedPct + '%;background:var(--success);"></div>';
         html += '</div>';
         html += '<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;">';
-        html += '<span style="color:#ff6800;">' + usedPct + '% used (' + r.tokensPacked.toLocaleString('en-US') + ')</span>';
+        html += '<span style="color:#FFB347;">' + usedPct + '% used (' + r.tokensPacked.toLocaleString('en-US') + ')</span>';
         html += '<span style="color:var(--success);">' + savedPct + '% saved (' + saved.toLocaleString('en-US') + ')</span>';
         html += '</div>';
         html += '</div>';
@@ -3328,13 +2139,13 @@ export function renderSecurity(data: SecurityPageData, port: number): string {
       <div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin-bottom:12px;letter-spacing:0.5px;">Risk Distribution (${totalSecrets} findings)</div>
       <div style="display:flex;height:24px;border-radius:6px;overflow:hidden;gap:1px;">
         ${riskCounts.critical > 0 ? `<div style="flex:${riskCounts.critical};background:#f85149;" title="Critical: ${riskCounts.critical}"></div>` : ''}
-        ${riskCounts.high > 0 ? `<div style="flex:${riskCounts.high};background:#ff6800;" title="High: ${riskCounts.high}"></div>` : ''}
+        ${riskCounts.high > 0 ? `<div style="flex:${riskCounts.high};background:#FFB347;" title="High: ${riskCounts.high}"></div>` : ''}
         ${riskCounts.medium > 0 ? `<div style="flex:${riskCounts.medium};background:#d29922;" title="Medium: ${riskCounts.medium}"></div>` : ''}
         ${riskCounts.low > 0 ? `<div style="flex:${riskCounts.low};background:var(--blue);" title="Low: ${riskCounts.low}"></div>` : ''}
       </div>
       <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;flex-wrap:wrap;">
         ${riskCounts.critical > 0 ? `<span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#f85149;border-radius:2px;"></span>Critical ${riskCounts.critical}</span>` : ''}
-        ${riskCounts.high > 0 ? `<span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#ff6800;border-radius:2px;"></span>High ${riskCounts.high}</span>` : ''}
+        ${riskCounts.high > 0 ? `<span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#FFB347;border-radius:2px;"></span>High ${riskCounts.high}</span>` : ''}
         ${riskCounts.medium > 0 ? `<span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#d29922;border-radius:2px;"></span>Medium ${riskCounts.medium}</span>` : ''}
         ${riskCounts.low > 0 ? `<span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:var(--blue);border-radius:2px;"></span>Low ${riskCounts.low}</span>` : ''}
       </div>
@@ -3447,7 +2258,7 @@ export function renderSecurity(data: SecurityPageData, port: number): string {
 
   // Security health score
   const secScore = data.scannedFiles > 0 ? Math.round((data.cleanFiles / data.scannedFiles) * 100) : 100;
-  const secColor = secScore >= 95 ? 'var(--success)' : secScore >= 80 ? '#ff6800' : '#f85149';
+  const secColor = secScore >= 95 ? 'var(--success)' : secScore >= 80 ? '#FFB347' : '#f85149';
   const healthBadge = `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:20px;">
       <div style="font-size:36px;font-weight:800;color:${secColor};font-family:${T.mono};">${secScore}%</div>

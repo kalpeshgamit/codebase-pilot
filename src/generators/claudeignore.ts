@@ -112,21 +112,96 @@ __snapshots__/
 .codebase-pilot/
 `;
 
+// Framework-specific patterns to suggest when detected
+const FRAMEWORK_PATTERNS: Record<string, { patterns: string[]; label: string }> = {
+  'Next.js': {
+    label: 'Next.js',
+    patterns: ['.next/', 'out/', 'public/images/', '*.svg', 'next-env.d.ts'],
+  },
+  'Nuxt': {
+    label: 'Nuxt',
+    patterns: ['.nuxt/', '.output/', 'public/'],
+  },
+  'SvelteKit': {
+    label: 'SvelteKit',
+    patterns: ['.svelte-kit/', 'static/'],
+  },
+  'Vite': {
+    label: 'Vite',
+    patterns: ['dist/', '.vite/'],
+  },
+  'React': {
+    label: 'React (CRA)',
+    patterns: ['build/', 'public/'],
+  },
+  'Django': {
+    label: 'Django',
+    patterns: ['staticfiles/', 'mediafiles/', '*.pyc', 'db.sqlite3'],
+  },
+  'FastAPI': {
+    label: 'FastAPI',
+    patterns: ['__pycache__/', '.pytest_cache/', '*.pyc'],
+  },
+  'Rails': {
+    label: 'Rails',
+    patterns: ['tmp/', 'log/', 'public/assets/', 'public/packs/', 'storage/'],
+  },
+  'Laravel': {
+    label: 'Laravel',
+    patterns: ['storage/', 'bootstrap/cache/', 'public/storage/'],
+  },
+  'Spring Boot': {
+    label: 'Spring Boot',
+    patterns: ['target/', '*.class', '*.jar', '*.war'],
+  },
+  'Gin': {
+    label: 'Gin / Go',
+    patterns: ['vendor/', '*.test', 'tmp/'],
+  },
+  'Axum': {
+    label: 'Axum / Rust',
+    patterns: ['target/', 'Cargo.lock'],
+  },
+  'Actix': {
+    label: 'Actix / Rust',
+    patterns: ['target/', 'Cargo.lock'],
+  },
+};
+
+export function getFrameworkSuggestions(
+  scan: ProjectScan,
+  existingContent: string,
+): Array<{ label: string; missing: string[] }> {
+  const results: Array<{ label: string; missing: string[] }> = [];
+  if (!scan.framework) return results;
+
+  const entry = FRAMEWORK_PATTERNS[scan.framework];
+  if (!entry) return results;
+
+  const missing = entry.patterns.filter(p => !existingContent.includes(p));
+  if (missing.length > 0) {
+    results.push({ label: entry.label, missing });
+  }
+  return results;
+}
+
 export function generateClaudeignore(
   root: string,
   scan: ProjectScan,
-): { created: boolean; merged: boolean } {
+): { created: boolean; merged: boolean; suggestions: Array<{ label: string; missing: string[] }> } {
   const outputPath = join(root, '.claudeignore');
 
   if (scan.existing.claudeignore && scan.existing.claudeignorePath) {
     const existing = readFileSync(scan.existing.claudeignorePath, 'utf8');
     const merged = mergeClaudeignore(existing);
     writeFileSync(scan.existing.claudeignorePath, merged, 'utf8');
-    return { created: false, merged: true };
+    const suggestions = getFrameworkSuggestions(scan, merged);
+    return { created: false, merged: true, suggestions };
   }
 
   writeFileSync(outputPath, BASE_CLAUDEIGNORE, 'utf8');
-  return { created: true, merged: false };
+  const suggestions = getFrameworkSuggestions(scan, BASE_CLAUDEIGNORE);
+  return { created: true, merged: false, suggestions };
 }
 
 function mergeClaudeignore(existing: string): string {

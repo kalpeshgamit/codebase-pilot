@@ -12,14 +12,14 @@ The codebase-pilot context engine optimizes token usage for large codebases.
 - `/token-budget` — Check token counts and plan context budget
 
 ### Workflow Skills
-- `/using-codebase-pilot` — Session start: how to use all codebase-pilot skills
+- `/codebase-pilot` — Session start: how to use all codebase-pilot skills
 - `/thinking` — Turn ideas into designs and specs through collaborative dialogue
 - `/writing-plans` — Write comprehensive implementation plans from specs
 - `/executing-plans` — Execute a written plan task-by-task with review checkpoints
 - `/test-driven-development` — TDD: write failing test first, red-green-refactor cycle
 - `/debugging` — Root cause investigation before any fix attempt
 - `/subagent-driven-development` — Fresh subagent per task with two-stage review
-- `/dispatching-parallel-agents` — Dispatch multiple independent agents concurrently
+- `/sync-agents` — Dispatch multiple independent agents concurrently
 - `/finishing-a-development-branch` — Complete dev branch: verify, PR, merge
 - `/requesting-code-review` — Request code review with proper context
 - `/receiving-code-review` — Handle review feedback systematically

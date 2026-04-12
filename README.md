@@ -4,7 +4,13 @@
 
 <p align="center">
   <strong>Stop burning tokens. Start coding smarter.</strong><br/>
-  AI context engine — pack, compress, optimize any codebase for LLMs. Zero cloud. Zero lock-in.
+  AI context engine — pack, compress, optimize any codebase for LLMs.<br/>
+  <strong>100% free. Zero cloud. Zero API calls. No subscription. No account.</strong>
+</p>
+
+<p align="center">
+  <em>Unlike AI coding assistants that charge per token, codebase-pilot never calls any AI API.<br/>
+  It runs entirely on your machine and <strong>saves you money</strong> on every prompt you send.</em>
 </p>
 
 <p align="center">
@@ -12,6 +18,9 @@
   <a href="https://img.shields.io/npm/dm/codebase-pilot-cli"><img src="https://img.shields.io/npm/dm/codebase-pilot-cli?style=flat-square&color=blue&label=downloads" alt="downloads" /></a>
   <a href="https://github.com/kalpeshgamit/codebase-pilot/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/kalpeshgamit/codebase-pilot/ci.yml?style=flat-square&label=CI" alt="CI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" /></a>
+  <img src="https://img.shields.io/badge/price-free%20forever-brightgreen?style=flat-square" alt="Free Forever" />
+  <img src="https://img.shields.io/badge/cloud-zero-lightgrey?style=flat-square" alt="Zero Cloud" />
+  <img src="https://img.shields.io/badge/API%20calls-none-blue?style=flat-square" alt="No API Calls" />
   <a href="https://safeskill.dev/scan/kalpeshgamit-codebase-pilot"><img src="https://safeskill.dev/api/badge/kalpeshgamit-codebase-pilot?v=1.0.0" alt="SafeSkill" /></a>
 </p>
 
@@ -83,6 +92,13 @@ curl -fsSL https://raw.githubusercontent.com/kalpeshgamit/codebase-pilot/main/in
 ```
 
 </td></tr>
+<tr><td><strong>Update</strong></td><td>
+
+```bash
+npm update -g codebase-pilot-cli
+```
+
+</td></tr>
 <tr><td><strong>Uninstall</strong></td><td>
 
 ```bash
@@ -117,6 +133,74 @@ codebase-pilot ui    # → http://localhost:7456 (health score, trend charts, $)
 # 7. (Optional) Install as always-on service
 codebase-pilot service   # auto-starts on login, tracks forever
 ```
+
+---
+
+## Why codebase-pilot
+
+Most AI developer tools call an AI API on your behalf — you pay per token, per month, or per seat.
+
+codebase-pilot is different:
+
+| | codebase-pilot | Context Packers | AI Coding Assistants |
+|--|:-:|:-:|:-:|
+| **Price** | Free forever | Free (basic) | $10–$50/month |
+| **Calls AI APIs** | Never | No | Yes — you pay |
+| **Runs locally** | Always | Yes | Cloud-dependent |
+| **Token savings** | 60–90% | 20–50% | None (adds tokens) |
+| **Security scanning** | 180 patterns | Basic | None |
+| **Workflow skills** | 19 built-in | None | Varies |
+| **Agent orchestration** | 7-layer | None | None |
+| **Web dashboard** | Full analytics | None | None |
+| **Zero telemetry** | ✅ | ✅ | ❌ |
+
+codebase-pilot doesn't replace your AI assistant — it makes every prompt cheaper and smarter.
+
+---
+
+## Maximum Token Savings — Stack These Together
+
+codebase-pilot compresses your **codebase**. Other plugins compress different things. Stack them for the best results:
+
+```
+Without any optimization:   150,000 tokens  (~$0.45/prompt)
++ codebase-pilot pack       →  41,000 tokens  (72% reduction)
++ --affected (incremental)  →   8,000 tokens  (95% on iterations)
++ --agent scoping           →   4,000 tokens  (only relevant files)
++ session memory plugin     →   3,000 tokens  (no repeated history)
+= Total savings: ~98% vs baseline
+```
+
+### Layer 1 — Codebase (codebase-pilot)
+| Technique | Command | Savings |
+|-----------|---------|---------|
+| Full compress | `codebase-pilot pack --compress` | 60–90% |
+| Incremental (changed files only) | `codebase-pilot pack --compress --affected` | 95%+ on iterations |
+| Import graph prune (only what matters) | `codebase-pilot pack --compress --prune src/file.ts` | 80–95% |
+| Agent scoping (one agent's files only) | `codebase-pilot pack --compress --agent <name>` | 85–95% |
+| Aggressive `.claudeignore` | Exclude build/, dist/, node_modules/, *.lock | 10–30% |
+| Token budget check before starting | `/codebase-pilot:token-budget` | Prevents overload |
+
+### Layer 2 — Session Memory (complementary plugins)
+| Plugin | What it compresses | How it helps |
+|--------|-------------------|-------------|
+| **Session memory plugins** (claude-mem etc.) | Past conversation history | No repeated context across sessions |
+| **Workflow plugins** (pro-workflow, get-shit-done) | Planning prompts + specs | Leaner task setup |
+| **Tool efficiency plugins** (goodvibes) | MCP tool call payloads | Smaller per-tool overhead |
+
+### Layer 3 — Prompt Engineering
+| Technique | Savings |
+|-----------|---------|
+| Use `/codebase-pilot:thinking` — design before coding | Avoids expensive re-work loops |
+| Use sub-agents — fresh context per task | Each agent starts clean, no accumulated history |
+| Use `--dry-run` to preview before loading | Load only what you need |
+| Keep CLAUDE.md lean — facts only, no prose | Every line loads every session |
+| Use `/codebase-pilot:pilot-check` at session start | Identifies token hogs before you start |
+
+> **Key insight:** codebase-pilot and session memory plugins solve different problems.
+> codebase-pilot compresses *what your code looks like now*.
+> Memory plugins compress *what Claude did in previous sessions*.
+> Stack both for near-zero redundant tokens.
 
 ---
 
@@ -242,7 +326,7 @@ File size warnings (red L >10K, orange M >5K tokens), language distribution, per
 | **Pack & Compress** | XML/Markdown output, regex-based compression (8 languages), agent-scoped packing |
 | **Incremental Pack** | `--affected` packs only changed files (SHA-256), `--prune` uses import graph for minimal context |
 | **Prompt Tracking** | Captures actual Claude Code prompts via hooks, git context (branch, commit, dirty), duration |
-| **Plugin Marketplace** | Install via `/plugin marketplace add` — 5 skills (chained), auto health check on session start, MCP auto-config |
+| **Plugin Marketplace** | Install via `/plugin marketplace add` — 19 built-in skills, auto health check on session start, MCP auto-config |
 | **Security Scanner** | 180 patterns across 15 categories — cloud, payment, AI, crypto, generic |
 | **Blast Radius** | Import graph analysis, risk scoring (0-100), affected test detection |
 | **Full-Text Search** | SQLite FTS5 with BM25 ranking, snippet extraction, highlighted matches |
@@ -299,36 +383,62 @@ codebase-pilot eject                                     # remove dependency
 
 ---
 
+## How It All Fits Together
+
+codebase-pilot has three layers — use whichever fits your workflow:
+
+| Layer | How to use | Where it runs |
+|-------|-----------|---------------|
+| **CLI** | `codebase-pilot pack`, `codebase-pilot scan-secrets` | Terminal — standalone, works anywhere |
+| **MCP Server** | `codebase-pilot serve` | Background process — exposes 10 tools directly to Claude Code, Cursor, Zed |
+| **Slash Commands** | `/codebase-pilot:thinking`, `/codebase-pilot:debugging` | Inside Claude Code — 21 project-level commands |
+
+The slash commands call the CLI internally — they work even without the MCP server running.
+
+---
+
 ## Built-in Skills
 
 codebase-pilot ships 19 skills — no additional plugins required. Every workflow is covered out of the box.
 
+All skills use the `codebase-pilot:` prefix. Type `/codebase-pilot` in Claude Code to see the full list.
+
+### Session Start
+| Skill | Trigger | What it does |
+|-------|---------|-------------|
+| `codebase-pilot` | `/codebase-pilot` | Session start — establishes all available skills and working context |
+
 ### Context Tools
 | Skill | Trigger | What it does |
 |-------|---------|-------------|
-| `pilot-check` | `/pilot-check` | Full health check (pack + secrets + git compare) |
-| `pack-context` | `/pack-context` | Compress codebase for LLM context window |
-| `scan-secrets` | `/scan-secrets` | 179-pattern security scan |
-| `impact-analysis` | `/impact-analysis` | Blast radius of file changes |
-| `token-budget` | `/token-budget` | Token counts per file, context planning |
+| `pilot-check` | `/codebase-pilot:pilot-check` | Full health check (pack + secrets + token budget + agent validation) |
+| `pack-context` | `/codebase-pilot:pack-context` | Compress codebase for LLM context window |
+| `scan-secrets` | `/codebase-pilot:scan-secrets` | 180-pattern security scan |
+| `impact-analysis` | `/codebase-pilot:impact-analysis` | Blast radius of file changes |
+| `token-budget` | `/codebase-pilot:token-budget` | Token counts per file, context planning |
 
 ### Workflow Skills
 | Skill | Trigger | What it does |
 |-------|---------|-------------|
-| `using-codebase-pilot` | auto on session start | How to use all skills |
-| `thinking` | `/thinking` | Turn ideas into designs and specs |
-| `writing-plans` | `/writing-plans` | Implementation plans from specs |
-| `executing-plans` | `/executing-plans` | Execute plans task-by-task |
-| `test-driven-development` | `/test-driven-development` | Red-green-refactor TDD |
-| `debugging` | `/debugging` | Root cause before any fix |
-| `subagent-driven-development` | `/subagent-driven-development` | Fresh subagent per task |
-| `dispatching-parallel-agents` | `/dispatching-parallel-agents` | Parallel independent agents |
-| `finishing-a-development-branch` | `/finishing-a-development-branch` | Complete dev branch |
-| `requesting-code-review` | `/requesting-code-review` | Request code review |
-| `receiving-code-review` | `/receiving-code-review` | Handle review feedback |
-| `verification-before-completion` | `/verification-before-completion` | Pre-completion checklist |
-| `using-git-worktrees` | `/using-git-worktrees` | Git worktree management |
-| `writing-skills` | `/writing-skills` | Create new skills |
+| `thinking` | `/codebase-pilot:thinking` | Turn ideas into designs and specs |
+| `writing-plans` | `/codebase-pilot:writing-plans` | Implementation plans from specs |
+| `executing-plans` | `/codebase-pilot:executing-plans` | Execute plans task-by-task |
+| `test-driven-development` | `/codebase-pilot:test-driven-development` | Red-green-refactor TDD |
+| `debugging` | `/codebase-pilot:debugging` | Root cause before any fix |
+| `subagent-driven-development` | `/codebase-pilot:subagent-driven-development` | Fresh subagent per task |
+| `sync-agents` | `/codebase-pilot:sync-agents` | Parallel independent agents |
+| `finishing-a-development-branch` | `/codebase-pilot:finishing-a-development-branch` | Complete dev branch: verify, PR, merge |
+| `requesting-code-review` | `/codebase-pilot:requesting-code-review` | Request code review with full context |
+| `receiving-code-review` | `/codebase-pilot:receiving-code-review` | Handle review feedback systematically |
+| `verification-before-completion` | `/codebase-pilot:verification-before-completion` | Pre-completion quality checklist |
+| `using-git-worktrees` | `/codebase-pilot:using-git-worktrees` | Git worktree management for parallel dev |
+| `writing-skills` | `/codebase-pilot:writing-skills` | Create new skills following established patterns |
+
+### Agent Ops
+| Skill | Trigger | What it does |
+|-------|---------|-------------|
+| `dispatch` | `/codebase-pilot:dispatch` | Break work into sub-agents via agents.json patterns |
+| `healthcheck` | `/codebase-pilot:healthcheck` | Validate agent setup — context paths, layers, models |
 
 ---
 

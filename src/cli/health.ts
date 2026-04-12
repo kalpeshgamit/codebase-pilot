@@ -8,6 +8,9 @@ interface HealthOptions {
   verbose?: boolean;
 }
 
+const MAGIC_CONTEXT = ['ALL agent outputs', 'Agent execution logs', 'ALL previous layers'];
+const MAGIC_DEP = ['ALL previous layers'];
+
 export async function healthCommand(options: HealthOptions): Promise<void> {
   const root = resolve(options.dir);
   const verbose = options.verbose || false;
@@ -39,10 +42,20 @@ export async function healthCommand(options: HealthOptions): Promise<void> {
   const agents = Object.values(config.agents);
   const agentNames = Object.keys(config.agents);
 
-  // Check 1: Context paths
+  // Check 1: Context paths — must exist on disk, must not be magic strings
   for (const agent of agents) {
     for (const ctxPath of agent.context) {
-      if (ctxPath === 'ALL agent outputs' || ctxPath === 'Agent execution logs' || ctxPath.startsWith('.codebase-pilot/')) continue;
+      // Flag magic strings immediately
+      if (MAGIC_CONTEXT.includes(ctxPath)) {
+        results.push({
+          agent: agent.name,
+          check: 'context_path',
+          status: 'fail',
+          detail: `"${ctxPath}" is a magic string — not a real path`,
+          fix: `Run "codebase-pilot scan" to regenerate agents.json with real paths`,
+        });
+        continue;
+      }
 
       const fullPath = join(root, ctxPath);
       const exists = existsSync(fullPath);
@@ -71,11 +84,19 @@ export async function healthCommand(options: HealthOptions): Promise<void> {
     }
   }
 
-  // Check 2: Dependency chain
-  let hasCycle = false;
+  // Check 2: Dependency chain — all dependsOn must reference real agents, no magic strings
   for (const agent of agents) {
     for (const dep of agent.dependsOn) {
-      if (dep === 'ALL previous layers' || dep === 'standards-agent') continue;
+      if (MAGIC_DEP.includes(dep)) {
+        results.push({
+          agent: agent.name,
+          check: 'dependency',
+          status: 'fail',
+          detail: `Depends on magic string "${dep}" — not a real agent`,
+          fix: `Run "codebase-pilot scan" to regenerate agents.json`,
+        });
+        continue;
+      }
       if (!agentNames.includes(dep)) {
         results.push({
           agent: agent.name,
@@ -88,18 +109,48 @@ export async function healthCommand(options: HealthOptions): Promise<void> {
     }
   }
 
-  // Check 3: Layer ordering
+  // Check 3: Cycle detection — DFS traversal
+  const cycleIssues = detectCycles(config.agents);
+  for (const cycle of cycleIssues) {
+    results.push({
+      agent: cycle.split(' → ')[0],
+      check: 'dependency',
+      status: 'fail',
+      detail: `Cycle detected: ${cycle}`,
+      fix: `Remove circular dependency in agents.json`,
+    });
+  }
+
+  // Check 4: Pattern coverage — every work agent (layer 1–3) must appear in at least one pattern
+  const patternAgentSet = new Set(Object.values(config.patterns).flat());
+  const infraAgents = new Set([
+    'standards-agent', 'security-agent', 'supervisor-agent', 'docs-agent', 'healthcheck-agent',
+  ]);
+  for (const agent of agents) {
+    if (infraAgents.has(agent.name)) continue; // gate/infra agents are always in full-feature
+    if (!patternAgentSet.has(agent.name)) {
+      results.push({
+        agent: agent.name,
+        check: 'pattern_coverage',
+        status: 'fail',
+        detail: `Agent "${agent.name}" is not referenced in any pattern — it cannot be orchestrated`,
+        fix: `Run "codebase-pilot scan" to regenerate agents.json with updated patterns`,
+      });
+    }
+  }
+
+  // Check 5: Layer ordering — deps must not be at a higher layer than the agent
   for (const agent of agents) {
     for (const dep of agent.dependsOn) {
-      if (dep === 'ALL previous layers' || dep === 'standards-agent') continue;
+      if (MAGIC_DEP.includes(dep)) continue; // already caught above
       const depAgent = config.agents[dep];
       if (depAgent && depAgent.layer > agent.layer) {
         results.push({
           agent: agent.name,
           check: 'layer_ordering',
           status: 'fail',
-          detail: `L${agent.layer} depends on "${dep}" at L${depAgent.layer}`,
-          fix: `Fix layer assignment — dependencies must be in lower layers`,
+          detail: `L${agent.layer} depends on "${dep}" at L${depAgent.layer} — dep is in a higher layer`,
+          fix: `Fix layer assignment — dependencies must not be in higher layers`,
         });
       }
     }
@@ -112,6 +163,7 @@ export async function healthCommand(options: HealthOptions): Promise<void> {
   const depFailures = failures.filter((r) => r.check === 'dependency');
   const layerFailures = failures.filter((r) => r.check === 'layer_ordering');
   const contextFailures = failures.filter((r) => r.check === 'context_path');
+  const patternFailures = failures.filter((r) => r.check === 'pattern_coverage');
 
   console.log(`  AGENTS (${agentNames.length})                        ✓ DEFINED`);
 
@@ -124,6 +176,7 @@ export async function healthCommand(options: HealthOptions): Promise<void> {
 
   console.log(`  DEPENDENCY CHAIN                  ${depFailures.length === 0 ? '✓ NO CYCLES' : '✗ ' + depFailures.length + ' ISSUES'}`);
   console.log(`  LAYER ORDERING                    ${layerFailures.length === 0 ? '✓ VALID' : '✗ ' + layerFailures.length + ' ISSUES'}`);
+  console.log(`  PATTERN COVERAGE                  ${patternFailures.length === 0 ? '✓ ALL ORCHESTRATED' : '✗ ' + patternFailures.length + ' ORPHANED'}`);
 
   console.log('');
 
@@ -136,11 +189,48 @@ export async function healthCommand(options: HealthOptions): Promise<void> {
     }
     console.log('');
     console.log('  STATUS: UNHEALTHY ✗');
+    process.exitCode = 1;
   } else {
     console.log('  ISSUES: 0');
     console.log('  STATUS: HEALTHY ✓');
   }
   console.log('');
+}
+
+/**
+ * Detect cycles using DFS. Returns an array of cycle descriptions like "a → b → a".
+ */
+function detectCycles(agents: AgentsConfig['agents']): string[] {
+  const cycles: string[] = [];
+  const visited = new Set<string>();
+  const inStack = new Set<string>();
+
+  function dfs(name: string, path: string[]): void {
+    if (inStack.has(name)) {
+      const cycleStart = path.indexOf(name);
+      cycles.push([...path.slice(cycleStart), name].join(' → '));
+      return;
+    }
+    if (visited.has(name)) return;
+
+    visited.add(name);
+    inStack.add(name);
+
+    const agent = agents[name];
+    if (agent) {
+      for (const dep of agent.dependsOn) {
+        if (agents[dep]) dfs(dep, [...path, name]);
+      }
+    }
+
+    inStack.delete(name);
+  }
+
+  for (const name of Object.keys(agents)) {
+    if (!visited.has(name)) dfs(name, []);
+  }
+
+  return cycles;
 }
 
 function countFiles(dir: string, depth = 0): number {

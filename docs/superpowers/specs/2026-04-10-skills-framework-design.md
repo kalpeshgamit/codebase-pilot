@@ -40,14 +40,14 @@ plugin/
     token-budget/
 
     # NEW — ported from superpowers
-    using-codebase-pilot/         ← replaces superpowers:using-superpowers (full rewrite)
+    codebase-pilot/               ← replaces superpowers:using-superpowers (full rewrite)
     thinking/                ← copy + integrate pilot pack-context
     writing-plans/                ← copy + reference agents.json
     executing-plans/              ← copy + namespace swap
     test-driven-development/      ← copy + namespace swap
-    systematic-debugging/         ← copy + integrate pilot impact-analysis
+    debugging/                    ← copy + integrate pilot impact-analysis
     subagent-driven-development/  ← copy + integrate agents.json dispatch
-    dispatching-parallel-agents/  ← copy + reference agents.json patterns
+    sync-agents/  ← copy + reference agents.json patterns
     finishing-a-development-branch/ ← copy + namespace swap
     requesting-code-review/       ← copy + namespace swap
     receiving-code-review/        ← copy + namespace swap
@@ -85,14 +85,14 @@ Copy SKILL.md then add codebase-pilot-specific hooks:
 | `thinking` | Add: use `pilot pack-context` to load project context before design questions |
 | `writing-plans` | Add: reference `agents.json` for agent boundaries when writing tasks |
 | `test-driven-development` | Add: use `pilot impact-analysis` to scope test coverage |
-| `systematic-debugging` | Add: use `pilot impact-analysis` to trace blast radius of bug |
-| `dispatching-parallel-agents` | Add: read `agents.json` patterns for agent boundaries |
+| `debugging` | Add: use `pilot impact-analysis` to trace blast radius of bug |
+| `sync-agents` | Add: read `agents.json` patterns for agent boundaries |
 
 ### Tier 3 — Full rewrite (2 skills)
 
 | Skill | Reason |
 |---|---|
-| `using-codebase-pilot` | Replaces `using-superpowers` — full rewrite for codebase-pilot context, MCP tools, hooks, commands |
+| `codebase-pilot` | Replaces `using-superpowers` — full rewrite for codebase-pilot context, MCP tools, hooks, commands |
 | `subagent-driven-development` | Deep integration with `agents.json` dispatch patterns and layer ordering |
 
 ---
@@ -104,14 +104,14 @@ Add 14 skill entries to `plugin/.claude-plugin/plugin.json`:
 ```json
 {
   "skills": [
-    { "name": "using-codebase-pilot", "path": "skills/using-codebase-pilot/SKILL.md" },
+    { "name": "codebase-pilot", "path": "skills/codebase-pilot/SKILL.md" },
     { "name": "thinking", "path": "skills/thinking/SKILL.md" },
     { "name": "writing-plans", "path": "skills/writing-plans/SKILL.md" },
     { "name": "executing-plans", "path": "skills/executing-plans/SKILL.md" },
     { "name": "test-driven-development", "path": "skills/test-driven-development/SKILL.md" },
-    { "name": "systematic-debugging", "path": "skills/systematic-debugging/SKILL.md" },
+    { "name": "debugging", "path": "skills/debugging/SKILL.md" },
     { "name": "subagent-driven-development", "path": "skills/subagent-driven-development/SKILL.md" },
-    { "name": "dispatching-parallel-agents", "path": "skills/dispatching-parallel-agents/SKILL.md" },
+    { "name": "sync-agents", "path": "skills/sync-agents/SKILL.md" },
     { "name": "finishing-a-development-branch", "path": "skills/finishing-a-development-branch/SKILL.md" },
     { "name": "requesting-code-review", "path": "skills/requesting-code-review/SKILL.md" },
     { "name": "receiving-code-review", "path": "skills/receiving-code-review/SKILL.md" },
